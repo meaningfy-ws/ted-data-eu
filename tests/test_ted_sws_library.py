@@ -9,12 +9,23 @@ TDA_REPOSITORY_NAME = "tda_repository"
 def test_ted_sws_library():
     mongodb_client = MongoClient(config.MONGO_DB_AUTH_URL)
     notice_repository = NoticeRepository(mongodb_client=mongodb_client)
-    notice_list = list(notice_repository.list())
-    notices_distilled_rdf_manifestation = {notice.ted_id: notice.distilled_rdf_manifestation.object_data
-                                           for notice in notice_list if notice.distilled_rdf_manifestation}
+    notice_iter = notice_repository.list()
+    # notices_distilled_rdf_manifestation = {notice.ted_id: notice.distilled_rdf_manifestation.object_data
+    #                                       for notice in notice_list if notice.distilled_rdf_manifestation}
+
+    nr_of_notices = 0
+    notices_distilled_rdf_manifestation = {}
+    for notice in notice_iter:
+        if notice.distilled_rdf_manifestation:
+            notices_distilled_rdf_manifestation[notice.ted_id] = notice.distilled_rdf_manifestation.object_data
+        nr_of_notices += 1
+    notices_distilled_rdf_manifestation_len = len(notices_distilled_rdf_manifestation)
+
     print('')
-    print(f'Number of notices: {len(notice_list)}')
-    print(f'Number of distilled_rdf_manifestation: {len(notices_distilled_rdf_manifestation)}')
+    print(f'Number of notices: {nr_of_notices}')
+    print(f'Number of distilled_rdf_manifestation: {notices_distilled_rdf_manifestation_len}')
+
+    assert notices_distilled_rdf_manifestation_len > 0, "There are no notices_distilled_rdf_manifestation"
 
     agraph_ts = AllegroGraphTripleStore(host=config.ALLEGRO_HOST,
                                         user=config.AGRAPH_SUPER_USER,
