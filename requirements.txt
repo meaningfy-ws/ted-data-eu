@@ -1,1 +1,2 @@
 https://github.com/meaningfy-ws/ted-sws/archive/main.zip
+pymongo~=4.0.2
