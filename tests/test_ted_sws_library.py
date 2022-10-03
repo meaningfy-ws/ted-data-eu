@@ -12,7 +12,6 @@ def test_ted_sws_library():
     assert mongodb_client
     notice_repository = NoticeRepository(mongodb_client=mongodb_client)
     assert notice_repository
-    notice_iter = notice_repository.list()
 
     agraph_ts = AllegroGraphTripleStore(host=config.ALLEGRO_HOST,
                                         user=config.AGRAPH_SUPER_USER,
@@ -22,14 +21,3 @@ def test_ted_sws_library():
     agraph_repositories = agraph_ts.list_repositories()
     assert agraph_repositories
     assert TDA_REPOSITORY_NAME in agraph_repositories
-
-    notices_distilled_rdf_manifestation = {}
-    i = 0
-    for notice in notice_iter:
-        if notice.distilled_rdf_manifestation:
-            # TODO: check if notice already exist in agraph
-            notices_distilled_rdf_manifestation[notice.ted_id] = notice.distilled_rdf_manifestation.object_data
-        i += 1
-
-    print("Nr of distiled: ", len(notices_distilled_rdf_manifestation))
-    print("Nor of notices: ", i)
