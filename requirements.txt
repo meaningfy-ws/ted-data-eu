@@ -1,2 +1,3 @@
+pymongo==4.0.2
+apache-airflow==2.4.0
 https://github.com/meaningfy-ws/ted-sws/archive/main.zip
-pymongo~=4.0.2
