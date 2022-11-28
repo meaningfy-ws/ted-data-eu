@@ -185,7 +185,7 @@ prod-dotenv-file: guard-VAULT_ADDR guard-VAULT_TOKEN vault-installed
 	@ echo VAULT_ADDR=${VAULT_ADDR} > .env
 	@ echo VAULT_TOKEN=${VAULT_TOKEN} >> .env
 	@ echo DOMAIN=ted-data.eu >> .env
-	@ echo ENVIRONMENT=prod >> .env
+	@ echo ENVIRONMENT=tda-prod >> .env
 	@ echo SUBDOMAIN=tda. >> .env
 	@ echo RML_MAPPER_PATH=${RML_MAPPER_PATH} >> .env
 	@ echo XML_PROCESSOR_PATH=${XML_PROCESSOR_PATH} >> .env
