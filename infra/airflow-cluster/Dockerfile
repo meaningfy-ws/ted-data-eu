@@ -8,7 +8,7 @@ RUN apt install -y default-jre
 # back to normal user
 USER airflow
 
-# requirements.txt shall be made availble from the **ted-sws** GitHub repository
+# requirements.txt shall be made availble from the **ted-data-eu** GitHub repository
 COPY requirements.txt /opt/airflow
 
 # working in the /opt/airflow

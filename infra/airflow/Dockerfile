@@ -8,12 +8,12 @@ RUN apt install -y default-jre
 # back to normal user
 USER airflow
 
-# requirements.txt shall be made availble from the **ted-sws** GitHub repository
+# requirements.txt shall be made availble from the **ted-data-eu** GitHub repository
 COPY requirements.txt /opt/airflow
 
 # working in the /opt/airflow
 WORKDIR /opt/airflow
-RUN mkdir -p ./.rmlmapper ./dags ./ted_sws ./temp
+RUN mkdir -p ./.rmlmapper ./dags ./ted_data_eu./temp
 RUN wget -c https://github.com/RMLio/rmlmapper-java/releases/download/v6.0.0/rmlmapper-6.0.0-r363-all.jar -O ./.rmlmapper/rmlmapper.jar
 
 
