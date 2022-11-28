@@ -141,7 +141,7 @@ init-saxon:
 
 
 
-start-project-services: | start-airflow-master start-allegro-graph start-fuseki start-minio
+start-project-services: | create-env-airflow-cluster start-airflow-master start-allegro-graph start-fuseki start-minio
 stop-project-services: | stop-airflow-master stop-allegro-graph stop-fuseki stop-minio
 
 #-----------------------------------------------------------------------------
