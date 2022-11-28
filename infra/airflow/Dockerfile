@@ -13,13 +13,12 @@ COPY requirements.txt /opt/airflow
 
 # working in the /opt/airflow
 WORKDIR /opt/airflow
-RUN mkdir -p ./.rmlmapper
+RUN mkdir -p ./.rmlmapper ./dags ./ted_data_eu./temp
 RUN wget -c https://github.com/RMLio/rmlmapper-java/releases/download/v6.0.0/rmlmapper-6.0.0-r363-all.jar -O ./.rmlmapper/rmlmapper.jar
 
 
 RUN wget -c https://kumisystems.dl.sourceforge.net/project/saxon/Saxon-HE/10/Java/SaxonHE10-6J.zip -P .saxon/
 RUN cd .saxon && unzip SaxonHE10-6J.zip && rm -rf SaxonHE10-6J.zip
-
 
 RUN mkdir -p ./.limes
 RUN wget -c https://github.com/dice-group/LIMES/releases/download/1.7.9/limes.jar -P ./.limes
