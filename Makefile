@@ -60,7 +60,15 @@ build-externals:
 #-----------------------------------------------------------------------------
 # PROJECT SERVICES
 #-----------------------------------------------------------------------------
-
+create-env-airflow:
+	@ echo -e "$(BUILD_PRINT) Create Airflow env $(END_BUILD_PRINT)"
+	@ echo -e "$(BUILD_PRINT) ${AIRFLOW_INFRA_FOLDER} ${ENVIRONMENT} $(END_BUILD_PRINT)"
+	@ mkdir -p ${AIRFLOW_INFRA_FOLDER}/logs ${AIRFLOW_INFRA_FOLDER}/plugins
+	@ ln -s -f ${PROJECT_PATH}/.env ${AIRFLOW_INFRA_FOLDER}/.env
+	@ ln -s -f -n ${PROJECT_PATH}/dags ${AIRFLOW_INFRA_FOLDER}/dags
+	@ ln -s -f -n ${PROJECT_PATH}/ted_data_eu ${AIRFLOW_INFRA_FOLDER}/ted_data_eu
+	@ chmod 777 ${AIRFLOW_INFRA_FOLDER}/logs ${AIRFLOW_INFRA_FOLDER}/plugins ${AIRFLOW_INFRA_FOLDER}/.env
+	@ cp requirements.txt ./infra/airflow/
 
 create-env-airflow-cluster:
 	@ echo -e "$(BUILD_PRINT) Create Airflow env $(END_BUILD_PRINT)"
@@ -71,9 +79,22 @@ create-env-airflow-cluster:
 	@ chmod 777 ${AIRFLOW_INFRA_FOLDER}/logs ${AIRFLOW_INFRA_FOLDER}/plugins ${AIRFLOW_INFRA_FOLDER}/.env
 	@ cp requirements.txt ./infra/airflow-cluster/
 
+build-airflow: guard-ENVIRONMENT create-env-airflow build-externals
+	@ echo -e "$(BUILD_PRINT) Build Airflow services $(END_BUILD_PRINT)"
+	@ docker build -t meaningfy/airflow-ted-data ./infra/airflow/
+	@ docker-compose -p ${ENVIRONMENT} --file ./infra/airflow/docker-compose.yaml --env-file ${ENV_FILE} up -d --force-recreate
+
+start-airflow: build-externals
+	@ echo -e "$(BUILD_PRINT)Starting Airflow services $(END_BUILD_PRINT)"
+	@ docker-compose -p ${ENVIRONMENT} --file ./infra/airflow/docker-compose.yaml --env-file ${ENV_FILE} up -d
+
+stop-airflow:
+	@ echo -e "$(BUILD_PRINT)Stopping Airflow services $(END_BUILD_PRINT)"
+	@ docker-compose -p ${ENVIRONMENT} --file ./infra/airflow/docker-compose.yaml --env-file ${ENV_FILE} down
+
 build-airflow-cluster: guard-ENVIRONMENT create-env-airflow-cluster build-externals
 	@ echo -e "$(BUILD_PRINT) Build Airflow Common Image $(END_BUILD_PRINT)"
-	@ docker build -t meaningfy/airflow ./infra/airflow-cluster/
+	@ docker build -t meaningfy/airflow-ted-data ./infra/airflow-cluster/
 
 start-airflow-master: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting Airflow Master $(END_BUILD_PRINT)"
@@ -141,8 +162,8 @@ init-saxon:
 
 
 
-start-project-services: | create-env-airflow-cluster start-airflow-master start-allegro-graph start-fuseki start-minio
-stop-project-services: | stop-airflow-master stop-allegro-graph stop-fuseki stop-minio
+start-project-services: | create-env-airflow start-airflow start-allegro-graph start-fuseki start-minio
+stop-project-services: | stop-airflow stop-allegro-graph stop-fuseki stop-minio
 
 #-----------------------------------------------------------------------------
 # VAULT SERVICES
