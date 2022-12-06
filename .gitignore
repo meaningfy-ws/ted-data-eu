@@ -134,3 +134,6 @@ dmypy.json
 infra/airflow/logs
 infra/airflow/dags
 infra/airflow/plugins
+venv_activation.sh
+.airflow
+infra/airflow/requirements.txt
