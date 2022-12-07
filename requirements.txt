@@ -1,2 +1,2 @@
-https://github.com/meaningfy-ws/ted-sws/archive/main.zip
+git+https://github.com/OP-TED/ted-rdf-conversion-pipeline.git@1.0.0-beta
 pymongo~=4.0.2
