@@ -1,3 +1,5 @@
+# Q1. How many Lots are using EU funds per Buyer country?
+
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX epo: <http://data.europa.eu/a4g/ontology#>
 PREFIX at: <http://publications.europa.eu/ontology/authority/>
