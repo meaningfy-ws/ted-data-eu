@@ -14,6 +14,8 @@ PROJECT_PATH = $(shell pwd)
 AIRFLOW_INFRA_FOLDER ?= ${PROJECT_PATH}/.airflow
 RML_MAPPER_PATH = ${PROJECT_PATH}/.rmlmapper/rmlmapper.jar
 XML_PROCESSOR_PATH = ${PROJECT_PATH}/.saxon/saxon-he-10.6.jar
+DASH_FOLDER = ${PROJECT_PATH}/dash
+REQUIREMENTS_FILE_PATH = ${PROJECT_PATH}/requirements.txt
 HOSTNAME = $(shell hostname)
 
 
@@ -147,6 +149,18 @@ stop-minio:
 	@ echo -e "$(BUILD_PRINT)Stopping the Minio services $(END_BUILD_PRINT)"
 	@ docker-compose -p ${ENVIRONMENT} --file ./infra/minio/docker-compose.yml --env-file ${ENV_FILE} down
 
+#	------------------------
+start-dash: build-externals
+	@ echo -e "$(BUILD_PRINT)Starting Dash services $(END_BUILD_PRINT)"
+	@ cp requirements.txt ./infra/dash/
+	@ cp -R ${PROJECT_PATH}/dash ./infra/dash
+	@ docker-compose -p ${ENVIRONMENT} --file ./infra/dash/docker-compose.yml --env-file ${ENV_FILE} up -d --build
+	@ rm -rf ./infra/dash/dash
+	@ rm ./infra/dash/requirements.txt
+
+stop-dash:
+	@ echo -e "$(BUILD_PRINT)Stopping Dash services $(END_BUILD_PRINT)"
+	@ docker-compose -p ${ENVIRONMENT} --file ./infra/dash/docker-compose.yml --env-file ${ENV_FILE} down
 
 
 init-rml-mapper:
@@ -161,9 +175,20 @@ init-saxon:
 	@ cd .saxon && unzip SaxonHE10-6J.zip && rm -rf SaxonHE10-6J.zip
 
 
-
 start-project-services: | create-env-airflow start-airflow start-allegro-graph start-fuseki start-minio
 stop-project-services: | stop-airflow stop-allegro-graph stop-fuseki stop-minio
+
+#-----------------------------------------------------------------------------
+# SERVER SERVICES
+#-----------------------------------------------------------------------------
+start-traefik: build-externals
+	@ echo -e "$(BUILD_PRINT)Starting the Traefik services $(END_BUILD_PRINT)"
+	@ docker-compose -p common --file ./infra/traefik/docker-compose.yml --env-file ${ENV_FILE} up -d
+
+stop-traefik:
+	@ echo -e "$(BUILD_PRINT)Stopping the Traefik services $(END_BUILD_PRINT)"
+	@ docker-compose -p common --file ./infra/traefik/docker-compose.yml --env-file ${ENV_FILE} down
+
 
 #-----------------------------------------------------------------------------
 # VAULT SERVICES
@@ -194,6 +219,8 @@ dev-dotenv-file: guard-VAULT_ADDR guard-VAULT_TOKEN vault-installed
 	@ echo XML_PROCESSOR_PATH=${XML_PROCESSOR_PATH} >> .env
 	@ echo AIRFLOW_INFRA_FOLDER=${AIRFLOW_INFRA_FOLDER} >> .env
 	@ echo AIRFLOW_WORKER_HOSTNAME=${HOSTNAME} >> .env
+	@ echo DASH_FOLDER_PATH=${DASH_FOLDER} >> .env
+	@ echo REQUIREMENTS_FILE=${REQUIREMENTS_FILE_PATH} >> .env
 	@ vault kv get -format="json" ted-data-dev/airflow | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
 	@ vault kv get -format="json" ted-data-dev/mongo-db | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
 	@ vault kv get -format="json" ted-data-dev/agraph | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
@@ -211,7 +238,9 @@ prod-dotenv-file: guard-VAULT_ADDR guard-VAULT_TOKEN vault-installed
 	@ echo RML_MAPPER_PATH=${RML_MAPPER_PATH} >> .env
 	@ echo XML_PROCESSOR_PATH=${XML_PROCESSOR_PATH} >> .env
 	@ echo AIRFLOW_INFRA_FOLDER=~/airflow-infra/ted-data-prod >> .env
+	@ echo DASH_FOLDER_PATH=${DASH_FOLDER} >> .env
 	@ echo AIRFLOW_WORKER_HOSTNAME=${HOSTNAME} >> .env
+	@ echo REQUIREMENTS_FILE=${REQUIREMENTS_FILE_PATH} >> .env
 	@ vault kv get -format="json" ted-prod/airflow | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
 	@ vault kv get -format="json" ted-prod/minio | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
 	@ vault kv get -format="json" ted-prod/mongo-db | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
