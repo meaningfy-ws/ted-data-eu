@@ -56,6 +56,25 @@ build-externals:
 	@ echo -e "$(BUILD_PRINT)Creating the necessary volumes, networks and folders and setting the special rights"
 	@ docker network create proxy-net || true
 	@ docker network create common-ext-${ENVIRONMENT} || true
+#-----------------------------------------------------------------------------
+# SERVER SERVICES
+#-----------------------------------------------------------------------------
+start-traefik: build-externals
+	@ echo -e "$(BUILD_PRINT)Starting the Traefik services $(END_BUILD_PRINT)"
+	@ docker-compose -p common --file ./infra/traefik/docker-compose.yml --env-file ${ENV_FILE} up -d
+
+stop-traefik:
+	@ echo -e "$(BUILD_PRINT)Stopping the Traefik services $(END_BUILD_PRINT)"
+	@ docker-compose -p common --file ./infra/traefik/docker-compose.yml --env-file ${ENV_FILE} down
+#-----------------------------------------------------------------------------
+# temporary
+start-metabase: build-externals
+	@ echo -e "$(BUILD_PRINT)Starting the Metabase services $(END_BUILD_PRINT)"
+	@ docker-compose -p ${ENVIRONMENT} --file ./infra/metabase/docker-compose.yml --env-file ${ENV_FILE} up -d
+
+stop-metabase:
+	@ echo -e "$(BUILD_PRINT)Stopping the Metabase services $(END_BUILD_PRINT)"
+	@ docker-compose -p ${ENVIRONMENT} --file ./infra/metabase/docker-compose.yml --env-file ${ENV_FILE} down
 
 #-----------------------------------------------------------------------------
 # PROJECT SERVICES
