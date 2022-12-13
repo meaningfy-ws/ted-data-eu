@@ -61,20 +61,20 @@ build-externals:
 #-----------------------------------------------------------------------------
 start-traefik: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting the Traefik services $(END_BUILD_PRINT)"
-	@ docker-compose -p common --file ./infra/traefik/docker-compose.yml --env-file ${ENV_FILE} up -d
+	@ docker-compose  --file ./infra/traefik/docker-compose.yml --env-file ${ENV_FILE} up -d
 
 stop-traefik:
 	@ echo -e "$(BUILD_PRINT)Stopping the Traefik services $(END_BUILD_PRINT)"
-	@ docker-compose -p common --file ./infra/traefik/docker-compose.yml --env-file ${ENV_FILE} down
+	@ docker-compose  --file ./infra/traefik/docker-compose.yml --env-file ${ENV_FILE} down
 #-----------------------------------------------------------------------------
 # temporary
 start-metabase: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting the Metabase services $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/metabase/docker-compose.yml --env-file ${ENV_FILE} up -d
+	@ docker-compose  --file ./infra/metabase/docker-compose.yml --env-file ${ENV_FILE} up -d
 
 stop-metabase:
 	@ echo -e "$(BUILD_PRINT)Stopping the Metabase services $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/metabase/docker-compose.yml --env-file ${ENV_FILE} down
+	@ docker-compose  --file ./infra/metabase/docker-compose.yml --env-file ${ENV_FILE} down
 
 #-----------------------------------------------------------------------------
 # PROJECT SERVICES
@@ -101,15 +101,15 @@ create-env-airflow-cluster:
 build-airflow: guard-ENVIRONMENT create-env-airflow build-externals
 	@ echo -e "$(BUILD_PRINT) Build Airflow services $(END_BUILD_PRINT)"
 	@ docker build -t meaningfy/airflow-ted-data ./infra/airflow/
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/airflow/docker-compose.yaml --env-file ${ENV_FILE} up -d --force-recreate
+	@ docker-compose  --file ./infra/airflow/docker-compose.yaml --env-file ${ENV_FILE} up -d --force-recreate
 
 start-airflow: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting Airflow services $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/airflow/docker-compose.yaml --env-file ${ENV_FILE} up -d
+	@ docker-compose  --file ./infra/airflow/docker-compose.yaml --env-file ${ENV_FILE} up -d
 
 stop-airflow:
 	@ echo -e "$(BUILD_PRINT)Stopping Airflow services $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/airflow/docker-compose.yaml --env-file ${ENV_FILE} down
+	@ docker-compose  --file ./infra/airflow/docker-compose.yaml --env-file ${ENV_FILE} down
 
 build-airflow-cluster: guard-ENVIRONMENT create-env-airflow-cluster build-externals
 	@ echo -e "$(BUILD_PRINT) Build Airflow Common Image $(END_BUILD_PRINT)"
@@ -117,54 +117,54 @@ build-airflow-cluster: guard-ENVIRONMENT create-env-airflow-cluster build-extern
 
 start-airflow-master: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting Airflow Master $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/airflow-cluster/docker-compose.yaml --env-file ${ENV_FILE} up -d --force-recreate
+	@ docker-compose  --file ./infra/airflow-cluster/docker-compose.yaml --env-file ${ENV_FILE} up -d --force-recreate
 
 start-airflow-worker: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting Airflow Worker $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/airflow-cluster/docker-compose-worker.yaml --env-file ${ENV_FILE} up -d
+	@ docker-compose  --file ./infra/airflow-cluster/docker-compose-worker.yaml --env-file ${ENV_FILE} up -d
 
 stop-airflow-master:
 	@ echo -e "$(BUILD_PRINT)Stopping Airflow Master $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/airflow-cluster/docker-compose.yaml --env-file ${ENV_FILE} down
+	@ docker-compose  --file ./infra/airflow-cluster/docker-compose.yaml --env-file ${ENV_FILE} down
 
 stop-airflow-worker:
 	@ echo -e "$(BUILD_PRINT)Stopping Airflow Worker $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/airflow-cluster/docker-compose-worker.yaml --env-file ${ENV_FILE} down
+	@ docker-compose  --file ./infra/airflow-cluster/docker-compose-worker.yaml --env-file ${ENV_FILE} down
 
 
 start-allegro-graph: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting Allegro-Graph services $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/allegro-graph/docker-compose.yml --env-file ${ENV_FILE} up -d
+	@ docker-compose  --file ./infra/allegro-graph/docker-compose.yml --env-file ${ENV_FILE} up -d
 
 stop-allegro-graph:
 	@ echo -e "$(BUILD_PRINT)Stopping Allegro-Graph services $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/allegro-graph/docker-compose.yml --env-file ${ENV_FILE} down
+	@ docker-compose  --file ./infra/allegro-graph/docker-compose.yml --env-file ${ENV_FILE} down
 
 #	------------------------
 start-fuseki: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting Fuseki services $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/fuseki/docker-compose.yml --env-file ${ENV_FILE} up -d
+	@ docker-compose  --file ./infra/fuseki/docker-compose.yml --env-file ${ENV_FILE} up -d
 
 stop-fuseki:
 	@ echo -e "$(BUILD_PRINT)Stopping Fuseki services $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/fuseki/docker-compose.yml --env-file ${ENV_FILE} down
+	@ docker-compose  --file ./infra/fuseki/docker-compose.yml --env-file ${ENV_FILE} down
 
 #	------------------------
 start-sftp: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting SFTP services $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/sftp/docker-compose.yml --env-file ${ENV_FILE} up -d
+	@ docker-compose  --file ./infra/sftp/docker-compose.yml --env-file ${ENV_FILE} up -d
 
 stop-sftp:
 	@ echo -e "$(BUILD_PRINT)Stopping SFTP services $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/sftp/docker-compose.yml --env-file ${ENV_FILE} down
+	@ docker-compose  --file ./infra/sftp/docker-compose.yml --env-file ${ENV_FILE} down
 
 start-minio: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting the Minio services $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/minio/docker-compose.yml --env-file ${ENV_FILE} up -d
+	@ docker-compose  --file ./infra/minio/docker-compose.yml --env-file ${ENV_FILE} up -d
 
 stop-minio:
 	@ echo -e "$(BUILD_PRINT)Stopping the Minio services $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/minio/docker-compose.yml --env-file ${ENV_FILE} down
+	@ docker-compose  --file ./infra/minio/docker-compose.yml --env-file ${ENV_FILE} down
 
 
 
