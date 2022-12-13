@@ -221,6 +221,24 @@ dev-dotenv-file: guard-VAULT_ADDR guard-VAULT_TOKEN vault-installed
 	@ vault kv get -format="json" ted-data-dev/minio | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
 
 
+staging-dotenv-file: guard-VAULT_ADDR guard-VAULT_TOKEN vault-installed
+	@ echo -e "$(BUILD_PRINT)Create .env file $(END_BUILD_PRINT)"
+	@ echo VAULT_ADDR=${VAULT_ADDR} > .env
+	@ echo VAULT_TOKEN=${VAULT_TOKEN} >> .env
+	@ echo DOMAIN=ted-data.eu >> .env
+	@ echo ENVIRONMENT=staging >> .env
+	@ echo SUBDOMAIN=staging. >> .env
+	@ echo RML_MAPPER_PATH=${RML_MAPPER_PATH} >> .env
+	@ echo XML_PROCESSOR_PATH=${XML_PROCESSOR_PATH} >> .env
+	@ echo AIRFLOW_INFRA_FOLDER=~/airflow-infra/staging >> .env
+	@ echo AIRFLOW_WORKER_HOSTNAME=${HOSTNAME} >> .env
+	@ vault kv get -format="json" ted-data-dev/airflow | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ vault kv get -format="json" ted-data-dev/mongo-db | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ vault kv get -format="json" ted-data-dev/agraph | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ vault kv get -format="json" ted-data-dev/metabase | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ vault kv get -format="json" ted-data-dev/fuseki | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ vault kv get -format="json" ted-data-dev/minio | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+
 prod-dotenv-file: guard-VAULT_ADDR guard-VAULT_TOKEN vault-installed
 	@ echo -e "$(BUILD_PRINT)Create .env file $(END_BUILD_PRINT)"
 	@ echo VAULT_ADDR=${VAULT_ADDR} > .env
