@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
 
-  postgres:
+  postgres-metabase:
     container_name: metabase-postgres-${ENVIRONMENT}
     restart: unless-stopped
     image: postgres:14.4-alpine
@@ -10,8 +10,8 @@ services:
       - POSTGRES_DB=${ENV_MB_DB_DBNAME}
       - POSTGRES_USER=${ENV_MB_DB_USER}
       - POSTGRES_PASSWORD=${ENV_MB_DB_PASS}
-    ports:
-      - "5436:5432"
+#    ports:
+#      - "5436:5432"
     volumes:
       - metabase_postgres_volume:/var/lib/postgresql/data/
     networks:
