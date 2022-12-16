@@ -10,13 +10,10 @@ services:
       - POSTGRES_DB=${ENV_MB_DB_DBNAME}
       - POSTGRES_USER=${ENV_MB_DB_USER}
       - POSTGRES_PASSWORD=${ENV_MB_DB_PASS}
-#    ports:
-#      - "5436:5432"
     volumes:
       - metabase_postgres_volume:/var/lib/postgresql/data/
     networks:
       - metabase-net
-
 
   metabase:
     container_name: metabase-${ENVIRONMENT}
