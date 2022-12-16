@@ -166,7 +166,10 @@ stop-minio:
 	@ echo -e "$(BUILD_PRINT)Stopping the Minio services $(END_BUILD_PRINT)"
 	@ docker-compose -p ${ENVIRONMENT} --file ./infra/minio/docker-compose.yml --env-file ${ENV_FILE} down
 
-
+init-limes:
+	@ echo -e "Limes folder initialisation!"
+	@ mkdir -p ./.limes
+	@ wget -c https://github.com/dice-group/LIMES/releases/download/1.7.9/limes.jar -P ./.limes
 
 init-rml-mapper:
 	@ echo -e "RMLMapper folder initialisation!"
@@ -300,17 +303,3 @@ stop-mongo:
 	@ echo -e "$(BUILD_PRINT)Stopping the Mongo services $(END_BUILD_PRINT)"
 	@ docker-compose -p ${ENVIRONMENT} --file ./infra/mongo/docker-compose.yml --env-file ${ENV_FILE} down
 
-init-rml-mapper:
-	@ echo -e "RMLMapper folder initialisation!"
-	@ mkdir -p ./.rmlmapper
-	@ wget -c https://github.com/RMLio/rmlmapper-java/releases/download/v6.0.0/rmlmapper-6.0.0-r363-all.jar -O ./.rmlmapper/rmlmapper.jar
-
-init-limes:
-	@ echo -e "Limes folder initialisation!"
-	@ mkdir -p ./.limes
-	@ wget -c https://github.com/dice-group/LIMES/releases/download/1.7.9/limes.jar -P ./.limes
-
-init-saxon:
-	@ echo -e "$(BUILD_PRINT)Saxon folder initialization $(END_BUILD_PRINT)"
-	@ wget -c https://kumisystems.dl.sourceforge.net/project/saxon/Saxon-HE/10/Java/SaxonHE10-6J.zip -P .saxon/
-	@ cd .saxon && unzip SaxonHE10-6J.zip && rm -rf SaxonHE10-6J.zip
