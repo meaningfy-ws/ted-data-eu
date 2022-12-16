@@ -100,7 +100,7 @@ create-env-airflow-cluster:
 
 build-airflow: guard-ENVIRONMENT create-env-airflow build-externals
 	@ echo -e "$(BUILD_PRINT) Build Airflow services $(END_BUILD_PRINT)"
-	@ docker build -t meaningfy/airflow-ted-data ./infra/airflow/
+	@ docker build -t meaningfy/airflow ./infra/airflow/
 	@ docker-compose -p ${ENVIRONMENT} --file ./infra/airflow/docker-compose.yaml --env-file ${ENV_FILE} up -d --force-recreate
 
 start-airflow: build-externals
@@ -113,7 +113,7 @@ stop-airflow:
 
 build-airflow-cluster: guard-ENVIRONMENT create-env-airflow-cluster build-externals
 	@ echo -e "$(BUILD_PRINT) Build Airflow Common Image $(END_BUILD_PRINT)"
-	@ docker build -t meaningfy/airflow-ted-data ./infra/airflow-cluster/
+	@ docker build -t meaningfy/airflow ./infra/airflow-cluster/
 
 start-airflow-master: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting Airflow Master $(END_BUILD_PRINT)"
