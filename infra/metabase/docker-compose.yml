@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
 
-  postgres:
+  postgres-metabase:
     container_name: metabase-postgres-${ENVIRONMENT}
     restart: unless-stopped
     image: postgres:14.4-alpine
@@ -14,7 +14,6 @@ services:
       - metabase_postgres_volume:/var/lib/postgresql/data/
     networks:
       - metabase-net
-
 
   metabase:
     container_name: metabase-${ENVIRONMENT}

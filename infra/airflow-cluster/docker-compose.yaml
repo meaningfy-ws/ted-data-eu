@@ -93,6 +93,7 @@ x-airflow-common:
   extra_hosts:
     - "hermes:65.108.123.44"
     - "newton:65.109.3.225"
+    - "platon:65.108.254.98"
     - "pascal:65.21.59.9"
     - "srv.meaningfy.ws:168.119.148.205"
   command: bash -c "export PYTHONPATH='/opt/airflow/'"
