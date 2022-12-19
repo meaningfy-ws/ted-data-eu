@@ -184,8 +184,18 @@ init-saxon:
 
 
 
-start-project-services: | create-env-airflow start-airflow start-allegro-graph start-fuseki start-minio
-stop-project-services: | stop-airflow stop-allegro-graph stop-fuseki stop-minio
+start-common-project-services: | start-mongo start-sftp start-fuseki start-allegro-graph start-minio start-metabase
+stop-common-project-services: | stop-mongo stop-sftp stop-fuseki stop-allegro-graph stop-minio stop-metabase
+
+start-prod-project-services : | prod-dotenv-file create-env-airflow-cluster start-airflow-master start-common-project-services start-digest_service-api
+stop-prod-project-services : | stop-airflow-master stop-common-project-services stop-digest_service-api
+
+start-staging-project-services : | staging-dotenv-file create-env-airflow start-airflow start-common-project-services install-allure
+stop-staging-project-services : | stop-airflow stop-common-project-services
+
+start-dev-project-services : | dev-dotenv-file create-env-airflow start-airflow start-common-project-services
+stop-dev-project-services : | stop-airflow stop-common-project-services
+
 
 #-----------------------------------------------------------------------------
 # VAULT SERVICES
@@ -303,11 +313,3 @@ start-mongo: build-externals
 stop-mongo:
 	@ echo -e "$(BUILD_PRINT)Stopping the Mongo services $(END_BUILD_PRINT)"
 	@ docker-compose -p ${ENVIRONMENT} --file ./infra/mongo/docker-compose.yml --env-file ${ENV_FILE} down
-
-start-sftp: build-externals
-	@ echo -e "$(BUILD_PRINT)Starting SFTP services $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/sftp/docker-compose.yml --env-file ${ENV_FILE} up -d
-
-stop-sftp:
-	@ echo -e "$(BUILD_PRINT)Stopping SFTP services $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/sftp/docker-compose.yml --env-file ${ENV_FILE} down
