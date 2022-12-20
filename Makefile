@@ -174,9 +174,10 @@ start-dash: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting Dash services $(END_BUILD_PRINT)"
 	@ cp requirements.txt ./infra/dash/
 	@ cp -R ${PROJECT_PATH}/dash ./infra/dash
-	@ cp -R ${PROJECT_PATH}/dags/resource/sparql_queries ./infra/dash
+	@ cp -R ${PROJECT_PATH}/dags/resources/sparql_queries ./infra/dash
 	@ docker-compose -p ${ENVIRONMENT} --file ./infra/dash/docker-compose.yml --env-file ${ENV_FILE} up -d --build
-	@ rm -rf ./infra/dash/dash
+	@ rm -r ./infra/dash/dash
+	@ rm -r ./infra/dash/resources
 	@ rm ./infra/dash/requirements.txt
 
 stop-dash:
