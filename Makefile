@@ -14,8 +14,6 @@ PROJECT_PATH = $(shell pwd)
 AIRFLOW_INFRA_FOLDER ?= ${PROJECT_PATH}/.airflow
 RML_MAPPER_PATH = ${PROJECT_PATH}/.rmlmapper/rmlmapper.jar
 XML_PROCESSOR_PATH = ${PROJECT_PATH}/.saxon/saxon-he-10.6.jar
-DASH_FOLDER = ${PROJECT_PATH}/dash
-REQUIREMENTS_FILE_PATH = ${PROJECT_PATH}/requirements.txt
 HOSTNAME = $(shell hostname)
 
 
