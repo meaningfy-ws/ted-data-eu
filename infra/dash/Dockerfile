@@ -14,7 +14,7 @@ RUN pip install -r /requirements.txt
 
 # Copy app folder to app folder in container
 COPY /dash /usr/src/app/
-COPY /sparql_queries /usr/src/app/
+COPY /sparql_queries /usr/src/app/sparql_queries
 
 # Changing to non-root user
 RUN useradd -m appUser
