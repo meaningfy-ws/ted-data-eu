@@ -219,18 +219,6 @@ stop-dev-project-services : | stop-airflow stop-common-project-services
 
 
 #-----------------------------------------------------------------------------
-# SERVER SERVICES
-#-----------------------------------------------------------------------------
-start-traefik: build-externals
-	@ echo -e "$(BUILD_PRINT)Starting the Traefik services $(END_BUILD_PRINT)"
-	@ docker-compose -p common --file ./infra/traefik/docker-compose.yml --env-file ${ENV_FILE} up -d
-
-stop-traefik:
-	@ echo -e "$(BUILD_PRINT)Stopping the Traefik services $(END_BUILD_PRINT)"
-	@ docker-compose -p common --file ./infra/traefik/docker-compose.yml --env-file ${ENV_FILE} down
-
-
-#-----------------------------------------------------------------------------
 # VAULT SERVICES
 #-----------------------------------------------------------------------------
 # Testing whether an env variable is set or not
