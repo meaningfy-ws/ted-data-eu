@@ -137,3 +137,4 @@ infra/airflow/plugins
 venv_activation.sh
 .airflow
 infra/airflow/requirements.txt
+junit_report.xml

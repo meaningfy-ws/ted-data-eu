@@ -58,6 +58,25 @@ build-externals:
 	@ echo -e "$(BUILD_PRINT)Creating the necessary volumes, networks and folders and setting the special rights"
 	@ docker network create proxy-net || true
 	@ docker network create common-ext-${ENVIRONMENT} || true
+#-----------------------------------------------------------------------------
+# SERVER SERVICES
+#-----------------------------------------------------------------------------
+start-traefik: build-externals
+	@ echo -e "$(BUILD_PRINT)Starting the Traefik services $(END_BUILD_PRINT)"
+	@ docker-compose  --file ./infra/traefik/docker-compose.yml --env-file ${ENV_FILE} up -d
+
+stop-traefik:
+	@ echo -e "$(BUILD_PRINT)Stopping the Traefik services $(END_BUILD_PRINT)"
+	@ docker-compose  --file ./infra/traefik/docker-compose.yml --env-file ${ENV_FILE} down
+#-----------------------------------------------------------------------------
+# temporary
+start-metabase: build-externals
+	@ echo -e "$(BUILD_PRINT)Starting the Metabase services $(END_BUILD_PRINT)"
+	@ docker-compose -p metabase-${ENVIRONMENT} --file ./infra/metabase/docker-compose.yml --env-file ${ENV_FILE} up -d
+
+stop-metabase:
+	@ echo -e "$(BUILD_PRINT)Stopping the Metabase services $(END_BUILD_PRINT)"
+	@ docker-compose -p metabase-${ENVIRONMENT} --file ./infra/metabase/docker-compose.yml --env-file ${ENV_FILE} down
 
 #-----------------------------------------------------------------------------
 # PROJECT SERVICES
@@ -83,7 +102,7 @@ create-env-airflow-cluster:
 
 build-airflow: guard-ENVIRONMENT create-env-airflow build-externals
 	@ echo -e "$(BUILD_PRINT) Build Airflow services $(END_BUILD_PRINT)"
-	@ docker build -t meaningfy/airflow-ted-data ./infra/airflow/
+	@ docker build -t meaningfy/airflow ./infra/airflow/
 	@ docker-compose -p ${ENVIRONMENT} --file ./infra/airflow/docker-compose.yaml --env-file ${ENV_FILE} up -d --force-recreate
 
 start-airflow: build-externals
@@ -96,7 +115,7 @@ stop-airflow:
 
 build-airflow-cluster: guard-ENVIRONMENT create-env-airflow-cluster build-externals
 	@ echo -e "$(BUILD_PRINT) Build Airflow Common Image $(END_BUILD_PRINT)"
-	@ docker build -t meaningfy/airflow-ted-data ./infra/airflow-cluster/
+	@ docker build -t meaningfy/airflow ./infra/airflow-cluster/
 
 start-airflow-master: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting Airflow Master $(END_BUILD_PRINT)"
@@ -149,6 +168,7 @@ stop-minio:
 	@ echo -e "$(BUILD_PRINT)Stopping the Minio services $(END_BUILD_PRINT)"
 	@ docker-compose -p ${ENVIRONMENT} --file ./infra/minio/docker-compose.yml --env-file ${ENV_FILE} down
 
+
 #	------------------------
 start-dash: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting Dash services $(END_BUILD_PRINT)"
@@ -162,6 +182,12 @@ start-dash: build-externals
 stop-dash:
 	@ echo -e "$(BUILD_PRINT)Stopping Dash services $(END_BUILD_PRINT)"
 	@ docker-compose -p ${ENVIRONMENT} --file ./infra/dash/docker-compose.yml --env-file ${ENV_FILE} down
+
+
+init-limes:
+	@ echo -e "Limes folder initialisation!"
+	@ mkdir -p ./.limes
+	@ wget -c https://github.com/dice-group/LIMES/releases/download/1.7.9/limes.jar -P ./.limes
 
 
 init-rml-mapper:
@@ -178,6 +204,19 @@ init-saxon:
 
 start-project-services: | create-env-airflow start-airflow start-allegro-graph start-fuseki start-minio
 stop-project-services: | stop-airflow stop-allegro-graph stop-fuseki stop-minio
+
+start-common-project-services: | start-mongo start-sftp start-fuseki start-allegro-graph start-minio start-metabase
+stop-common-project-services: | stop-mongo stop-sftp stop-fuseki stop-allegro-graph stop-minio stop-metabase
+
+start-prod-project-services : | prod-dotenv-file create-env-airflow-cluster start-airflow-master start-common-project-services start-digest_service-api
+stop-prod-project-services : | stop-airflow-master stop-common-project-services stop-digest_service-api
+
+start-staging-project-services : | staging-dotenv-file create-env-airflow start-airflow start-common-project-services install-allure
+stop-staging-project-services : | stop-airflow stop-common-project-services
+
+start-dev-project-services : | dev-dotenv-file create-env-airflow start-airflow start-common-project-services
+stop-dev-project-services : | stop-airflow stop-common-project-services
+
 
 #-----------------------------------------------------------------------------
 # SERVER SERVICES
@@ -225,17 +264,38 @@ dev-dotenv-file: guard-VAULT_ADDR guard-VAULT_TOKEN vault-installed
 	@ vault kv get -format="json" ted-data-dev/airflow | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
 	@ vault kv get -format="json" ted-data-dev/mongo-db | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
 	@ vault kv get -format="json" ted-data-dev/agraph | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ vault kv get -format="json" ted-data-dev/metabase | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
 	@ vault kv get -format="json" ted-data-dev/fuseki | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ vault kv get -format="json" ted-data-dev/ted-sws | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
 	@ vault kv get -format="json" ted-data-dev/minio | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
 
+
+staging-dotenv-file: guard-VAULT_ADDR guard-VAULT_TOKEN vault-installed
+	@ echo -e "$(BUILD_PRINT)Create .env file $(END_BUILD_PRINT)"
+	@ echo VAULT_ADDR=${VAULT_ADDR} > .env
+	@ echo VAULT_TOKEN=${VAULT_TOKEN} >> .env
+	@ echo DOMAIN=ted-data.eu >> .env
+	@ echo ENVIRONMENT=staging >> .env
+	@ echo SUBDOMAIN=staging. >> .env
+	@ echo RML_MAPPER_PATH=${RML_MAPPER_PATH} >> .env
+	@ echo XML_PROCESSOR_PATH=${XML_PROCESSOR_PATH} >> .env
+	@ echo AIRFLOW_INFRA_FOLDER=~/airflow-infra/ted-data-staging >> .env
+	@ echo AIRFLOW_WORKER_HOSTNAME=${HOSTNAME} >> .env
+	@ vault kv get -format="json" ted-data-dev/airflow | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ vault kv get -format="json" ted-data-dev/mongo-db | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ vault kv get -format="json" ted-data-dev/agraph | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ vault kv get -format="json" ted-data-dev/metabase | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ vault kv get -format="json" ted-data-dev/fuseki | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ vault kv get -format="json" ted-data-dev/ted-sws | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ vault kv get -format="json" ted-data-dev/minio | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
 
 prod-dotenv-file: guard-VAULT_ADDR guard-VAULT_TOKEN vault-installed
 	@ echo -e "$(BUILD_PRINT)Create .env file $(END_BUILD_PRINT)"
 	@ echo VAULT_ADDR=${VAULT_ADDR} > .env
 	@ echo VAULT_TOKEN=${VAULT_TOKEN} >> .env
 	@ echo DOMAIN=ted-data.eu >> .env
-	@ echo ENVIRONMENT=tda-prod >> .env
-	@ echo SUBDOMAIN=tda. >> .env
+	@ echo ENVIRONMENT=prod >> .env
+	@ echo SUBDOMAIN= >> .env
 	@ echo RML_MAPPER_PATH=${RML_MAPPER_PATH} >> .env
 	@ echo XML_PROCESSOR_PATH=${XML_PROCESSOR_PATH} >> .env
 	@ echo AIRFLOW_INFRA_FOLDER=~/airflow-infra/ted-data-prod >> .env
@@ -247,6 +307,14 @@ prod-dotenv-file: guard-VAULT_ADDR guard-VAULT_TOKEN vault-installed
 	@ vault kv get -format="json" ted-prod/mongo-db | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
 	@ vault kv get -format="json" ted-prod/fuseki | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
 	@ vault kv get -format="json" ted-prod/agraph | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ echo AIRFLOW_CELERY_WORKER_CONCURRENCY=32 >> .env
+	@ vault kv get -format="json" ted-data-prod/airflow | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ vault kv get -format="json" ted-data-prod/minio | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ vault kv get -format="json" ted-data-prod/metabase | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ vault kv get -format="json" ted-data-prod/mongo-db | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ vault kv get -format="json" ted-data-prod/fuseki | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ vault kv get -format="json" ted-data-prod/ted-sws | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
+	@ vault kv get -format="json" ted-data-prod/agraph | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
 
 local-dotenv-file: rml-mapper-path-add-dotenv-file
 
@@ -260,3 +328,31 @@ install-allure:
 	@ echo -e "Start install Allure commandline."
 	@ sudo apt -y install npm
 	@ sudo npm install -g allure-commandline
+
+create-env-digest-api:
+	@ cp requirements.txt ./infra/digest_api/digest_service/project_requirements.txt
+	@ mkdir "temp" && cd temp && git clone https://github.com/OP-TED/ted-rdf-conversion-pipeline.git
+	@ cp -r temp/ted-rdf-conversion-pipeline/ted_sws ./infra/digest_api/
+	@ rm -rf temp
+
+build-digest_service-api: create-env-digest-api
+	@ echo -e "$(BUILD_PRINT) Build digest_service API service $(END_BUILD_PRINT)"
+	@ docker-compose -p common --file infra/digest_api/docker-compose.yml --env-file ${ENV_FILE} build --no-cache --force-rm
+	@ rm -rf ./infra/digest_api/ted_sws || true
+	@ docker-compose -p common --file infra/digest_api/docker-compose.yml --env-file ${ENV_FILE} up -d --force-recreate
+
+start-digest_service-api:
+	@ echo -e "$(BUILD_PRINT)Starting digest_service API service $(END_BUILD_PRINT)"
+	@ docker-compose -p common --file infra/digest_api/docker-compose.yml --env-file ${ENV_FILE} up -d
+
+stop-digest_service-api:
+	@ echo -e "$(BUILD_PRINT)Stopping digest_service API service $(END_BUILD_PRINT)"
+	@ docker-compose -p common --file infra/digest_api/docker-compose.yml --env-file ${ENV_FILE} down
+
+start-mongo: build-externals
+	@ echo -e "$(BUILD_PRINT)Starting the Mongo services $(END_BUILD_PRINT)"
+	@ docker-compose -p ${ENVIRONMENT} --file ./infra/mongo/docker-compose.yml --env-file ${ENV_FILE} up -d
+
+stop-mongo:
+	@ echo -e "$(BUILD_PRINT)Stopping the Mongo services $(END_BUILD_PRINT)"
+	@ docker-compose -p ${ENVIRONMENT} --file ./infra/mongo/docker-compose.yml --env-file ${ENV_FILE} down
