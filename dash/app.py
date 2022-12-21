@@ -1,8 +1,10 @@
 import dash
 from dash import Dash, html, dcc
 import dash_bootstrap_components as dbc
+from dash_bootstrap_templates import load_figure_template
 
-app = Dash(__name__, use_pages=True, external_stylesheets=[dbc.themes.GRID])
+load_figure_template('FLATLY')
+app = Dash(__name__, use_pages=True, external_stylesheets=[dbc.themes.FLATLY])
 server = app.server
 
 app.layout = html.Div([

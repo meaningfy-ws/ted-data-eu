@@ -69,7 +69,6 @@ def figure_q15(figure: dict = None, start_date: str = START_DATE.strftime(QUERY_
     return fig
 
 
-#
 @callback(
     Output("q2_graph", "figure"),
     Input("q2_dropdown", "value")
@@ -94,6 +93,89 @@ def figure_q3():
     query_result = fuseki_endpoint.with_query(query).fetch_tabular()
 
     return dash_table.DataTable(query_result.to_dict('records'), [{"name": i, "id": i} for i in query_result.columns])
+
+
+def figure_q16():
+    collection_name = 'q16'
+    query = Path(f'{QUERY_FOLDER}/{collection_name}{SPARQL_QUERY_FORMAT}').read_text(encoding=FILES_ENCODING)
+
+    query_result: DataFrame = fuseki_endpoint.with_query(query).fetch_tabular()
+
+    if query_result.empty:
+        return go.Figure(go.Indicator())
+
+    fig = go.Figure(
+        go.Indicator(mode="number", value=query_result['Total_Awardet_Lots'][0], title={"text": "Total Awardet Lots"},
+                     # TODO: change in query to Awarded
+                     delta={'position': "top", 'reference': 320}, domain={'x': [0, 1], 'y': [0, 1]}))
+    return fig
+
+
+def figure_q24():
+    collection_name = 'q24'
+    query = Path(f'{QUERY_FOLDER}/{collection_name}{SPARQL_QUERY_FORMAT}').read_text(encoding=FILES_ENCODING)
+
+    query_result: DataFrame = fuseki_endpoint.with_query(query).fetch_tabular()
+
+    if query_result.empty:
+        return go.Figure(go.Indicator())
+
+    fig = go.Figure(
+        go.Indicator(mode="number", value=query_result['Missing_seller_reg_numbers'][0],
+                     title={"text": "Missing seller reg. numbers "},
+                     number={"suffix": "%"},
+                     delta={'position': "top", 'reference': 320}, domain={'x': [0, 1], 'y': [0, 1]}))
+    return fig
+
+
+def figure_q25():
+    collection_name = 'q25'
+    query = Path(f'{QUERY_FOLDER}/{collection_name}{SPARQL_QUERY_FORMAT}').read_text(encoding=FILES_ENCODING)
+
+    query_result: DataFrame = fuseki_endpoint.with_query(query).fetch_tabular()
+
+    if query_result.empty:
+        return go.Figure(go.Indicator())
+
+    fig = go.Figure(
+        go.Indicator(mode="number", value=query_result['Missing_buyer_reg_numbers'][0],
+                     title={"text": "Missing buyer reg. numbers "},
+                     number= {"suffix": "%"},
+                     delta={'position': "top", 'reference': 320}, domain={'x': [0, 1], 'y': [0, 1]}))
+    return fig
+
+
+def figure_q5():
+    collection_name = 'q5'
+    query = Path(f'{QUERY_FOLDER}/{collection_name}{SPARQL_QUERY_FORMAT}').read_text(encoding=FILES_ENCODING)
+
+    query_result: DataFrame = fuseki_endpoint.with_query(query).fetch_tabular()
+
+    if query_result.empty:
+        return go.Figure(go.Indicator())
+
+    fig = go.Figure(
+        go.Indicator(mode="number", value=query_result['Nr_of_Organizations'][0],
+                     title={"text": "Nr of Buyers who have published ContractNotices"},
+                     delta={'position': "top", 'reference': 320}, domain={'x': [0, 1], 'y': [0, 1]}))
+    return fig
+
+
+def figure_q6():
+    collection_name = 'q6'
+    query = Path(f'{QUERY_FOLDER}/{collection_name}{SPARQL_QUERY_FORMAT}').read_text(encoding=FILES_ENCODING)
+
+    query_result: DataFrame = fuseki_endpoint.with_query(query).fetch_tabular()
+
+    if query_result.empty:
+        return go.Figure(go.Indicator())
+
+    fig = go.Figure(
+        go.Indicator(mode="number", value=query_result['Nr_of_Organizations'][0],
+                     title={"text": "Nr of byers who have published ContractAwardNotices"},
+                     delta={'position': "top", 'reference': 320}, domain={'x': [0, 1], 'y': [0, 1]}))
+    return fig
+
 
 
 layout = html.Div(children=[
@@ -133,6 +215,31 @@ layout = html.Div(children=[
         # Q3
         html.Div(children=[
             figure_q3(),
+        ], style={"border": "2px black solid"}),
+
+        # Q16
+        html.Div(children=[
+            dcc.Graph(figure=figure_q16()),
+        ], style={"border": "2px black solid"}),
+
+        # Q24
+        html.Div(children=[
+            dcc.Graph(figure=figure_q24()),
+        ], style={"border": "2px black solid"}),
+
+        # Q25
+        html.Div(children=[
+            dcc.Graph(figure=figure_q25()),
+        ], style={"border": "2px black solid"}),
+
+        # Q5
+        html.Div(children=[
+            dcc.Graph(figure=figure_q5()),
+        ], style={"border": "2px black solid"}),
+
+        # Q6
+        html.Div(children=[
+            dcc.Graph(figure=figure_q6()),
         ], style={"border": "2px black solid"}),
 
     ])
