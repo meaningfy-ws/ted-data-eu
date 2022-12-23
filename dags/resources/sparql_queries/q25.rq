@@ -1,7 +1,6 @@
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX epo: <http://data.europa.eu/a4g/ontology#>
 PREFIX at: <http://publications.europa.eu/ontology/authority/>
-
 PREFIX locn: <http://www.w3.org/ns/locn#>
 PREFIX cv: <http://purl.org/captsolo/resume-rdf/0.2/cv#>
 PREFIX org: <http://www.w3.org/ns/org#>
@@ -11,13 +10,18 @@ prefix ns:   <http://example.org/ns#>
 prefix :     <http://example.org/ns#>
 prefix xsd:  <http://www.w3.org/2001/XMLSchema#>
 prefix foaf:  <http://xmlns.com/foaf/0.1/>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
 
-SELECT ( (100 - ((count(?IdValue) / count(?Buyer)) * 100)) as ?Missing_buyer_reg_numbers)
-{ 
+
+SELECT distinct ?IdValue ?Buyer (afn:localname(?CountryCodeURL) as ?CountryCode)
+{
 
     ?Buyer rdf:type epo:Buyer;
            epo:playedBy ?Organization.
-    ?Organization rdf:type org:Organization.
+    ?Organization rdf:type org:Organization;
+                  legal:registeredAddress ?Address.
+  	?Address a locn:Address;
+                  epo:hasCountryCode ?CountryCodeURL
   
   OPTIONAL 
   {
