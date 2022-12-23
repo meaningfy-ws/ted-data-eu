@@ -201,9 +201,6 @@ init-saxon:
 	@ cd .saxon && unzip SaxonHE10-6J.zip && rm -rf SaxonHE10-6J.zip
 
 
-start-project-services: | create-env-airflow start-airflow start-allegro-graph start-fuseki start-minio
-stop-project-services: | stop-airflow stop-allegro-graph stop-fuseki stop-minio
-
 start-common-project-services: | start-mongo start-sftp start-fuseki start-allegro-graph start-minio start-metabase
 stop-common-project-services: | stop-mongo stop-sftp stop-fuseki stop-allegro-graph stop-minio stop-metabase
 
@@ -285,11 +282,6 @@ prod-dotenv-file: guard-VAULT_ADDR guard-VAULT_TOKEN vault-installed
 	@ echo XML_PROCESSOR_PATH=${XML_PROCESSOR_PATH} >> .env
 	@ echo AIRFLOW_INFRA_FOLDER=~/airflow-infra/ted-data-prod >> .env
 	@ echo AIRFLOW_WORKER_HOSTNAME=${HOSTNAME} >> .env
-	@ vault kv get -format="json" ted-prod/airflow | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
-	@ vault kv get -format="json" ted-prod/minio | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
-	@ vault kv get -format="json" ted-prod/mongo-db | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
-	@ vault kv get -format="json" ted-prod/fuseki | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
-	@ vault kv get -format="json" ted-prod/agraph | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
 	@ echo AIRFLOW_CELERY_WORKER_CONCURRENCY=32 >> .env
 	@ vault kv get -format="json" ted-data-prod/airflow | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
 	@ vault kv get -format="json" ted-data-prod/minio | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
