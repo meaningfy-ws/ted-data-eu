@@ -166,10 +166,28 @@ stop-minio:
 	@ echo -e "$(BUILD_PRINT)Stopping the Minio services $(END_BUILD_PRINT)"
 	@ docker-compose -p ${ENVIRONMENT} --file ./infra/minio/docker-compose.yml --env-file ${ENV_FILE} down
 
+
+#	------------------------
+start-dash: build-externals
+	@ echo -e "$(BUILD_PRINT)Starting Dash services $(END_BUILD_PRINT)"
+	@ cp requirements.txt ./infra/dash/
+	@ cp -R ${PROJECT_PATH}/dash ./infra/dash
+	@ cp -R ${PROJECT_PATH}/dags/resources/sparql_queries ./infra/dash
+	@ docker-compose -p ${ENVIRONMENT} --file ./infra/dash/docker-compose.yml --env-file ${ENV_FILE} up -d --build
+	@ rm -r ./infra/dash/dash
+	@ rm -r ./infra/dash/sparql_queries
+	@ rm ./infra/dash/requirements.txt
+
+stop-dash:
+	@ echo -e "$(BUILD_PRINT)Stopping Dash services $(END_BUILD_PRINT)"
+	@ docker-compose -p ${ENVIRONMENT} --file ./infra/dash/docker-compose.yml --env-file ${ENV_FILE} down
+
+
 init-limes:
 	@ echo -e "Limes folder initialisation!"
 	@ mkdir -p ./.limes
 	@ wget -c https://github.com/dice-group/LIMES/releases/download/1.7.9/limes.jar -P ./.limes
+
 
 init-rml-mapper:
 	@ echo -e "RMLMapper folder initialisation!"
@@ -181,7 +199,6 @@ init-saxon:
 	@ echo -e "$(BUILD_PRINT)Saxon folder initialization $(END_BUILD_PRINT)"
 	@ wget -c https://kumisystems.dl.sourceforge.net/project/saxon/Saxon-HE/10/Java/SaxonHE10-6J.zip -P .saxon/
 	@ cd .saxon && unzip SaxonHE10-6J.zip && rm -rf SaxonHE10-6J.zip
-
 
 
 start-common-project-services: | start-mongo start-sftp start-fuseki start-allegro-graph start-minio start-metabase

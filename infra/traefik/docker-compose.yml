@@ -36,6 +36,7 @@ services:
       - --entrypoints.mongo.address=:27017 # <== Defining an entrypoint for mongo on port :27017 named mongo
       - --entrypoints.postgres.address=:5432 # PostgreSQL endpoint
       - --entrypoints.redis.address=:6379 # Redis endpoint
+      - --entrypoints.dash.address=:8050 # Dash endpoint
       ## Certificate Settings (Let's Encrypt) -  https://docs.traefik.io/https/acme/#configuration-examples ##
       - --certificatesresolvers.mytlschallenge.acme.tlschallenge=true # <== Enable TLS-ALPN-01 to generate and renew ACME certs
       - --certificatesresolvers.mytlschallenge.acme.email=dragos.paun0000@gmail.com # <== Setting email for certs
