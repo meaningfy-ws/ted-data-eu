@@ -1,12 +1,15 @@
+import pathlib
 from typing import Dict
 
+from ted_data_eu import config
 from ted_data_eu.adapters.etl_pipeline_abc import ETLPipelineABC
 
 
 class DummyETLPipeline(ETLPipelineABC):
 
     def extract(self) -> Dict:
-        print("extract: HELLO")
+        print(f"extract: {config.BQ_PATHS['q1']}")
+        print(pathlib.Path(config.BQ_PATHS['q1']).read_text(encoding="utf-8"))
         return {"data": "hello"}
 
     def transform(self, extracted_data: Dict) -> Dict:
