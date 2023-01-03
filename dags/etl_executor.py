@@ -6,10 +6,6 @@ from dags import DEFAULT_DAG_ARGUMENTS
 from dags.operators.ETLStepOperator import ExtractStepOperator, TransformStepOperator, LoadStepOperator
 from ted_data_eu import etl_pipelines_register
 
-FUSEKI_DATASET_NAME_DAG_PARAM_KEY = "fuseki_dataset_name"
-NOTICE_STATUS_DAG_PARAM_KEY = "notice_status"
-DEFAULT_FUSEKI_DATASET_NAME = "mdr_dataset"
-
 
 @dag(default_args=DEFAULT_DAG_ARGUMENTS,
      schedule_interval=None,
