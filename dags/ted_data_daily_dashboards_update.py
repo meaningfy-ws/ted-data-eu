@@ -1,3 +1,4 @@
+import datetime
 from pathlib import Path
 
 from airflow.decorators import dag, task
@@ -42,6 +43,11 @@ def ted_data_daily_dashboards_update():
         start_date = get_dag_param(key=START_DATE_DAG_PARAM)
         end_date = get_dag_param(key=END_DATE_DAG_PARAM)
         xsd_version = get_dag_param(key=XSD_VERSION_DAG_PARAM)
+
+        if not start_date and not end_date:
+            yesterday_date = (datetime.date.today() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+            start_date = yesterday_date
+            end_date = yesterday_date
 
         mongodb_client = MongoClient(config.MONGO_DB_AUTH_URL)
         fuseki_repository = FusekiAdapter()
