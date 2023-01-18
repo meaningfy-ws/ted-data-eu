@@ -331,3 +331,11 @@ start-mongo: build-externals
 stop-mongo:
 	@ echo -e "$(BUILD_PRINT)Stopping the Mongo services $(END_BUILD_PRINT)"
 	@ docker-compose -p ${ENVIRONMENT} --file ./infra/mongo/docker-compose.yml --env-file ${ENV_FILE} down
+
+start-graphdb: build-externals
+	@ echo -e "$(BUILD_PRINT)Starting the GraphDB services $(END_BUILD_PRINT)"
+	@ docker-compose -p ${ENVIRONMENT} --file ./infra/graphdb/docker-compose.yml --env-file ${ENV_FILE} up -d
+
+stop-graphdb:
+	@ echo -e "$(BUILD_PRINT)Stopping the GraphDB services $(END_BUILD_PRINT)"
+	@ docker-compose -p ${ENVIRONMENT} --file ./infra/graphdb/docker-compose.yml --env-file ${ENV_FILE} down
