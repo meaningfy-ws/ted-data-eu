@@ -1,0 +1,42 @@
+PREFIX cpov: <http://data.europa.eu/m8g/>
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+
+SELECT distinct
+  ?CustomerEmail
+  ?CustomerName
+  ?ContractTitle
+  ?LotCPV
+  ?ContractConclusionDate
+  ?TotalValue
+  ?Currency
+{
+	?Contract a epo:Contract;
+  		epo:hasContractConclusionDate ?ContractConclusionDate;
+		epo:includesLotAwardOutcome ?LotAwardOutcome;
+  		epo:hasTitle ?ContractTitle.
+
+  	?LotAwardOutcome a epo:LotAwardOutcome;
+  		epo:hasAwardedValue ?MonetaryValue;
+    	epo:describesLot ?Lot;
+     	epo:comprisesTenderAwardOutcome ?TenderAwardOutcome.
+
+  	?Lot a epo:Lot;
+      	epo:hasPurpose ?Purpose.
+  	?Purpose a epo:Purpose;
+       	epo:hasAdditionalClassification ?LotCPV.
+
+    ?MonetaryValue a epo:MonetaryValue;
+      	epo:hasAmountValue ?TotalValue;
+       	epo:hasCurrency ?Currency.
+
+	?TenderAwardOutcome a epo:TenderAwardOutcome;
+       	epo:indicatesAwardOfLotToWinner ?PotentialCostumer.
+    ?PotentialCostumer a epo:Winner;
+        epo:playedBy ?Business.
+
+    ?Business a epo:Business;
+    	epo:hasLegalName ?CustomerName;
+        epo:hasPrimaryContactPoint ?CustomerContactPoint.
+    ?CustomerContactPoint a cpov:ContactPoint;
+        cpov:email ?CustomerEmail.
+}
