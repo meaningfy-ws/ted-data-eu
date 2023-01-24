@@ -3,7 +3,7 @@ from typing import Dict
 
 import numpy as np
 from pymongo import MongoClient
-from ted_sws.data_manager.adapters.triple_store import FusekiAdapter
+from ted_sws.data_manager.adapters.triple_store import FusekiAdapter, TripleStoreABC
 
 from ted_data_eu import config
 from ted_data_eu.adapters.etl_pipeline_abc import ETLPipelineABC
@@ -15,12 +15,19 @@ TED_DATA_MONGODB_DATABASE_NAME = 'ted_analytics'  # TODO: temporary while not pu
 
 class PotentialCustomersETLPipeline(ETLPipelineABC):
 
+    def __init__(self, triple_store: TripleStoreABC = None, mongo_client: MongoClient = None, query_limit: int = None):
+        self.triple_store = triple_store if triple_store else FusekiAdapter(host=config.FUSEKI_ADMIN_HOST,
+                                                                            user=config.FUSEKI_ADMIN_USER,
+                                                                            password=config.FUSEKI_ADMIN_PASSWORD)
+        self.mongo_client = mongo_client if mongo_client else MongoClient(config.MONGO_DB_AUTH_URL)
+        self.query_limit = query_limit
+
     def extract(self) -> Dict:
-        fuseki_adapter = FusekiAdapter(host=config.FUSEKI_ADMIN_HOST, user=config.FUSEKI_ADMIN_USER,
-                                       password=config.FUSEKI_ADMIN_PASSWORD)
-        fuseki_endpoint = fuseki_adapter.get_sparql_triple_store_endpoint(DEFAULT_FUSEKI_DATASET_NAME)
+        triple_store_endpoint = self.triple_store.get_sparql_triple_store_endpoint(DEFAULT_FUSEKI_DATASET_NAME)
         query = config.BQ_POTENTIAL_CUSTOMERS.read_text(encoding='utf-8')
-        query_result = fuseki_endpoint.with_query(query).fetch_tabular()
+        if self.query_limit:
+            query += f" LIMIT {str(self.query_limit)}"
+        query_result = triple_store_endpoint.with_query(query).fetch_tabular()
         return {"data": query_result}
 
     def transform(self, extracted_data: Dict) -> Dict:
@@ -52,8 +59,8 @@ class PotentialCustomersETLPipeline(ETLPipelineABC):
 
     def load(self, transformed_data: Dict):
         transformed_data = transformed_data['data']
-        mongodb_client = MongoClient(config.MONGO_DB_AUTH_URL)
-        mongodb_database = mongodb_client[TED_DATA_MONGODB_DATABASE_NAME]
+
+        mongodb_database = self.mongo_client[TED_DATA_MONGODB_DATABASE_NAME]
         query_collection = mongodb_database[config.BQ_POTENTIAL_CUSTOMERS.stem]
         query_collection.drop()
         if not transformed_data.empty:
