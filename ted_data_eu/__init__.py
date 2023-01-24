@@ -1,7 +1,10 @@
 import pathlib
 from typing import Dict
 
-from ted_sws import TedConfigResolver
+from ted_sws import TedConfigResolver, env_property
+import dotenv
+
+dotenv.load_dotenv(verbose=True, override=True)
 
 PROJECT_RESOURCES_PATH = pathlib.Path(__file__).parent.resolve() / "resources"
 PROJECT_RESOURCES_BQ_FOLDER_PATH = PROJECT_RESOURCES_PATH / "sparql_queries"
@@ -19,7 +22,22 @@ class BQResourcesConfig:
         return bq_paths_map
 
 
-class TedDataConfigResolver(TedConfigResolver, BQResourcesConfig):
+class GraphDBConfig:
+
+    @env_property()
+    def GRAPHDB_USER(self, config_value: str) -> str:
+        return config_value
+
+    @env_property()
+    def GRAPHDB_PASSWORD(self, config_value: str) -> str:
+        return config_value
+
+    @env_property()
+    def GRAPHDB_HOST(self, config_value: str) -> str:
+        return config_value
+
+
+class TedDataConfigResolver(TedConfigResolver, BQResourcesConfig, GraphDBConfig):
     """
         This class is used for automatic config discovery.
     """
