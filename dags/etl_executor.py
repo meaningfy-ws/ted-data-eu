@@ -5,7 +5,7 @@ from airflow.utils.task_group import TaskGroup
 from dags import DEFAULT_DAG_ARGUMENTS
 from dags.operators.ETLStepOperator import ExtractStepOperator, TransformStepOperator, LoadStepOperator
 from ted_data_eu.adapters.etl_pipeline_register import ETLPipelineRegister
-from ted_data_eu.services.etl_pipelines.dummy_etl_pipeline import DummyETLPipeline, TestETLPipeline
+from ted_data_eu.services.etl_pipelines.dummy_etl_pipeline import PotentialCustomersETLPipeline
 
 etl_pipelines_register = ETLPipelineRegister()
 
@@ -15,8 +15,8 @@ def init_etl_pipelines_register():
         This function is used for register all ETL pipelines inside DAG.
     :return:
     """
-    etl_pipelines_register.register(etl_pipeline_name="Test ETL 1 pipeline", etl_pipeline=DummyETLPipeline())
-    etl_pipelines_register.register(etl_pipeline_name="Test ETL 2 pipeline", etl_pipeline=TestETLPipeline())
+    etl_pipelines_register.register(etl_pipeline_name="Potential Customers ETL pipeline",
+                                    etl_pipeline=PotentialCustomersETLPipeline())
 
 
 @dag(default_args=DEFAULT_DAG_ARGUMENTS,

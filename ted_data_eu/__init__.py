@@ -18,6 +18,10 @@ class BQResourcesConfig:
                 bq_paths_map[bq_path.stem] = bq_path
         return bq_paths_map
 
+    @property
+    def BQ_POTENTIAL_CUSTOMERS(self) -> pathlib.Path:
+        return PROJECT_RESOURCES_BQ_FOLDER_PATH / "potential_customers.rq"
+
 
 class TedDataConfigResolver(TedConfigResolver, BQResourcesConfig):
     """
