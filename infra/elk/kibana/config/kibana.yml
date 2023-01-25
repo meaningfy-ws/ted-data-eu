@@ -79,3 +79,11 @@ xpack.fleet.agentPolicies:
                 value: 0.0.0.0:8200
               - name: url
                 value: http://apm-server:8200
+xpack.security.authc.providers:
+  basic.basic1:
+    order: 0
+  anonymous.anonymous1:
+    order: 1
+    credentials:
+      username: "anonymous"
+      password: ${ANONYMOUS_KIBANA_SYSTEM_PASSWORD}
