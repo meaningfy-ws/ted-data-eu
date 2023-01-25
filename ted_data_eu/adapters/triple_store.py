@@ -14,6 +14,12 @@ from ted_data_eu.resources import GRAPHDB_REPOSITORY_CONFIG_FILE
 REPOSITORY_ID = "id"
 
 
+class GraphDBException(Exception):
+    """
+        An exception when GraphDB server interaction has failed.
+    """
+
+
 class GraphDBAdapter(TripleStoreABC):
     def __init__(self, host: str = None,
                  user: str = None,
@@ -25,7 +31,7 @@ class GraphDBAdapter(TripleStoreABC):
         response = requests.post(urljoin(self.host, f"/rest/login/{self.user}"),
                                  headers={"X-GraphDB-Password": self.password})
         if response.status_code != 200:
-            raise ValueError(response.text)
+            raise GraphDBException(response.text)
         self.headers = {'Authorization': response.headers.get('Authorization')}
 
     def create_repository(self, repository_name: str):
@@ -36,7 +42,7 @@ class GraphDBAdapter(TripleStoreABC):
         :return: true if repository was created
         """
         if not repository_name:
-            raise ValueError('Repository name cannot be empty.')
+            raise GraphDBException('Repository name cannot be empty.')
 
         headers = {**self.headers, 'Accept': 'application/json',
                    "content-type": "application/json;charset=UTF-8"}
@@ -45,14 +51,14 @@ class GraphDBAdapter(TripleStoreABC):
         response = requests.post(urljoin(self.host, '/rest/repositories'), headers=headers,
                                  data=json.dumps(repository_configs))
         if response.status_code != 201:
-            raise ValueError(response.text)
+            raise GraphDBException(response.text)
 
     def add_data_to_repository(self, file_content: Union[str, bytes, bytearray], mime_type: str, repository_name: str):
         update_url = urljoin(self.host, f"/repositories/{repository_name}/statements")
         headers = {**self.headers, "Content-Type": mime_type}
         response = requests.post(url=update_url, data=file_content, headers=headers)
         if response.status_code != 204:
-            raise ValueError(response.text)
+            raise GraphDBException(response.text)
 
     def add_file_to_repository(self, file_path: Path, repository_name: str):
         file_content = file_path.open('rb').read()
@@ -69,7 +75,7 @@ class GraphDBAdapter(TripleStoreABC):
         """
         response = requests.delete(urljoin(self.host, f"/rest/repositories/{repository_name}"), headers=self.headers)
         if response.status_code != 200:
-            raise ValueError(response.text)
+            raise GraphDBException(response.text)
 
     def list_repositories(self) -> list:
         """
@@ -79,7 +85,7 @@ class GraphDBAdapter(TripleStoreABC):
         """
         response = requests.get(urljoin(self.host, '/rest/repositories'), headers=self.headers)
         if response.status_code != 200:
-            raise ValueError(response.text)
+            raise GraphDBException(response.text)
         repositories = json.loads(response.text)
         return [repository[REPOSITORY_ID] for repository in repositories]
 

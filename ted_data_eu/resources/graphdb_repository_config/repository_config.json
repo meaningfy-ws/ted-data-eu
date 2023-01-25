@@ -18,12 +18,12 @@
     "rdfsSubClassReasoning": {
       "name": "rdfsSubClassReasoning",
       "label": "RDFS subClass reasoning",
-      "value": "true"
+      "value": "false"
     },
     "validationEnabled": {
       "name": "validationEnabled",
       "label": "Enable the SHACL validation",
-      "value": "true"
+      "value": "false"
     },
     "ftsStringLiteralsIndex": {
       "name": "ftsStringLiteralsIndex",
@@ -33,7 +33,7 @@
     "shapesGraph": {
       "name": "shapesGraph",
       "label": "Named graphs for SHACL shapes",
-      "value": "http://rdf4j.org/schema/rdf4j#SHACLShapeGraph"
+      "value": ""
     },
     "parallelValidation": {
       "name": "parallelValidation",
@@ -68,7 +68,7 @@
     "dashDataShapes": {
       "name": "dashDataShapes",
       "label": "DASH data shapes extensions",
-      "value": "true"
+      "value": "false"
     },
     "queryLimitResults": {
       "name": "queryLimitResults",
@@ -133,7 +133,7 @@
     "ruleset": {
       "name": "ruleset",
       "label": "Ruleset",
-      "value": "rdfsplus-optimized"
+      "value": ""
     },
     "readOnly": {
       "name": "readOnly",
@@ -178,7 +178,7 @@
     "entityIdSize": {
       "name": "entityIdSize",
       "label": "Entity ID size",
-      "value": "32"
+      "value": "40"
     },
     "repositoryType": {
       "name": "repositoryType",
@@ -188,7 +188,7 @@
     "eclipseRdf4jShaclExtensions": {
       "name": "eclipseRdf4jShaclExtensions",
       "label": "RDF4J SHACL extensions",
-      "value": "true"
+      "value": "false"
     },
     "validationResultsLimitTotal": {
       "name": "validationResultsLimitTotal",
