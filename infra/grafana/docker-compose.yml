@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  grafana:
+    image: grafana/grafana-oss:8.5.16
+    container_name: grafana-${ENVIRONMENT}
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - grafana
+      - proxy-net
+    labels:
+      #### Labels define the behavior and rules of the traefik proxy for this container ####
+      - "traefik.enable=true" # <== Enable traefik to proxy this container
+      - "traefik.http.routers.${ENVIRONMENT}-grafana.rule=Host(`grafana.${SUBDOMAIN}${DOMAIN}`)" # <== Your Domain Name goes here for the http rule
+      - "traefik.http.routers.${ENVIRONMENT}-grafana.entrypoints=web" # <== Defining the entrypoint for http, **ref: line 30
+      - "traefik.http.routers.${ENVIRONMENT}-grafana.middlewares=redirect@file" # <== This is a middleware to redirect to https
+      - "traefik.http.routers.${ENVIRONMENT}-grafana-secured.rule=Host(`grafana.${SUBDOMAIN}${DOMAIN}`)" # <== Your Domain Name for the https rule
+      - "traefik.http.routers.${ENVIRONMENT}-grafana-secured.entrypoints=web-secured" # <== Defining entrypoint for https, **ref: line 31
+      - "traefik.http.routers.${ENVIRONMENT}-grafana-secured.tls.certResolver=mytlschallenge" # <== Defining certsresolvers for https
+
+
+volumes:
+  grafana-storage:
+    name: grafana-${ENVIRONMENT}
+
+
+networks:
+  grafana:
+    internal: true
+    name: grafana-${ENVIRONMENT}
+  proxy-net:
+    external:
+      name: proxy-net
