@@ -4,6 +4,8 @@ services:
   grafana:
     image: grafana/grafana-oss:8.5.16
     container_name: grafana-${ENVIRONMENT}
+    environment:
+      GF_SECURITY_ALLOW_EMBEDDING: true
     volumes:
       - grafana-storage:/var/lib/grafana
     networks:
