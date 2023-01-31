@@ -6,6 +6,7 @@ services:
     container_name: grafana-${ENVIRONMENT}
     environment:
       GF_SECURITY_ALLOW_EMBEDDING: "true"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
     volumes:
       - grafana-storage:/var/lib/grafana
     networks:
