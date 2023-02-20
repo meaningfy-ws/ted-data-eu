@@ -1,5 +1,2 @@
 git+https://github.com/OP-TED/ted-rdf-conversion-pipeline.git@main
 pymongo~=4.0.2
-dash~=2.7.0
-dash-bootstrap-components~=1.2.1
-dash-bootstrap-templates~=1.0.7
