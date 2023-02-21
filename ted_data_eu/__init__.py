@@ -57,8 +57,8 @@ class ElasticConfig:
         return config_value
 
     @env_property()
-    def ELASTIC_HOST(self) -> str:
-        return f"{ELASTIC_SUBDOMAIN}.{self.DOMAIN}"
+    def ELASTIC_HOST(self, config_value: str) -> str:
+        return f"https://{ELASTIC_SUBDOMAIN}.{self.DOMAIN}"
 
 
 class TedDataConfigResolver(TedConfigResolver, BQResourcesConfig, GraphDBConfig, ElasticConfig):

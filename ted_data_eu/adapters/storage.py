@@ -2,6 +2,7 @@ import json
 from typing import Dict, List
 
 import requests
+from requests import Response
 from requests.auth import HTTPBasicAuth
 
 from ted_data_eu import config
@@ -17,9 +18,9 @@ class ElasticStorage(DocumentStorageABC):
 
     def __init__(self,
                  index: str,
-                 host: str = config.ELASTIC_HOST,
-                 user: str = config.ELASTIC_USER,
-                 password: str = config.ELASTIC_PASSWORD):
+                 host: str = None,
+                 user: str = None,
+                 password: str = None):
         """
            Implements interaction with ElasticSearch storage by using its API.
 
@@ -29,11 +30,12 @@ class ElasticStorage(DocumentStorageABC):
             :param password: Elastic API password
             :return:
         """
-        self.host = host
-        self.auth = HTTPBasicAuth(user, password)
+        self.host = host if host else config.ELASTIC_HOST
+        self.auth = HTTPBasicAuth(user if user else config.ELASTIC_USER,
+                                  password if password else config.ELASTIC_PASSWORD)
         self.index = index
 
-    def add_document(self, document: Dict) -> Dict:
+    def add_document(self, document: str) -> Response:
         """
            Add document to storage.
 
@@ -43,23 +45,27 @@ class ElasticStorage(DocumentStorageABC):
         response = requests.post(url=f"{self.host}/{self.index}/_doc/",
                                  headers=BASIC_HEADERS,
                                  auth=self.auth,
-                                 data=json.dumps(document))
-        return json.loads(response.content)
+                                 data=document)
+        return response
 
-    def add_documents(self, documents: List[Dict]):
+    def add_documents(self, documents: List[str]) -> Response:
         """
            Add documents to storage using Elastic API bulk.
 
             :param documents: List of documents to be stored
             :return:
         """
+        data_to_send = []
+        for document in documents:
+            data_to_send.append(json.dumps({"create": {"_index": self.index}}))
+            data_to_send.append(document)
         response = requests.post(url=f"{self.host}/{self.index}/_bulk",
                                  headers=BASIC_HEADERS,
                                  auth=self.auth,
-                                 data='\n'.join(json.dumps(document) for document in documents) + '\n')
-        return json.loads(response.content)
+                                 data='\n'.join(line for line in data_to_send) + '\n')
+        return response
 
-    def query(self, query: Dict):
+    def query(self, query: str) -> Response:
         """
             Query storage using Elastic API query parameters.
 
@@ -69,5 +75,16 @@ class ElasticStorage(DocumentStorageABC):
         response = requests.get(url=f"{self.host}/{self.index}/_search",
                                 headers=BASIC_HEADERS,
                                 auth=self.auth,
-                                data=json.dumps(query))
-        return json.loads(response.content)
+                                data=query)
+        return response
+
+    def clear(self):
+        """
+            Delete current index.
+
+        :return:
+        """
+        response = requests.delete(url=f"{self.host}/{self.index}",
+                                   headers=BASIC_HEADERS,
+                                   auth=self.auth)
+        return response

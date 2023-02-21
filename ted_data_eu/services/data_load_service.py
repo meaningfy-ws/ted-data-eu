@@ -1,3 +1,4 @@
+import json
 from typing import Dict, List
 
 from ted_data_eu.adapters.storage import ElasticStorage
@@ -18,4 +19,9 @@ def load_documents_to_storage(documents: List[Dict],
     if not storage:
         storage = ElasticStorage(index=ELASTIC_DEFAULT_INDEX)
 
-    return storage.add_documents(documents=documents)
+    processed_documents = []
+    for document in documents:
+        processed_documents.append(json.dumps(document))
+
+    response = storage.add_documents(documents=processed_documents)
+    return json.loads(response.content)

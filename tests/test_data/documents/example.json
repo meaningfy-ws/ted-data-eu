@@ -1,0 +1,287 @@
+{
+  "created": "2022-02-16T09:35:35.326251813",
+  "modified": "2022-09-30T07:04:26.532627697",
+  "metaData": {
+    "opentender": true
+  },
+  "persistentId": "AT_6c4d5f84c42d78c13742b4e24ba0b9149b3aaeee570ca11bbb697bdcb50b43a9_1",
+  "processingOrder": "2022-09-01 17:41:37.67051276",
+  "title": "AP352 GEBÄUDEBEWEISSICHERUNG SILLSCHLUCHT - BRENNER",
+  "description": "Mit dem gegenständlichen Verfahren werden die Ingenieurdienstleistungen zur Durchführung der Gebäudebeweissicherung im Projektbereich Sillschlucht - Brenner in Österreich vergeben.",
+  "contractSignatureDate": "2021-09-23",
+  "cpvs": [
+    {
+      "code": "71250000",
+      "isMain": true
+    }
+  ],
+  "indicators": [
+    {
+      "type": "ADMINISTRATIVE_CENTRALIZED_PROCUREMENT",
+      "status": "INSUFFICIENT_DATA"
+    },
+    {
+      "type": "TRANSPARENCY_MISSING_OR_INCOMPLETE_DURATION_INFO",
+      "status": "UNDEFINED"
+    },
+    {
+      "type": "TRANSPARENCY_MISSING_OR_INCOMPLETE_FUNDINGS_INFO",
+      "status": "UNDEFINED"
+    },
+    {
+      "type": "ADMINISTRATIVE_ELECTRONIC_AUCTION",
+      "status": "INSUFFICIENT_DATA"
+    },
+    {
+      "type": "INTEGRITY_PROCEDURE_TYPE",
+      "status": "CALCULATED",
+      "value": 100
+    },
+    {
+      "type": "ADMINISTRATIVE_FRAMEWORK_AGREEMENT",
+      "status": "INSUFFICIENT_DATA"
+    },
+    {
+      "type": "ADMINISTRATIVE_NOTICE_AND_AWARD_DISCREPANCIES",
+      "status": "INSUFFICIENT_DATA"
+    },
+    {
+      "type": "TRANSPARENCY_MISSING_ELIGIBLE_BID_LANGUAGES",
+      "status": "UNDEFINED"
+    },
+    {
+      "type": "INTEGRITY_SINGLE_BID",
+      "status": "CALCULATED",
+      "value": 100
+    },
+    {
+      "type": "TRANSPARENCY_MISSING_OR_INCOMPLETE_AWARD_CRITERIA",
+      "status": "UNDEFINED"
+    },
+    {
+      "type": "ADMINISTRATIVE_COVERED_BY_GPA",
+      "status": "INSUFFICIENT_DATA"
+    },
+    {
+      "type": "TRANSPARENCY_VALUE_MISSING",
+      "status": "CALCULATED",
+      "value": 100
+    },
+    {
+      "type": "TRANSPARENCY_MISSING_SELECTION_METHOD",
+      "status": "UNDEFINED"
+    },
+    {
+      "type": "INTEGRITY_TAX_HAVEN",
+      "status": "INSUFFICIENT_DATA"
+    },
+    {
+      "type": "INTEGRITY_ADVERTISEMENT_PERIOD",
+      "status": "CALCULATED",
+      "value": 100
+    },
+    {
+      "type": "INTEGRITY_CALL_FOR_TENDER_PUBLICATION",
+      "status": "CALCULATED",
+      "value": 0
+    },
+    {
+      "type": "INTEGRITY_NEW_COMPANY",
+      "status": "INSUFFICIENT_DATA"
+    },
+    {
+      "type": "ADMINISTRATIVE_ENGLISH_AS_FOREIGN_LANGUAGE",
+      "status": "INSUFFICIENT_DATA"
+    },
+    {
+      "type": "TRANSPARENCY_MISSING_OR_INCOMPLETE_CPVS",
+      "status": "UNDEFINED"
+    },
+    {
+      "type": "TRANSPARENCY_MISSING_ADDRESS_OF_IMPLEMENTATION_NUTS",
+      "status": "CALCULATED",
+      "value": 0
+    },
+    {
+      "type": "INTEGRITY_DECISION_PERIOD",
+      "status": "CALCULATED",
+      "value": 100
+    },
+    {
+      "type": "TRANSPARENCY_BIDDER_NAME_MISSING",
+      "status": "CALCULATED",
+      "value": 100
+    },
+    {
+      "type": "TRANSPARENCY_MISSING_SUBCONTRACTED_INFO",
+      "status": "CALCULATED",
+      "value": 0
+    }
+  ],
+  "procedureType": "OPEN",
+  "nationalProcedureType": "PT_OPEN",
+  "supplyType": "SERVICES",
+  "size": "ABOVE_THE_THRESHOLD",
+  "buyers": [
+    {
+      "processingOrder": "2022-09-01 17:58:08.28996045",
+      "name": "Galleria di Base del Brennero - Brenner Basistunnel BBT SE",
+      "email": "markus.heiss@bbt-se.com",
+      "phone": "+43 5124030",
+      "id": "AT_body_38897827bc730524068f0692cc654dad3f6a2407bbb2fd767c3eeed4c7e0362f"
+    }
+  ],
+  "publications": [
+    {
+      "source": "https://www.data.gv.at",
+      "sourceTenderId": "AP352",
+      "machineReadableUrl": "https://bekanntmachungen.vemap.com/FN_367729_d_BVergG-VIII-2-Z1_439135.xml",
+      "publicationDate": "2021-09-24",
+      "isIncluded": true,
+      "formType": "CONTRACT_AWARD",
+      "sourceFormType": "KD_8_2_Z1"
+    }
+  ],
+  "lots": [
+    {
+      "indicators": [
+        {
+          "@class": "eu.dl.dataaccess.dto.indicator.BasicIndicator",
+          "type": "TRANSPARENCY_VALUE_MISSING",
+          "status": "CALCULATED",
+          "value": 100
+        },
+        {
+          "@class": "eu.dl.dataaccess.dto.indicator.BasicIndicator",
+          "type": "TRANSPARENCY_MISSING_OR_INCOMPLETE_DURATION_INFO",
+          "status": "UNDEFINED"
+        },
+        {
+          "@class": "eu.dl.dataaccess.dto.indicator.BasicIndicator",
+          "type": "TRANSPARENCY_MISSING_SELECTION_METHOD",
+          "status": "UNDEFINED"
+        },
+        {
+          "@class": "eu.dl.dataaccess.dto.indicator.BasicIndicator",
+          "type": "TRANSPARENCY_MISSING_OR_INCOMPLETE_FUNDINGS_INFO",
+          "status": "UNDEFINED"
+        },
+        {
+          "@class": "eu.dl.dataaccess.dto.indicator.BasicIndicator",
+          "type": "INTEGRITY_TAX_HAVEN",
+          "status": "INSUFFICIENT_DATA"
+        },
+        {
+          "@class": "eu.dl.dataaccess.dto.indicator.BasicIndicator",
+          "type": "INTEGRITY_NEW_COMPANY",
+          "status": "INSUFFICIENT_DATA"
+        },
+        {
+          "@class": "eu.dl.dataaccess.dto.indicator.BasicIndicator",
+          "type": "TRANSPARENCY_MISSING_OR_INCOMPLETE_CPVS",
+          "status": "UNDEFINED"
+        },
+        {
+          "@class": "eu.dl.dataaccess.dto.indicator.BasicIndicator",
+          "metaData": {},
+          "type": "INTEGRITY_SINGLE_BID",
+          "status": "CALCULATED",
+          "value": 100
+        },
+        {
+          "@class": "eu.dl.dataaccess.dto.indicator.BasicIndicator",
+          "type": "TRANSPARENCY_MISSING_OR_INCOMPLETE_AWARD_CRITERIA",
+          "status": "UNDEFINED"
+        },
+        {
+          "@class": "eu.dl.dataaccess.dto.indicator.BasicIndicator",
+          "type": "INTEGRITY_DECISION_PERIOD",
+          "status": "CALCULATED",
+          "value": 100
+        },
+        {
+          "@class": "eu.dl.dataaccess.dto.indicator.BasicIndicator",
+          "type": "TRANSPARENCY_BIDDER_NAME_MISSING",
+          "status": "CALCULATED",
+          "value": 100
+        },
+        {
+          "@class": "eu.dl.dataaccess.dto.indicator.BasicIndicator",
+          "type": "TRANSPARENCY_MISSING_SUBCONTRACTED_INFO",
+          "status": "CALCULATED",
+          "value": 0
+        }
+      ],
+      "status": "AWARDED",
+      "bids": [
+        {
+          "isWinning": true,
+          "bidders": [
+            {
+              "processingOrder": "2022-02-15 16:54:44.00727586",
+              "name": "BERNARD Gruppe ZT GmbH",
+              "id": "AT_body_0f728bc792352ca7f268e57b41ebf8418e78128b42b68972df6562648d48b816"
+            }
+          ],
+          "price": {
+            "netAmount": 869659,
+            "vat": 20,
+            "currency": "EUR",
+            "netAmountEur": 869659,
+            "currencyNational": "EUR",
+            "netAmountNational": 869659,
+            "publicationDate": "2021-09-24"
+          },
+          "robustPrice": {
+            "netAmount": 869659,
+            "vat": 20,
+            "currency": "EUR",
+            "netAmountEur": 869659,
+            "currencyNational": "EUR",
+            "netAmountNational": 869659,
+            "reliability": 0.75
+          },
+          "bidId": "group_AT_tender_043bd46aa9b820a0a5a531877e3d6d3ce6728c6b_1_1",
+          "digiwhistPrice": {
+            "netAmount": 869659,
+            "currency": "EUR",
+            "netAmountEur": 869659
+          }
+        }
+      ],
+      "bidsCount": 2,
+      "smeBidsCount": 2,
+      "lotId": "group_AT_tender_043bd46aa9b820a0a5a531877e3d6d3ce6728c6b_1"
+    }
+  ],
+  "country": "AT",
+  "groupId": "group_AT_tender_043bd46aa9b820a0a5a531877e3d6d3ce6728c6b",
+  "digiwhistPrice": {
+    "netAmount": 869659,
+    "currency": "EUR",
+    "netAmountEur": 869659
+  },
+  "id": "27095eef-3ef3-4ac9-9681-8c138fc20d1f",
+  "ot": {
+    "country": "AT",
+    "scores": [
+      {
+        "type": "INTEGRITY",
+        "value": 80,
+        "status": "CALCULATED"
+      },
+      {
+        "type": "TRANSPARENCY",
+        "value": 50,
+        "status": "CALCULATED"
+      },
+      {
+        "type": "TENDER",
+        "value": 65,
+        "status": "CALCULATED"
+      }
+    ],
+    "cpv": "71250000",
+    "date": "2021-09-23"
+  }
+}
