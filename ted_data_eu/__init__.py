@@ -8,6 +8,7 @@ dotenv.load_dotenv(verbose=True, override=True)
 
 PROJECT_RESOURCES_PATH = pathlib.Path(__file__).parent.resolve() / "resources"
 PROJECT_RESOURCES_BQ_FOLDER_PATH = PROJECT_RESOURCES_PATH / "sparql_queries"
+ELASTIC_SUBDOMAIN = 'elastic'
 
 
 class BQResourcesConfig:
@@ -37,7 +38,30 @@ class GraphDBConfig:
         return config_value
 
 
-class TedDataConfigResolver(TedConfigResolver, BQResourcesConfig, GraphDBConfig):
+class ElasticConfig:
+
+    @env_property()
+    def DOMAIN(self, config_value: str) -> str:
+        return config_value
+
+    @env_property()
+    def ELASTIC_USER(self, config_value: str) -> str:
+        return config_value
+
+    @env_property()
+    def ELASTIC_PASSWORD(self, config_value: str) -> str:
+        return config_value
+
+    @env_property()
+    def ELASTIC_VERSION(self, config_value: str) -> str:
+        return config_value
+
+    @env_property()
+    def ELASTIC_HOST(self) -> str:
+        return f"{ELASTIC_SUBDOMAIN}.{self.DOMAIN}"
+
+
+class TedDataConfigResolver(TedConfigResolver, BQResourcesConfig, GraphDBConfig, ElasticConfig):
     """
         This class is used for automatic config discovery.
     """
