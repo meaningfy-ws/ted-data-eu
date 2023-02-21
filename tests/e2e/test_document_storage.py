@@ -6,7 +6,7 @@ from ted_data_eu.services.data_load_service import load_documents_to_storage
 def test_elastic_storage_service(elastic_storage, document_file_path):
     assert document_file_path.exists()
     test_doc = json.loads(document_file_path.read_text(encoding='utf-8'))
-    result = load_documents_to_storage([test_doc, test_doc])
+    result = load_documents_to_storage([test_doc, test_doc], elastic_storage)
     assert result['errors'] is False
     for item in result['items']:
         assert item['create']['status'] == 201

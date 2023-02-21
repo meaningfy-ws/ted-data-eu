@@ -30,9 +30,9 @@ class ElasticStorage(DocumentStorageABC):
             :param password: Elastic API password
             :return:
         """
-        self.host = host if host else config.ELASTIC_HOST
-        self.auth = HTTPBasicAuth(user if user else config.ELASTIC_USER,
-                                  password if password else config.ELASTIC_PASSWORD)
+        self.host = host or config.ELASTIC_HOST
+        self.auth = HTTPBasicAuth(user or config.ELASTIC_USER,
+                                  password or config.ELASTIC_PASSWORD)
         self.index = index
 
     def add_document(self, document: str) -> Response:
