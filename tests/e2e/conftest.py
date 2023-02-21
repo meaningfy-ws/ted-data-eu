@@ -45,7 +45,7 @@ def elastic_index():
 
 @pytest.fixture
 def elastic_storage(elastic_index):
-    return ElasticStorage(index=elastic_index)
+    return ElasticStorage(host='https://elastic.staging.ted-data.eu', index=elastic_index)
 
 
 @pytest.fixture
