@@ -96,17 +96,17 @@ def notice_processing_pipeline():
         trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
     )
 
-    selector_branch_before_package = BranchPythonOperator(
-        task_id=SELECTOR_BRANCH_BEFORE_PACKAGE_TASK_ID,
-        python_callable=_selector_branch_before_package,
-        trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
-    )
-
-    selector_branch_before_publish = BranchPythonOperator(
-        task_id=SELECTOR_BRANCH_BEFORE_PUBLISH_TASK_ID,
-        python_callable=_selector_branch_before_publish,
-        trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
-    )
+    # selector_branch_before_package = BranchPythonOperator(
+    #     task_id=SELECTOR_BRANCH_BEFORE_PACKAGE_TASK_ID,
+    #     python_callable=_selector_branch_before_package,
+    #     trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
+    # )
+    #
+    # selector_branch_before_publish = BranchPythonOperator(
+    #     task_id=SELECTOR_BRANCH_BEFORE_PUBLISH_TASK_ID,
+    #     python_callable=_selector_branch_before_publish,
+    #     trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
+    # )
 
     stop_processing = PythonOperator(
         task_id=STOP_PROCESSING_TASK_ID,
