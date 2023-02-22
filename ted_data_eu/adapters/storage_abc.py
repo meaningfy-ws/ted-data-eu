@@ -14,7 +14,7 @@ class DocumentStorageABC(StorageABC):
     """
 
     @abc.abstractmethod
-    def add_document(self, document: str):
+    def add_document(self, document: Dict):
         """
             This method allows you to add document object to the storage.
         :param document:
@@ -22,7 +22,7 @@ class DocumentStorageABC(StorageABC):
         """
 
     @abc.abstractmethod
-    def add_documents(self, documents: List[str]):
+    def add_documents(self, documents: List[Dict]):
         """
             This method allows you to add documents objects to the storage.
         :param documents:
@@ -30,7 +30,7 @@ class DocumentStorageABC(StorageABC):
         """
 
     @abc.abstractmethod
-    def query(self, query: str):
+    def query(self, query: Dict):
         """
             This method allows you to query data in storage.
         :param query:

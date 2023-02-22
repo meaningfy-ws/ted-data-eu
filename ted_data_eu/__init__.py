@@ -8,7 +8,6 @@ dotenv.load_dotenv(verbose=True, override=True)
 
 PROJECT_RESOURCES_PATH = pathlib.Path(__file__).parent.resolve() / "resources"
 PROJECT_RESOURCES_BQ_FOLDER_PATH = PROJECT_RESOURCES_PATH / "sparql_queries"
-ELASTIC_SUBDOMAIN = 'elastic'
 
 
 class BQResourcesConfig:
@@ -41,10 +40,6 @@ class GraphDBConfig:
 class ElasticConfig:
 
     @env_property()
-    def DOMAIN(self, config_value: str) -> str:
-        return config_value
-
-    @env_property()
     def ELASTIC_USER(self, config_value: str) -> str:
         return config_value
 
@@ -58,7 +53,11 @@ class ElasticConfig:
 
     @env_property()
     def ELASTIC_HOST(self, config_value: str) -> str:
-        return f"https://{ELASTIC_SUBDOMAIN}.{self.DOMAIN}"
+        return config_value
+
+    @env_property()
+    def ELASTIC_DEFAULT_INDEX(self, config_value: str) -> str:
+        return config_value
 
 
 class TedDataConfigResolver(TedConfigResolver, BQResourcesConfig, GraphDBConfig, ElasticConfig):

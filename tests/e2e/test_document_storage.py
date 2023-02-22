@@ -14,12 +14,12 @@ def test_elastic_storage_service(elastic_storage, document_file_path):
 
 def test_elastic_storage(elastic_storage, document_file_path, elastic_query):
     assert document_file_path.exists()
-    test_doc = document_file_path.read_text()
-    response = elastic_storage.add_document(test_doc.encode('utf-8'))
-    assert response.status_code == 201
+    test_doc = json.loads(document_file_path.read_text())
+    response = elastic_storage.add_document(test_doc)
+    assert response['result'] == 'created'
 
     response = elastic_storage.query(elastic_query)
-    assert response.status_code == 200
+    assert response['_shards']['successful'] > 0
 
     response = elastic_storage.clear()
-    assert response.status_code == 200
+    assert response['acknowledged'] is True
