@@ -64,7 +64,7 @@ def fetch_notices_by_date():
                                                            default_value=(datetime.now() - timedelta(days=1)).strftime(
                                                                "%Y%m%d*")), "%Y%m%d*")
         mongodb_client = MongoClient(config.MONGO_DB_AUTH_URL)
-        validate_and_update_daily_supra_notice(notice_publication_day=publication_date,
+        validate_and_update_daily_supra_notice(ted_publication_date=publication_date,
                                                mongodb_client=mongodb_client)
 
     def _branch_selector():
