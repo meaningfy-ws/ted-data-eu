@@ -106,6 +106,7 @@ services:
     environment:
       KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
       ANONYMOUS_KIBANA_SYSTEM_PASSWORD: ${ANONYMOUS_KIBANA_SYSTEM_PASSWORD:-}
+      SERVER_PUBLICBASEURL: ${KIBANA_HOST:-}
     networks:
       - elk
       - proxy-net
