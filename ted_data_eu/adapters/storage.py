@@ -10,6 +10,13 @@ from ted_data_eu.adapters.storage_abc import DocumentStorageABC
 BASIC_HEADERS = {'Content-type': 'application/x-ndjson'}
 
 
+class ElasticStorageException(Exception):
+    """
+        Implements custom exception for ElasticStorage
+    """
+    pass
+
+
 class ElasticStorage(DocumentStorageABC):
     """
        Implements interaction with ElasticSearch storage by using its API.
@@ -34,12 +41,12 @@ class ElasticStorage(DocumentStorageABC):
                                   password or config.ELASTIC_PASSWORD)
         self.elastic_index = elastic_index
 
-    def add_document(self, document: Dict) -> Dict:
+    def add_document(self, document: Dict):
         """
            Add document to storage.
 
             :param document: Document to be stored
-            :return: dict with Elastic API Response
+            :return:
         """
         response = requests.post(url=f"{self.host}/{self.elastic_index}/_doc/",
                                  headers=BASIC_HEADERS,
@@ -47,16 +54,15 @@ class ElasticStorage(DocumentStorageABC):
                                  data=json.dumps(document))
         deserialized_response = json.loads(response.content)
         if response.status_code != 201:
-            raise Exception(
+            raise ElasticStorageException(
                 f"Elastic API add_document() error: {deserialized_response['error']['caused_by']['reason']}")
-        return deserialized_response
 
-    def add_documents(self, documents: List[Dict]) -> Dict:
+    def add_documents(self, documents: List[Dict]):
         """
            Add documents to storage using Elastic API bulk.
 
             :param documents: List of documents to be stored
-            :return: dict with Elastic API Response
+            :return:
         """
         data_to_send = []
         for document in documents:
@@ -68,36 +74,34 @@ class ElasticStorage(DocumentStorageABC):
                                  data='\n'.join(line for line in data_to_send) + '\n')
         deserialized_response = json.loads(response.content)
         if response.status_code != 200:
-            raise Exception(
+            raise ElasticStorageException(
                 f"Elastic API add_documents() error: {deserialized_response['error']['caused_by']['reason']}")
-        return deserialized_response
 
-    def query(self, query: Dict) -> Dict:
-        """
-            Query storage using Elastic API query parameters.
-
-        :param query: Elastic API query
-        :return: dict with Elastic API Response
-        """
-        response = requests.get(url=f"{self.host}/{self.elastic_index}/_search",
-                                headers=BASIC_HEADERS,
-                                auth=self.auth,
-                                data=query)
-        deserialized_response = json.loads(response.content)
-        if response.status_code != 200:
-            raise Exception(f"Elastic API query() error: {deserialized_response['error']['caused_by']['reason']}")
-        return deserialized_response
-
-    def clear(self) -> Dict:
+    def clear(self):
         """
             Delete current index.
 
-        :return: dict with Elastic API Response
+        :return:
         """
         response = requests.delete(url=f"{self.host}/{self.elastic_index}",
                                    headers=BASIC_HEADERS,
                                    auth=self.auth)
         deserialized_response = json.loads(response.content)
         if response.status_code != 200:
-            raise Exception(f"Elastic API clear() error: {deserialized_response['error']['caused_by']['reason']}")
-        return deserialized_response
+            raise ElasticStorageException(
+                f"Elastic API clear() error: {deserialized_response['error']['caused_by']['reason']}")
+
+    def count(self) -> int:
+        """
+            Return number of documents from current ElasticSearch Index.
+
+        :return:
+        """
+        response = requests.post(url=f"{self.host}/{self.elastic_index}/_count",
+                                 headers=BASIC_HEADERS,
+                                 auth=self.auth)
+        deserialized_response = json.loads(response.content)
+        if response.status_code != 200:
+            raise ElasticStorageException(
+                f"Elastic API count() error: {deserialized_response['error']['caused_by']['reason']}")
+        return deserialized_response['count']

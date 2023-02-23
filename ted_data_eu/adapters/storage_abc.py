@@ -30,10 +30,9 @@ class DocumentStorageABC(StorageABC):
         """
 
     @abc.abstractmethod
-    def query(self, query: Dict):
+    def count(self):
         """
-            This method allows you to query data in storage.
-        :param query:
+            Get number of documents.
         :return:
         """
 

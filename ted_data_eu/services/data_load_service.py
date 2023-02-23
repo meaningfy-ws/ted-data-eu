@@ -15,7 +15,7 @@ def load_documents_to_storage(documents: List[Dict],
     :return: dict with Elastic API Response
     """
 
-    if not storage:
+    if storage is None:
         storage = ElasticStorage(elastic_index=config.ELASTIC_DEFAULT_INDEX)
 
     return storage.add_documents(documents=documents)
