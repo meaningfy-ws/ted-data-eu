@@ -141,3 +141,4 @@ junit_report.xml
 
 # Traefik files
 infra/traefik/letsencrypt/acme.json
+notebooks/open_tender_data/resources/open_tender_all_jsons/*
