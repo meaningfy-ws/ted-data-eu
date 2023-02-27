@@ -132,6 +132,18 @@ stop-airflow-worker:
 	@ docker-compose -p ${ENVIRONMENT} --file ./infra/airflow-cluster/docker-compose-worker.yaml --env-file ${ENV_FILE} down
 
 
+restart-airflow-master: stop-airflow-master create-env-airflow-cluster
+	@ echo -e "$(BUILD_PRINT)Restart Airflow Master $(END_BUILD_PRINT)"
+	@ git pull
+	@ make build-airflow-cluster
+	@ make start-airflow-master
+
+restart-airflow-worker: stop-airflow-worker create-env-airflow-cluster
+	@ echo -e "$(BUILD_PRINT)Restart Airflow Worker $(END_BUILD_PRINT)"
+	@ git pull
+	@ make build-airflow-cluster
+	@ make start-airflow-worker
+
 start-allegro-graph: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting Allegro-Graph services $(END_BUILD_PRINT)"
 	@ docker-compose -p ${ENVIRONMENT} --file ./infra/allegro-graph/docker-compose.yml --env-file ${ENV_FILE} up -d
