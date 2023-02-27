@@ -192,7 +192,7 @@ init-limes:
 init-rml-mapper:
 	@ echo -e "RMLMapper folder initialisation!"
 	@ mkdir -p ./.rmlmapper
-	@ wget -c https://api.bitbucket.org/2.0/repositories/Dragos0000/rml-mapper/src/master/rmlmapper.jar -P ./.rmlmapper
+	@ wget -c https://github.com/RMLio/rmlmapper-java/releases/download/v6.1.3/rmlmapper-6.1.3-r367-all.jar -O ./.rmlmapper/rmlmapper.jar
 
 
 init-saxon:
