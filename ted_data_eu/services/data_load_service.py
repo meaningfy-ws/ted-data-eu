@@ -6,7 +6,7 @@ from ted_data_eu import config
 
 
 def load_documents_to_storage(documents: List[Dict],
-                              storage: DocumentStorageABC = None) -> Dict:
+                              storage: DocumentStorageABC = None):
     """
         Loads data in document format to a storage.
 
@@ -17,5 +17,4 @@ def load_documents_to_storage(documents: List[Dict],
 
     if storage is None:
         storage = ElasticStorage(elastic_index=config.ELASTIC_DEFAULT_INDEX)
-
-    return storage.add_documents(documents=documents)
+    storage.add_documents(documents=documents)

@@ -50,4 +50,4 @@ def elastic_storage(elastic_index):
 
 @pytest.fixture
 def elastic_query():
-    return "{\"query\": {\"match_all\": {}}}"
+    return {"match_all": {}}

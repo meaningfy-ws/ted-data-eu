@@ -1,13 +1,7 @@
-import json
 from typing import Dict, List
-
-import requests
-from requests.auth import HTTPBasicAuth
-
 from ted_data_eu import config
 from ted_data_eu.adapters.storage_abc import DocumentStorageABC
-
-BASIC_HEADERS = {'Content-type': 'application/x-ndjson'}
+from elasticsearch import Elasticsearch, helpers
 
 
 class ElasticStorageException(Exception):
@@ -36,10 +30,12 @@ class ElasticStorage(DocumentStorageABC):
             :param password: Elastic API password
             :return:
         """
-        self.host = host or config.ELASTIC_HOST
-        self.auth = HTTPBasicAuth(user or config.ELASTIC_USER,
-                                  password or config.ELASTIC_PASSWORD)
+        host = host or config.ELASTIC_HOST
+        basic_auth = (user or config.ELASTIC_USER, password or config.ELASTIC_PASSWORD)
+        self.es_client = Elasticsearch(hosts=[f"{host}:443"], basic_auth=basic_auth)
         self.elastic_index = elastic_index
+        if not self.es_client.indices.exists(index=self.elastic_index):
+            self.es_client.indices.create(index=self.elastic_index)
 
     def add_document(self, document: Dict):
         """
@@ -48,14 +44,10 @@ class ElasticStorage(DocumentStorageABC):
             :param document: Document to be stored
             :return:
         """
-        response = requests.post(url=f"{self.host}/{self.elastic_index}/_doc/",
-                                 headers=BASIC_HEADERS,
-                                 auth=self.auth,
-                                 data=json.dumps(document))
-        deserialized_response = json.loads(response.content)
-        if response.status_code != 201:
-            raise ElasticStorageException(
-                f"Elastic API add_document() error: {deserialized_response['error']['caused_by']['reason']}")
+        response = self.es_client.index(index=self.elastic_index, document=document)
+        if not response:
+            raise ElasticStorageException(str(response))
+        self.es_client.indices.refresh(index=self.elastic_index)
 
     def add_documents(self, documents: List[Dict]):
         """
@@ -64,18 +56,11 @@ class ElasticStorage(DocumentStorageABC):
             :param documents: List of documents to be stored
             :return:
         """
-        data_to_send = []
-        for document in documents:
-            data_to_send.append(json.dumps({"create": {"_index": self.elastic_index}}))
-            data_to_send.append(json.dumps(document))
-        response = requests.post(url=f"{self.host}/{self.elastic_index}/_bulk",
-                                 headers=BASIC_HEADERS,
-                                 auth=self.auth,
-                                 data='\n'.join(line for line in data_to_send) + '\n')
-        deserialized_response = json.loads(response.content)
-        if response.status_code != 200:
-            raise ElasticStorageException(
-                f"Elastic API add_documents() error: {deserialized_response['error']['caused_by']['reason']}")
+        results = helpers.parallel_bulk(self.es_client, documents, index=self.elastic_index)
+        for result in results:
+            if not result[0]:
+                raise ElasticStorageException(str(result[1]))
+        self.es_client.indices.refresh(index=self.elastic_index)
 
     def clear(self):
         """
@@ -83,13 +68,10 @@ class ElasticStorage(DocumentStorageABC):
 
         :return:
         """
-        response = requests.delete(url=f"{self.host}/{self.elastic_index}",
-                                   headers=BASIC_HEADERS,
-                                   auth=self.auth)
-        deserialized_response = json.loads(response.content)
-        if response.status_code != 200:
-            raise ElasticStorageException(
-                f"Elastic API clear() error: {deserialized_response['error']['caused_by']['reason']}")
+        response = self.es_client.delete_by_query(index=self.elastic_index, body={"query": {"match_all": {}}})
+        if not response:
+            raise ElasticStorageException(str(response))
+        self.es_client.indices.refresh(index=self.elastic_index)
 
     def count(self) -> int:
         """
@@ -97,11 +79,21 @@ class ElasticStorage(DocumentStorageABC):
 
         :return:
         """
-        response = requests.post(url=f"{self.host}/{self.elastic_index}/_count",
-                                 headers=BASIC_HEADERS,
-                                 auth=self.auth)
-        deserialized_response = json.loads(response.content)
-        if response.status_code != 200:
-            raise ElasticStorageException(
-                f"Elastic API count() error: {deserialized_response['error']['caused_by']['reason']}")
-        return deserialized_response['count']
+        response = self.es_client.count(index=self.elastic_index)
+        if response:
+            return response["count"]
+        else:
+            raise ElasticStorageException(str(response))
+
+    def query(self, query) -> List[dict]:
+        """
+            Return list of documents based on result of query in ElasticSearch Index.
+        :param query:
+        :return:
+        """
+        self.es_client.indices.refresh(index=self.elastic_index)
+        response = self.es_client.search(index=self.elastic_index, query=query)
+        if response:
+            return [document_hit["_source"] for document_hit in response['hits']['hits']]
+        else:
+            raise ElasticStorageException(str(response))
