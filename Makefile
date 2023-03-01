@@ -132,6 +132,18 @@ stop-airflow-worker:
 	@ docker-compose -p ${ENVIRONMENT} --file ./infra/airflow-cluster/docker-compose-worker.yaml --env-file ${ENV_FILE} down
 
 
+restart-airflow-master: stop-airflow-master create-env-airflow-cluster
+	@ echo -e "$(BUILD_PRINT)Restart Airflow Master $(END_BUILD_PRINT)"
+	@ git pull
+	@ make build-airflow-cluster
+	@ make start-airflow-master
+
+restart-airflow-worker: stop-airflow-worker create-env-airflow-cluster
+	@ echo -e "$(BUILD_PRINT)Restart Airflow Worker $(END_BUILD_PRINT)"
+	@ git pull
+	@ make build-airflow-cluster
+	@ make start-airflow-worker
+
 start-allegro-graph: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting Allegro-Graph services $(END_BUILD_PRINT)"
 	@ docker-compose -p ${ENVIRONMENT} --file ./infra/allegro-graph/docker-compose.yml --env-file ${ENV_FILE} up -d
@@ -192,7 +204,7 @@ init-limes:
 init-rml-mapper:
 	@ echo -e "RMLMapper folder initialisation!"
 	@ mkdir -p ./.rmlmapper
-	@ wget -c https://api.bitbucket.org/2.0/repositories/Dragos0000/rml-mapper/src/master/rmlmapper.jar -P ./.rmlmapper
+	@ wget -c https://github.com/RMLio/rmlmapper-java/releases/download/v6.0.0/rmlmapper-6.0.0-r363-all.jar -O ./.rmlmapper/rmlmapper.jar
 
 
 init-saxon:

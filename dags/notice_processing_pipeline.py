@@ -96,17 +96,17 @@ def notice_processing_pipeline():
         trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
     )
 
-    selector_branch_before_package = BranchPythonOperator(
-        task_id=SELECTOR_BRANCH_BEFORE_PACKAGE_TASK_ID,
-        python_callable=_selector_branch_before_package,
-        trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
-    )
-
-    selector_branch_before_publish = BranchPythonOperator(
-        task_id=SELECTOR_BRANCH_BEFORE_PUBLISH_TASK_ID,
-        python_callable=_selector_branch_before_publish,
-        trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
-    )
+    # selector_branch_before_package = BranchPythonOperator(
+    #     task_id=SELECTOR_BRANCH_BEFORE_PACKAGE_TASK_ID,
+    #     python_callable=_selector_branch_before_package,
+    #     trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
+    # )
+    #
+    # selector_branch_before_publish = BranchPythonOperator(
+    #     task_id=SELECTOR_BRANCH_BEFORE_PUBLISH_TASK_ID,
+    #     python_callable=_selector_branch_before_publish,
+    #     trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
+    # )
 
     stop_processing = PythonOperator(
         task_id=STOP_PROCESSING_TASK_ID,
@@ -130,23 +130,28 @@ def notice_processing_pipeline():
     notice_validation_step = NoticeBatchPipelineOperator(notice_pipeline_callable=notice_validation_pipeline,
                                                          task_id=NOTICE_VALIDATION_PIPELINE_TASK_ID,
                                                          trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-    notice_package_step = NoticeBatchPipelineOperator(notice_pipeline_callable=notice_package_pipeline,
-                                                      task_id=NOTICE_PACKAGE_PIPELINE_TASK_ID,
-                                                      trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-
-    notice_publish_step = NoticeBatchPipelineOperator(notice_pipeline_callable=notice_publish_pipeline,
-                                                      task_id=NOTICE_PUBLISH_PIPELINE_TASK_ID,
-                                                      trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+    # notice_package_step = NoticeBatchPipelineOperator(notice_pipeline_callable=notice_package_pipeline,
+    #                                                   task_id=NOTICE_PACKAGE_PIPELINE_TASK_ID,
+    #                                                   trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+    #
+    # notice_publish_step = NoticeBatchPipelineOperator(notice_pipeline_callable=notice_publish_pipeline,
+    #                                                   task_id=NOTICE_PUBLISH_PIPELINE_TASK_ID,
+    #                                                   trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 
     start_processing >> [notice_normalisation_step, selector_branch_before_transformation,
                          selector_branch_before_validation,
-                         selector_branch_before_package, selector_branch_before_publish]
+                         # selector_branch_before_package, selector_branch_before_publish
+                         ]
     [selector_branch_before_transformation, selector_branch_before_validation,
-     selector_branch_before_package, selector_branch_before_publish, notice_publish_step] >> stop_processing
+     # selector_branch_before_package, selector_branch_before_publish,
+     # notice_publish_step
+     notice_validation_step
+     ] >> stop_processing
     notice_normalisation_step >> selector_branch_before_transformation >> notice_transformation_step
     notice_transformation_step >> notice_distillation_step >> selector_branch_before_validation >> notice_validation_step
-    notice_validation_step >> selector_branch_before_package >> notice_package_step
-    notice_package_step >> selector_branch_before_publish >> notice_publish_step
+
+    # notice_validation_step >> selector_branch_before_package >> notice_package_step
+    # notice_package_step >> selector_branch_before_publish >> notice_publish_step
 
 
 dag = notice_processing_pipeline()
