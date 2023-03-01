@@ -37,7 +37,30 @@ class GraphDBConfig:
         return config_value
 
 
-class TedDataConfigResolver(TedConfigResolver, BQResourcesConfig, GraphDBConfig):
+class ElasticConfig:
+
+    @env_property()
+    def ELASTIC_USER(self, config_value: str) -> str:
+        return config_value
+
+    @env_property()
+    def ELASTIC_PASSWORD(self, config_value: str) -> str:
+        return config_value
+
+    @env_property()
+    def ELASTIC_VERSION(self, config_value: str) -> str:
+        return config_value
+
+    @env_property()
+    def ELASTIC_HOST(self, config_value: str) -> str:
+        return config_value
+
+    @env_property()
+    def ELASTIC_DEFAULT_INDEX(self, config_value: str) -> str:
+        return config_value
+
+
+class TedDataConfigResolver(TedConfigResolver, BQResourcesConfig, GraphDBConfig, ElasticConfig):
     """
         This class is used for automatic config discovery.
     """
