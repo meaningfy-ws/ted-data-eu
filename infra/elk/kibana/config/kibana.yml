@@ -91,6 +91,5 @@ xpack.security.authc.providers:
 
 
 xpack.security.sameSiteCookies: "None"
-server.ssl.enabled: true
 xpack.security.secureCookies: true
 
