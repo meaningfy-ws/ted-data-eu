@@ -87,3 +87,10 @@ xpack.security.authc.providers:
     credentials:
       username: "anonymous"
       password: ${ANONYMOUS_KIBANA_SYSTEM_PASSWORD}
+
+
+
+xpack.security.sameSiteCookies: "None"
+xpack.security.transport.filter.allow: ['*.ted-data.eu', '*.ted-data.com', 'ted-data.eu', 'ted-data.com']
+xpack.security.transport.filter.deny: _all
+
