@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Protocol, List
 from uuid import uuid4
 from airflow.models import BaseOperator
@@ -16,11 +17,11 @@ from ted_sws.event_manager.services.logger_from_context import get_logger, handl
 NOTICE_IDS_KEY = "notice_ids"
 START_WITH_STEP_NAME_KEY = "start_with_step_name"
 EXECUTE_ONLY_ONE_STEP_KEY = "execute_only_one_step"
-DEFAULT_NUMBER_OF_CELERY_WORKERS = 144  # TODO: revise this config
+DEFAULT_NUMBER_OF_CELERY_WORKERS = 64  # TODO: revise this config
 NOTICE_PROCESSING_PIPELINE_DAG_NAME = "notice_processing_pipeline"
 DEFAULT_START_WITH_TASK_ID = "notice_normalisation_pipeline"
 DEFAULT_PIPELINE_NAME_FOR_LOGS = "unknown_pipeline_name"
-MAX_BATCH_SIZE = 5000
+MAX_BATCH_SIZE = 500
 
 
 class BatchPipelineCallable(Protocol):
@@ -78,7 +79,7 @@ class NoticeBatchPipelineOperator(BaseOperator):
             processed_notice_ids.extend(
                 self.batch_pipeline_callable(notice_ids=notice_ids, mongodb_client=mongodb_client))
         elif self.notice_pipeline_callable is not None:
-            for notice_id in notice_ids:
+            def multithread_notice_processor(notice_id: str):
                 notice = None
                 try:
                     notice_event = NoticeEventMessage(notice_id=notice_id, domain_action=pipeline_name)
@@ -102,6 +103,11 @@ class NoticeBatchPipelineOperator(BaseOperator):
                                      notice_status=notice.status if notice else None,
                                      notice_eforms_subtype=notice_normalised_metadata.eforms_subtype if notice_normalised_metadata else None)
 
+            with ThreadPoolExecutor() as executor:
+                futures = [executor.submit(multithread_notice_processor, notice_id) for notice_id in
+                           notice_ids]
+                for future in futures:
+                    future.result()
         batch_event_message.end_record()
         logger.info(event_message=batch_event_message)
         if not processed_notice_ids:
