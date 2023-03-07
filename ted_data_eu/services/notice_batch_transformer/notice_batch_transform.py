@@ -4,7 +4,6 @@ from threading import Lock
 from typing import List, Optional
 import semantic_version
 from pymongo import MongoClient
-from ted_sws import config
 from ted_sws.core.model.manifestation import RDFManifestation
 from ted_sws.core.model.notice import Notice, NoticeStatus
 from ted_sws.core.model.transform import MappingSuite
@@ -15,6 +14,8 @@ from ted_sws.notice_metadata_processor.services.notice_eligibility import check_
 from ted_sws.notice_transformer.adapters.rml_mapper import RMLMapper
 from collections import defaultdict
 import shutil
+
+from ted_data_eu import config
 
 DATA_SOURCE_PACKAGE = "data"
 DEFAULT_TRANSFORMATION_FILE_EXTENSION = ".ttl"
