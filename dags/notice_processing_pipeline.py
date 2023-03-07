@@ -46,8 +46,8 @@ def branch_selector(result_branch: str, xcom_forward_keys: List[str] = [NOTICE_I
 
 @dag(default_args=DEFAULT_DAG_ARGUMENTS,
      schedule_interval=None,
-     max_active_runs=256,
-     max_active_tasks=256,
+     max_active_runs=64,
+     max_active_tasks=64,
      tags=['worker', 'pipeline'])
 def notice_processing_pipeline():
     """
@@ -89,12 +89,12 @@ def notice_processing_pipeline():
         python_callable=_selector_branch_before_transformation,
         trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
     )
-
-    selector_branch_before_validation = BranchPythonOperator(
-        task_id=SELECTOR_BRANCH_BEFORE_VALIDATION_TASK_ID,
-        python_callable=_selector_branch_before_validation,
-        trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
-    )
+    #
+    # selector_branch_before_validation = BranchPythonOperator(
+    #     task_id=SELECTOR_BRANCH_BEFORE_VALIDATION_TASK_ID,
+    #     python_callable=_selector_branch_before_validation,
+    #     trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
+    # )
 
     # selector_branch_before_package = BranchPythonOperator(
     #     task_id=SELECTOR_BRANCH_BEFORE_PACKAGE_TASK_ID,
@@ -121,15 +121,15 @@ def notice_processing_pipeline():
     notice_transformation_step = NoticeBatchPipelineOperator(notice_pipeline_callable=notice_transformation_pipeline,
                                                              task_id=NOTICE_TRANSFORMATION_PIPELINE_TASK_ID,
                                                              trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-
-    notice_distillation_step = NoticeBatchPipelineOperator(batch_pipeline_callable=notices_batch_distillation_pipeline,
-                                                           task_id=NOTICE_DISTILLATION_PIPELINE_TASK_ID,
-                                                           trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS
-                                                           )
-
-    notice_validation_step = NoticeBatchPipelineOperator(notice_pipeline_callable=notice_validation_pipeline,
-                                                         task_id=NOTICE_VALIDATION_PIPELINE_TASK_ID,
-                                                         trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+    #
+    # notice_distillation_step = NoticeBatchPipelineOperator(batch_pipeline_callable=notices_batch_distillation_pipeline,
+    #                                                        task_id=NOTICE_DISTILLATION_PIPELINE_TASK_ID,
+    #                                                        trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS
+    #                                                        )
+    #
+    # notice_validation_step = NoticeBatchPipelineOperator(notice_pipeline_callable=notice_validation_pipeline,
+    #                                                      task_id=NOTICE_VALIDATION_PIPELINE_TASK_ID,
+    #                                                      trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
     # notice_package_step = NoticeBatchPipelineOperator(notice_pipeline_callable=notice_package_pipeline,
     #                                                   task_id=NOTICE_PACKAGE_PIPELINE_TASK_ID,
     #                                                   trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
@@ -139,16 +139,19 @@ def notice_processing_pipeline():
     #                                                   trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 
     start_processing >> [notice_normalisation_step, selector_branch_before_transformation,
-                         selector_branch_before_validation,
+                         # selector_branch_before_validation,
                          # selector_branch_before_package, selector_branch_before_publish
                          ]
-    [selector_branch_before_transformation, selector_branch_before_validation,
-     # selector_branch_before_package, selector_branch_before_publish,
-     # notice_publish_step
-     notice_validation_step
+    [selector_branch_before_transformation,
+     # selector_branch_before_validation,
+     # selector_branch_before_package,
+     # selector_branch_before_publish,
+     # notice_publish_step,
+     # notice_validation_step
+     notice_transformation_step
      ] >> stop_processing
     notice_normalisation_step >> selector_branch_before_transformation >> notice_transformation_step
-    notice_transformation_step >> notice_distillation_step >> selector_branch_before_validation >> notice_validation_step
+    # notice_transformation_step >> notice_distillation_step >> selector_branch_before_validation >> notice_validation_step
 
     # notice_validation_step >> selector_branch_before_package >> notice_package_step
     # notice_package_step >> selector_branch_before_publish >> notice_publish_step
