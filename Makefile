@@ -298,7 +298,7 @@ prod-dotenv-file: guard-VAULT_ADDR guard-VAULT_TOKEN vault-installed
 	@ echo XML_PROCESSOR_PATH=${XML_PROCESSOR_PATH} >> .env
 	@ echo AIRFLOW_INFRA_FOLDER=~/airflow-infra/ted-data-prod >> .env
 	@ echo AIRFLOW_WORKER_HOSTNAME=${HOSTNAME} >> .env
-	@ echo AIRFLOW_CELERY_WORKER_CONCURRENCY=4 >> .env
+	@ echo AIRFLOW_CELERY_WORKER_CONCURRENCY=1 >> .env
 	@ vault kv get -format="json" ted-data-prod/airflow | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
 	@ vault kv get -format="json" ted-data-prod/minio | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
 	@ vault kv get -format="json" ted-data-prod/metabase | jq -r ".data.data | keys[] as \$$k | \"\(\$$k)=\(.[\$$k])\"" >> .env
