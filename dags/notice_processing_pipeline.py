@@ -47,8 +47,8 @@ def branch_selector(result_branch: str, xcom_forward_keys: List[str] = [NOTICE_I
 
 @dag(default_args=DEFAULT_DAG_ARGUMENTS,
      schedule_interval=None,
-     max_active_runs=64,
-     max_active_tasks=64,
+     max_active_runs=16,
+     max_active_tasks=16,
      tags=['worker', 'pipeline'])
 def notice_processing_pipeline():
     """
