@@ -17,7 +17,7 @@ from ted_sws.event_manager.services.logger_from_context import get_logger, handl
 NOTICE_IDS_KEY = "notice_ids"
 START_WITH_STEP_NAME_KEY = "start_with_step_name"
 EXECUTE_ONLY_ONE_STEP_KEY = "execute_only_one_step"
-DEFAULT_NUMBER_OF_CELERY_WORKERS = 16  # TODO: revise this config
+DEFAULT_NUMBER_OF_CELERY_WORKERS = 20  # TODO: revise this config
 NOTICE_PROCESSING_PIPELINE_DAG_NAME = "notice_processing_pipeline"
 DEFAULT_START_WITH_TASK_ID = "notice_normalisation_pipeline"
 DEFAULT_PIPELINE_NAME_FOR_LOGS = "unknown_pipeline_name"
