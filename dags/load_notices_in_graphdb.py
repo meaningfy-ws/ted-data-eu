@@ -40,6 +40,9 @@ def load_notices_in_graphdb():
             load_rdf_manifestation_into_triple_store(rdf_manifestation=notice.rdf_manifestation,
                                                      triple_store_repository=graphdb_repository,
                                                      repository_name=graphdb_dataset_name)
+            notice._status = NoticeStatus.PUBLISHED
+            notice_repository.update(notice)
+            
         with ThreadPoolExecutor() as executor:
             features = [executor.submit(load_rdf_manifestation, notice) for notice in notices]
             for feature in features:
