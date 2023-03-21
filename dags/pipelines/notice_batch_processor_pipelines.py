@@ -42,10 +42,11 @@ def transform_notices_by_ids(notice_ids: List[str], mongodb_client: MongoClient)
     from ted_data_eu.services.notice_batch_transformer.notice_batch_transform import MappingSuiteTransformationPool, \
         transform_notice_by_id
     from concurrent.futures import ThreadPoolExecutor
+    import os
 
     mapping_transformation_pool = MappingSuiteTransformationPool(mongodb_client=mongodb_client)
     result_notice_ids = []
-    with ThreadPoolExecutor() as executor:
+    with ThreadPoolExecutor(max_workers=(os.cpu_count() or 1) * 4) as executor:
         features = [executor.submit(transform_notice_by_id, notice_id, mapping_transformation_pool) for notice_id in
                     notice_ids]
         for feature in features:
