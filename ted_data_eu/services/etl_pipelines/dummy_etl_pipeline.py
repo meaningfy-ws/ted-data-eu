@@ -7,9 +7,19 @@ from ted_data_eu.adapters.etl_pipeline_abc import ETLPipelineABC
 
 class DummyETLPipeline(ETLPipelineABC):
 
+    def __init__(self):
+        self.etl_metadata = {}
+
+    def set_metadata(self, etl_metadata: dict):
+        self.etl_metadata = etl_metadata
+
+    def get_metadata(self) -> dict:
+        return self.etl_metadata
+
     def extract(self) -> Dict:
-        print(f"extract: {config.BQ_PATHS['q1']}")
-        print(pathlib.Path(config.BQ_PATHS['q1']).read_text(encoding="utf-8"))
+        etl_metadata = self.get_metadata()
+        self.etl_metadata = {}
+        print(etl_metadata)
         return {"data": "hello"}
 
     def transform(self, extracted_data: Dict) -> Dict:
