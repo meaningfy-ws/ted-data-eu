@@ -56,3 +56,11 @@ def elastic_query():
 @pytest.fixture
 def ted_data_etl_pipeline():
     return TedDataETLPipeline()
+
+@pytest.fixture
+def etl_pipeline_config():
+    return {"start_date": "20180314", "end_date": "20180314"}
+
+@pytest.fixture
+def wrong_etl_pipeline_config():
+    return {"wrong_field": "wrong_value"}
