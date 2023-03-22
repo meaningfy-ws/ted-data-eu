@@ -23,5 +23,5 @@ def test_etl_pipeline():
     data = ted_pipeline.extract()
     data = ted_pipeline.transform(data)
     ted_pipeline.load(data)
-    print(data['data'].head().to_string())
+    #print(data['data'].head().to_string())
 
