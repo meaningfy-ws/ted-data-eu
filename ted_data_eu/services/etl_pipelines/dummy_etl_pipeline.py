@@ -9,6 +9,10 @@ class DummyETLPipeline(ETLPipelineABC):
 
     def __init__(self):
         self.etl_metadata = {}
+        self.pipeline_name = "dummy_pipeline"
+
+    def get_pipeline_name(self) -> str:
+        return self.pipeline_name
 
     def set_metadata(self, etl_metadata: dict):
         self.etl_metadata = etl_metadata
@@ -31,6 +35,9 @@ class DummyETLPipeline(ETLPipelineABC):
 
 
 class TestETLPipeline(ETLPipelineABC):
+
+    def get_pipeline_name(self) -> str:
+        return "test_etl_pipeline"
 
     def set_metadata(self, etl_metadata: dict):
         pass

@@ -8,6 +8,13 @@ class ETLPipelineABC(abc.ABC):
     """
 
     @abc.abstractmethod
+    def get_pipeline_name(self)->str:
+        """
+            Return unique pipeline name
+        :return:
+        """
+
+    @abc.abstractmethod
     def set_metadata(self, etl_metadata: dict):
         """
 
