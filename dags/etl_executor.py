@@ -6,6 +6,7 @@ from dags import DEFAULT_DAG_ARGUMENTS
 from dags.operators.ETLStepOperator import ExtractStepOperator, TransformStepOperator, LoadStepOperator
 from ted_data_eu.adapters.etl_pipeline_register import ETLPipelineRegister
 from ted_data_eu.services.etl_pipelines.dummy_etl_pipeline import DummyETLPipeline, TestETLPipeline
+from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import TED_DATA_ETL_PIPELINE_NAME, TedDataETLPipeline
 
 ETL_METADATA_DAG_CONFIG_KEY = "etl_metadata"
 
@@ -17,8 +18,8 @@ def init_etl_pipelines_register():
         This function is used for register all ETL pipelines inside DAG.
     :return:
     """
-    etl_pipelines_register.register(etl_pipeline_name="cpv_index_etl", etl_pipeline=DummyETLPipeline())
-    etl_pipelines_register.register(etl_pipeline_name="Test ETL 2 pipeline", etl_pipeline=TestETLPipeline())
+    etl_pipelines_register.register(etl_pipeline_name=TED_DATA_ETL_PIPELINE_NAME, etl_pipeline=TedDataETLPipeline())
+
 
 @dag(default_args=DEFAULT_DAG_ARGUMENTS,
      schedule_interval=None,

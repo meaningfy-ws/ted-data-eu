@@ -3,13 +3,14 @@ from datetime import datetime, date
 from string import Template
 from typing import Dict
 
+import pandas as pd
 from dateutil import rrule
 
 from ted_data_eu import config
 from ted_data_eu.adapters.etl_pipeline_abc import ETLPipelineABC
 from ted_data_eu.adapters.storage import ElasticStorage
 from ted_data_eu.adapters.triple_store import GraphDBAdapter
-
+from ted_data_eu.services.data_load_service import load_documents_to_storage
 
 TED_DATA_ETL_PIPELINE_NAME = "ted_data"
 START_DATE_METADATA_FIELD = "start_date"
@@ -81,6 +82,7 @@ class TedDataETLPipeline(ETLPipelineABC):
         data_table[LOT_NUTS_COLUMN_NAME] = data_table[LOT_NUTS_COLUMN_NAME].apply(lambda x: x.split('/')[-1])
         data_table[CURRENCY_COLUMN_NAME] = data_table[CURRENCY_COLUMN_NAME].apply(lambda x: x.split('/')[-1])
         data_table[LOT_TITLE_COLUMN_NAME] = data_table[LOT_TITLE_COLUMN_NAME].apply(lambda x: x.strip())
+        data_table[PUBLICATION_DATE_COLUMN_NAME] = data_table[PUBLICATION_DATE_COLUMN_NAME].apply(lambda x: pd.to_datetime(str(x), format='%Y%m%d'))
         return {"data": data_table}
 
     def load(self, transformed_data: Dict):
@@ -100,4 +102,4 @@ class TedDataETLPipeline(ETLPipelineABC):
                     PROCEDURE_TYPE_COLUMN_NAME: row[PROCEDURE_TYPE_COLUMN_NAME]
                 }
             )
-        elastic_storage.add_documents(documents=documents)
+        load_documents_to_storage(documents=documents, storage=elastic_storage)
