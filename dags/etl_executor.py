@@ -5,7 +5,6 @@ from airflow.utils.task_group import TaskGroup
 from dags import DEFAULT_DAG_ARGUMENTS
 from dags.operators.ETLStepOperator import ExtractStepOperator, TransformStepOperator, LoadStepOperator
 from ted_data_eu.adapters.etl_pipeline_register import ETLPipelineRegister
-from ted_data_eu.services.etl_pipelines.dummy_etl_pipeline import DummyETLPipeline, TestETLPipeline
 from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import TED_DATA_ETL_PIPELINE_NAME, TedDataETLPipeline
 
 ETL_METADATA_DAG_CONFIG_KEY = "etl_metadata"
