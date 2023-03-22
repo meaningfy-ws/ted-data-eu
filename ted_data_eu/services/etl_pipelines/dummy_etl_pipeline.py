@@ -1,8 +1,12 @@
 import pathlib
 from typing import Dict
 
+from dags.etl_executor import TED_DATA_ETL_PIPELINE_NAME
 from ted_data_eu import config
 from ted_data_eu.adapters.etl_pipeline_abc import ETLPipelineABC
+from ted_data_eu.adapters.triple_store import GraphDBAdapter
+
+
 
 
 class DummyETLPipeline(ETLPipelineABC):
