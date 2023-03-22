@@ -32,6 +32,12 @@ class DummyETLPipeline(ETLPipelineABC):
 
 class TestETLPipeline(ETLPipelineABC):
 
+    def set_metadata(self, etl_metadata: dict):
+        pass
+
+    def get_metadata(self) -> dict:
+        return None
+
     def extract(self) -> Dict:
         print("extract: HELLO1")
         return {"data": "hello1"}
