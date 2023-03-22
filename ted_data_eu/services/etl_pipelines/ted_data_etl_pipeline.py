@@ -102,4 +102,5 @@ class TedDataETLPipeline(ETLPipelineABC):
                     PROCEDURE_TYPE_COLUMN_NAME: row[PROCEDURE_TYPE_COLUMN_NAME]
                 }
             )
-        load_documents_to_storage(documents=documents, storage=elastic_storage)
+        elastic_storage.add_documents(documents=documents)
+        #load_documents_to_storage(documents=documents, storage=elastic_storage)
