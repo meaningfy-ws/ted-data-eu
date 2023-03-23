@@ -10,7 +10,7 @@ select distinct
 ?winner_nuts
 ?ammount_value
 ?currency
-?lot_title
+?procedure_title
 ?lot_nuts_code
 ?procedure_type
 where {
@@ -31,9 +31,9 @@ where {
                       epo:hasLegalName ?winner_name;
                       cccev:registeredAddress / epo:hasNutsCode ?winner_nuts.
         ?lot a epo:Lot;
-             epo:hasTitle ?lot_title;
              epo:foreseesContractSpecificTerm / epo:definesSpecificPlaceOfPerformance / epo:hasNutsCode ?lot_nuts_code.
         ?procedure a epo:Procedure;
+                   epo:hasTitle ?procedure_title;
                    epo:hasProcurementScopeDividedIntoLot ?lot;
                    epo:hasProcedureType ?procedure_type.
     }

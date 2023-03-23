@@ -24,7 +24,7 @@ CURRENCY_COLUMN_NAME = "currency"
 PUBLICATION_DATE_COLUMN_NAME = "publication_date"
 WINNER_NAME_COLUMN_NAME = "winner_name"
 AMMOUNT_VALUE_COLUMN_NAME = "ammount_value"
-LOT_TITLE_COLUMN_NAME = "lot_title"
+PROCEDURE_TITLE_COLUMN_NAME = "procedure_title"
 
 def generate_dates_by_date_range(start_date: str, end_date: str) -> list:
     """
@@ -81,7 +81,7 @@ class TedDataETLPipeline(ETLPipelineABC):
         data_table[PROCEDURE_TYPE_COLUMN_NAME] = data_table[PROCEDURE_TYPE_COLUMN_NAME].apply(lambda x: x.split('/')[-1])
         data_table[LOT_NUTS_COLUMN_NAME] = data_table[LOT_NUTS_COLUMN_NAME].apply(lambda x: x.split('/')[-1])
         data_table[CURRENCY_COLUMN_NAME] = data_table[CURRENCY_COLUMN_NAME].apply(lambda x: x.split('/')[-1])
-        data_table[LOT_TITLE_COLUMN_NAME] = data_table[LOT_TITLE_COLUMN_NAME].apply(lambda x: x.strip())
+        data_table[PROCEDURE_TITLE_COLUMN_NAME] = data_table[PROCEDURE_TITLE_COLUMN_NAME].apply(lambda x: x.strip())
         data_table[PUBLICATION_DATE_COLUMN_NAME] = data_table[PUBLICATION_DATE_COLUMN_NAME].apply(lambda x: pd.to_datetime(str(x), format='%Y%m%d'))
         return {"data": data_table}
 
@@ -97,7 +97,7 @@ class TedDataETLPipeline(ETLPipelineABC):
                     WINNER_NUTS_COLUMN_NAME: row[WINNER_NUTS_COLUMN_NAME],
                     AMMOUNT_VALUE_COLUMN_NAME: row[AMMOUNT_VALUE_COLUMN_NAME],
                     CURRENCY_COLUMN_NAME: row[CURRENCY_COLUMN_NAME],
-                    LOT_TITLE_COLUMN_NAME: row[LOT_TITLE_COLUMN_NAME],
+                    PROCEDURE_TITLE_COLUMN_NAME: row[PROCEDURE_TITLE_COLUMN_NAME],
                     LOT_NUTS_COLUMN_NAME: row[LOT_NUTS_COLUMN_NAME],
                     PROCEDURE_TYPE_COLUMN_NAME: row[PROCEDURE_TYPE_COLUMN_NAME]
                 }

@@ -1,9 +1,9 @@
 import pytest
 
-from ted_data_eu.adapters.triple_store import GraphDBAdapter
 from ted_data_eu.adapters.storage import ElasticStorage
+from ted_data_eu.adapters.triple_store import GraphDBAdapter
 from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import TedDataETLPipeline
-from tests.test_data import TEST_RDF_MANIFESTATIONS_PATH, TEST_DOCUMENTS_PATH
+from tests.test_data import TEST_RDF_MANIFESTATIONS_PATH, TEST_DOCUMENTS_PATH, TEST_NOTICES_PATH
 
 REPOSITORY_NAME = "unknown_repository_123456677"
 SPARQL_QUERY_TRIPLES = "select * {?s ?p ?o}"
@@ -53,14 +53,17 @@ def elastic_storage(elastic_index):
 def elastic_query():
     return {"match_all": {}}
 
+
 @pytest.fixture
 def ted_data_etl_pipeline():
     return TedDataETLPipeline()
 
-@pytest.fixture
-def etl_pipeline_config():
-    return {"start_date": "20180314", "end_date": "20180314"}
 
 @pytest.fixture
-def wrong_etl_pipeline_config():
-    return {"wrong_field": "wrong_value"}
+def etl_pipeline_config():
+    return {"start_date": "20210912", "end_date": "20210914"}
+
+
+@pytest.fixture
+def example_notices():
+    return list(TEST_NOTICES_PATH.iterdir())
