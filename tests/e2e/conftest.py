@@ -61,7 +61,7 @@ def ted_data_etl_pipeline():
 
 @pytest.fixture
 def etl_pipeline_config():
-    return {"start_date": "20210912", "end_date": "20210914"}
+    return {"start_date": "20180314", "end_date": "20180314"}
 
 
 @pytest.fixture

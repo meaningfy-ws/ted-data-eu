@@ -13,6 +13,7 @@ select distinct
 ?procedure_title
 ?lot_nuts_code
 ?procedure_type
+?lot
 where {
     values ?publication_date {
             $date_range
