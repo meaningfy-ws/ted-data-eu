@@ -27,6 +27,17 @@ WINNER_NAME_COLUMN_NAME = "winner_name"
 AMMOUNT_VALUE_COLUMN_NAME = "ammount_value"
 PROCEDURE_TITLE_COLUMN_NAME = "procedure_title"
 
+TED_DATA_COLUMNS = [
+    PROCEDURE_TYPE_COLUMN_NAME,
+    WINNER_NUTS_COLUMN_NAME,
+    LOT_NUTS_COLUMN_NAME,
+    CURRENCY_COLUMN_NAME,
+    PUBLICATION_DATE_COLUMN_NAME,
+    WINNER_NAME_COLUMN_NAME,
+    AMMOUNT_VALUE_COLUMN_NAME,
+    PROCEDURE_TITLE_COLUMN_NAME
+]
+
 def generate_dates_by_date_range(start_date: str, end_date: str) -> list:
     """
         Given a date range returns all daily dates in that range
@@ -99,10 +110,18 @@ class TedDataETLPipeline(ETLPipelineABC):
 
     def transform(self, extracted_data: Dict) -> Dict:
         data_table = extracted_data['data']
+        columns_wihtout_date = TED_DATA_COLUMNS
+        columns_wihtout_date.remove(PUBLICATION_DATE_COLUMN_NAME)
+        data_table.dropna(subset=columns_wihtout_date, how='all', inplace=True)
+
+        data_table[WINNER_NUTS_COLUMN_NAME] = data_table[WINNER_NUTS_COLUMN_NAME].astype(str)
+        data_table[PROCEDURE_TYPE_COLUMN_NAME] = data_table[PROCEDURE_TYPE_COLUMN_NAME].astype(str)
+        data_table[LOT_NUTS_COLUMN_NAME] = data_table[LOT_NUTS_COLUMN_NAME].astype(str)
+        data_table[PROCEDURE_TITLE_COLUMN_NAME] = data_table[PROCEDURE_TITLE_COLUMN_NAME].astype(str)
+
         data_table[WINNER_NUTS_COLUMN_NAME] = data_table[WINNER_NUTS_COLUMN_NAME].apply(lambda x: x.split('/')[-1])
         data_table[PROCEDURE_TYPE_COLUMN_NAME] = data_table[PROCEDURE_TYPE_COLUMN_NAME].apply(lambda x: x.split('/')[-1])
         data_table[LOT_NUTS_COLUMN_NAME] = data_table[LOT_NUTS_COLUMN_NAME].apply(lambda x: x.split('/')[-1])
-        data_table[CURRENCY_COLUMN_NAME] = data_table[CURRENCY_COLUMN_NAME].apply(lambda x: x.split('/')[-1])
         data_table[PROCEDURE_TITLE_COLUMN_NAME] = data_table[PROCEDURE_TITLE_COLUMN_NAME].apply(lambda x: x.strip())
         data_table[PUBLICATION_DATE_COLUMN_NAME] = data_table[PUBLICATION_DATE_COLUMN_NAME].apply(lambda x: pd.to_datetime(str(x), format='%Y%m%d'))
         return {"data": data_table}

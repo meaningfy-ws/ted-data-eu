@@ -17,9 +17,9 @@ where {
     values ?publication_date {
             $date_range
     }
+    OPTIONAL {
     ?result_notice a epo:ResultNotice;
                    epo:hasPublicationDate ?publication_date.
-    OPTIONAL {
         #epo:announcesRole / epo:playedBy / epo:hasLegalName ?buyer_name;
         ?result_notice epo:announcesContract / epo:resultsFromLotAwardOutcome ?lot_award_outcome.
         ?lot_award_outcome a epo:LotAwardOutcome;
