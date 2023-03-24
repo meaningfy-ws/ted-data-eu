@@ -102,10 +102,6 @@ class TedDataETLPipeline(ETLPipelineABC):
         sparql_query_str = sparql_query_template.substitute(date_range=date_range)
         triple_store_endpoint = GraphDBAdapter().get_sparql_triple_store_endpoint(repository_name=TRIPLE_STORE_ENDPOINT)
         result_table = triple_store_endpoint.with_query(sparql_query_str).fetch_tabular()
-        if result_table.empty:
-            raise TedETLException("No data was been fetched from triple store!")
-        else:
-            logging.info(result_table.head())
         return {"data": result_table}
 
     def transform(self, extracted_data: Dict) -> Dict:
@@ -113,6 +109,10 @@ class TedDataETLPipeline(ETLPipelineABC):
         columns_wihtout_date = TED_DATA_COLUMNS
         columns_wihtout_date.remove(PUBLICATION_DATE_COLUMN_NAME)
         data_table.dropna(subset=columns_wihtout_date, how='all', inplace=True)
+        if data_table.empty:
+            raise TedETLException("No data was been fetched from triple store!")
+        else:
+            logging.info(data_table.head())
 
         data_table[WINNER_NUTS_COLUMN_NAME] = data_table[WINNER_NUTS_COLUMN_NAME].astype(str)
         data_table[PROCEDURE_TYPE_COLUMN_NAME] = data_table[PROCEDURE_TYPE_COLUMN_NAME].astype(str)
