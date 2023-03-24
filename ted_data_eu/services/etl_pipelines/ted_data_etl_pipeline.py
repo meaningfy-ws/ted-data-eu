@@ -89,7 +89,7 @@ class TedDataETLPipeline(ETLPipelineABC):
         sparql_query_str = sparql_query_template.substitute(date_range=date_range)
         triple_store_endpoint = GraphDBAdapter().get_sparql_triple_store_endpoint(repository_name=TRIPLE_STORE_ENDPOINT)
         result_table = triple_store_endpoint.with_query(sparql_query_str).fetch_tabular()
-        if result_table.empy:
+        if result_table.empty:
             raise TedETLException("No data was been fetched from triple store!")
         else:
             logging.info(result_table.head())
