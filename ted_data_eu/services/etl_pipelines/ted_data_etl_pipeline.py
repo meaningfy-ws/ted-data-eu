@@ -2,6 +2,7 @@ import pathlib
 from datetime import datetime, date, timedelta
 from string import Template
 from typing import Dict
+import logging
 
 import pandas as pd
 from dateutil import rrule
@@ -26,6 +27,17 @@ WINNER_NAME_COLUMN_NAME = "winner_name"
 AMMOUNT_VALUE_COLUMN_NAME = "ammount_value"
 PROCEDURE_TITLE_COLUMN_NAME = "procedure_title"
 
+TED_DATA_COLUMNS = [
+    PROCEDURE_TYPE_COLUMN_NAME,
+    WINNER_NUTS_COLUMN_NAME,
+    LOT_NUTS_COLUMN_NAME,
+    CURRENCY_COLUMN_NAME,
+    PUBLICATION_DATE_COLUMN_NAME,
+    WINNER_NAME_COLUMN_NAME,
+    AMMOUNT_VALUE_COLUMN_NAME,
+    PROCEDURE_TITLE_COLUMN_NAME
+]
+
 def generate_dates_by_date_range(start_date: str, end_date: str) -> list:
     """
         Given a date range returns all daily dates in that range
@@ -40,14 +52,29 @@ def generate_dates_by_date_range(start_date: str, end_date: str) -> list:
 
 
 def generate_sparql_filter_by_date_range(start_date: str, end_date: str) -> str:
+    """
+        Given a date range returns all daily dates in string format for sparql query
+    :param start_date:
+    :param end_date:
+    :return:
+    """
     date_range = generate_dates_by_date_range(start_date, end_date)
     result_string = list(map(lambda x: f"\"{x}\"", date_range))
 
     return " ".join(result_string)
 
 
-class TedDataETLPipeline(ETLPipelineABC):
+class TedETLException(Exception):
+    """
+        TedData ETL Exception
+    """
+    pass
 
+
+class TedDataETLPipeline(ETLPipelineABC):
+    """
+        ETL Class that gets data from TDA endpoint, transforms and inserts result to document storage
+    """
     def __init__(self):
         self.etl_metadata = {}
         self.pipeline_name = TED_DATA_ETL_PIPELINE_NAME
@@ -66,7 +93,9 @@ class TedDataETLPipeline(ETLPipelineABC):
         etl_metadata_fields = etl_metadata.keys()
         if START_DATE_METADATA_FIELD in etl_metadata_fields and END_DATE_METADATA_FIELD in etl_metadata_fields:
             date_range = generate_sparql_filter_by_date_range(etl_metadata[START_DATE_METADATA_FIELD], etl_metadata[END_DATE_METADATA_FIELD])
+            logging.info("Querying data from date range")
         else:
+            logging.info("Querying data from yesterday")
             date_range = (date.today() - timedelta(days=1)).strftime("\"%Y%m%d\"")
 
         sparql_query_template = Template(config.BQ_PATHS[TED_DATA_ETL_PIPELINE_NAME].read_text(encoding='utf-8'))
@@ -77,12 +106,25 @@ class TedDataETLPipeline(ETLPipelineABC):
 
     def transform(self, extracted_data: Dict) -> Dict:
         data_table = extracted_data['data']
-        data_table[WINNER_NUTS_COLUMN_NAME] = data_table[WINNER_NUTS_COLUMN_NAME].apply(lambda x: x.split('/')[-1])
-        data_table[PROCEDURE_TYPE_COLUMN_NAME] = data_table[PROCEDURE_TYPE_COLUMN_NAME].apply(lambda x: x.split('/')[-1])
-        data_table[LOT_NUTS_COLUMN_NAME] = data_table[LOT_NUTS_COLUMN_NAME].apply(lambda x: x.split('/')[-1])
-        data_table[CURRENCY_COLUMN_NAME] = data_table[CURRENCY_COLUMN_NAME].apply(lambda x: x.split('/')[-1])
-        data_table[PROCEDURE_TITLE_COLUMN_NAME] = data_table[PROCEDURE_TITLE_COLUMN_NAME].apply(lambda x: x.strip())
-        data_table[PUBLICATION_DATE_COLUMN_NAME] = data_table[PUBLICATION_DATE_COLUMN_NAME].apply(lambda x: pd.to_datetime(str(x), format='%Y%m%d'))
+        columns_wihtout_date = TED_DATA_COLUMNS
+        columns_wihtout_date.remove(PUBLICATION_DATE_COLUMN_NAME)
+        data_table.dropna(subset=columns_wihtout_date, how='all', inplace=True)
+        if data_table.empty:
+            raise TedETLException("No data was been fetched from triple store!")
+        else:
+            logging.info(data_table.head())
+
+        data_table[WINNER_NUTS_COLUMN_NAME] = data_table[WINNER_NUTS_COLUMN_NAME].astype(str)
+        data_table[PROCEDURE_TYPE_COLUMN_NAME] = data_table[PROCEDURE_TYPE_COLUMN_NAME].astype(str)
+        data_table[LOT_NUTS_COLUMN_NAME] = data_table[LOT_NUTS_COLUMN_NAME].astype(str)
+        data_table[PROCEDURE_TITLE_COLUMN_NAME] = data_table[PROCEDURE_TITLE_COLUMN_NAME].astype(str)
+
+        data_table[WINNER_NUTS_COLUMN_NAME] = data_table[WINNER_NUTS_COLUMN_NAME].apply(lambda x: x.split('/')[-1] if x else x)
+        data_table[PROCEDURE_TYPE_COLUMN_NAME] = data_table[PROCEDURE_TYPE_COLUMN_NAME].apply(lambda x: x.split('/')[-1] if x else x)
+        data_table[LOT_NUTS_COLUMN_NAME] = data_table[LOT_NUTS_COLUMN_NAME].apply(lambda x: x.split('/')[-1] if x else x)
+        data_table[CURRENCY_COLUMN_NAME] = data_table[CURRENCY_COLUMN_NAME].apply(lambda x: x.split('/')[-1] if x else x)
+        data_table[PROCEDURE_TITLE_COLUMN_NAME] = data_table[PROCEDURE_TITLE_COLUMN_NAME].apply(lambda x: x.strip() if x else x)
+        data_table[PUBLICATION_DATE_COLUMN_NAME] = data_table[PUBLICATION_DATE_COLUMN_NAME].apply(lambda x: pd.to_datetime(str(x), format='%Y%m%d') if x else x)
         return {"data": data_table}
 
     def load(self, transformed_data: Dict):
