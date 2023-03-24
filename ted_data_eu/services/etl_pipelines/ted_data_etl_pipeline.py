@@ -1,5 +1,5 @@
 import pathlib
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from string import Template
 from typing import Dict
 
@@ -67,7 +67,7 @@ class TedDataETLPipeline(ETLPipelineABC):
         if START_DATE_METADATA_FIELD in etl_metadata_fields and END_DATE_METADATA_FIELD in etl_metadata_fields:
             date_range = generate_sparql_filter_by_date_range(etl_metadata[START_DATE_METADATA_FIELD], etl_metadata[END_DATE_METADATA_FIELD])
         else:
-            date_range = date.today().strftime("\"%Y%m%d\"")
+            date_range = (date.today() - timedelta(days=1)).strftime("\"%Y%m%d\"")
 
         sparql_query_template = Template(config.BQ_PATHS[TED_DATA_ETL_PIPELINE_NAME].read_text(encoding='utf-8'))
         sparql_query_str = sparql_query_template.substitute(date_range=date_range)
