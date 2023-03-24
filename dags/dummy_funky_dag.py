@@ -15,7 +15,7 @@ def dummy_funky_dag():
 
         :return:
         """
-        elastic_storage = ElasticStorage(elastic_index=TED_DATA_ETL_PIPELINE_NAME)
+        elastic_storage = ElasticStorage(elastic_index="test_index")
 
 
     test()
