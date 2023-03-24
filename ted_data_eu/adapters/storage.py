@@ -1,4 +1,3 @@
-import time
 from typing import Dict, List
 from ted_data_eu import config
 from ted_data_eu.adapters.storage_abc import DocumentStorageABC
