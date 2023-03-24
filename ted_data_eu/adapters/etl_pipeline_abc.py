@@ -6,6 +6,29 @@ class ETLPipelineABC(abc.ABC):
     """
         This class represents a template for an ETL pipeline.
     """
+
+    @abc.abstractmethod
+    def get_pipeline_name(self)->str:
+        """
+            Return unique pipeline name
+        :return:
+        """
+
+    @abc.abstractmethod
+    def set_metadata(self, etl_metadata: dict):
+        """
+
+        :param etl_metadata:
+        :return:
+        """
+
+    @abc.abstractmethod
+    def get_metadata(self)->dict:
+        """
+
+        :return:
+        """
+
     @abc.abstractmethod
     def extract(self) -> Dict:
         """

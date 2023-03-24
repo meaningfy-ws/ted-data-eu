@@ -2,10 +2,11 @@ from abc import ABC
 from typing import Any
 
 from airflow.models import BaseOperator
-from dags.dags_utils import pull_dag_upstream, push_dag_downstream
+from dags.dags_utils import pull_dag_upstream, push_dag_downstream, get_dag_param
 from ted_data_eu.adapters.etl_pipeline_abc import ETLPipelineABC
 
 ETL_STEP_DATA_KEY = "etl_step_data"
+ETL_METADATA_DAG_CONFIG_KEY = "etl_metadata"
 
 
 class ETLStepOperatorABC(BaseOperator, ABC):
@@ -30,6 +31,9 @@ class ExtractStepOperator(ETLStepOperatorABC):
         :param context:
         :return:
         """
+        etl_dag_metadata = get_dag_param(key=ETL_METADATA_DAG_CONFIG_KEY, default_value={})
+        if self.etl_pipeline.get_pipeline_name() in etl_dag_metadata.keys():
+            self.etl_pipeline.set_metadata(etl_metadata=etl_dag_metadata[self.etl_pipeline.get_pipeline_name()])
         result_data = self.etl_pipeline.extract()
         push_dag_downstream(key=ETL_STEP_DATA_KEY, value=result_data)
 

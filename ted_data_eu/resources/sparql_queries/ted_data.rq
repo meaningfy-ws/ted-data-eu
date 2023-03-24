@@ -1,0 +1,40 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX locn: <http://www.w3.org/ns/locn#>
+PREFIX cccev: <http://data.europa.eu/m8g/>
+PREFIX org: <http://www.w3.org/ns/org#>
+
+select distinct
+?publication_date
+#?buyer_name
+?winner_name
+?winner_nuts
+?ammount_value
+?currency
+?procedure_title
+?lot_nuts_code
+?procedure_type
+where {
+    values ?publication_date {
+            $date_range
+    }
+    ?result_notice a epo:ResultNotice;
+                   epo:hasPublicationDate ?publication_date.
+    OPTIONAL {
+        #epo:announcesRole / epo:playedBy / epo:hasLegalName ?buyer_name;
+        ?result_notice epo:announcesContract / epo:resultsFromLotAwardOutcome ?lot_award_outcome.
+        ?lot_award_outcome a epo:LotAwardOutcome;
+                           epo:comprisesTenderAwardOutcome / epo:indicatesAwardOfLotToWinner / epo:playedBy ?Organization;
+                           epo:hasAwardedValue / epo:hasAmountValue ?ammount_value;
+                           epo:hasAwardedValue / epo:hasCurrency ?currency;                                                                                                                               							 epo:describesLot ?lot.
+
+        ?Organization a org:Organization;
+                      epo:hasLegalName ?winner_name;
+                      cccev:registeredAddress / epo:hasNutsCode ?winner_nuts.
+        ?lot a epo:Lot;
+             epo:foreseesContractSpecificTerm / epo:definesSpecificPlaceOfPerformance / epo:hasNutsCode ?lot_nuts_code.
+        ?procedure a epo:Procedure;
+                   epo:hasTitle ?procedure_title;
+                   epo:hasProcurementScopeDividedIntoLot ?lot;
+                   epo:hasProcedureType ?procedure_type.
+    }
+}
