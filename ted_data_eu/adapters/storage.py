@@ -32,6 +32,7 @@ class ElasticStorage(DocumentStorageABC):
         """
         host = host or config.ELASTIC_HOST
         basic_auth = (user or config.ELASTIC_USER, password or config.ELASTIC_PASSWORD)
+        print("basic_auth:", basic_auth)
         self.es_client = Elasticsearch(hosts=[f"{host}:443"], basic_auth=basic_auth)
         self.elastic_index = elastic_index
         if not self.es_client.indices.exists(index=self.elastic_index):
