@@ -2,6 +2,7 @@ import pathlib
 from datetime import datetime, date, timedelta
 from string import Template
 from typing import Dict
+import logging
 
 import pandas as pd
 from dateutil import rrule
@@ -40,14 +41,29 @@ def generate_dates_by_date_range(start_date: str, end_date: str) -> list:
 
 
 def generate_sparql_filter_by_date_range(start_date: str, end_date: str) -> str:
+    """
+        Given a date range returns all daily dates in string format for sparql query
+    :param start_date:
+    :param end_date:
+    :return:
+    """
     date_range = generate_dates_by_date_range(start_date, end_date)
     result_string = list(map(lambda x: f"\"{x}\"", date_range))
 
     return " ".join(result_string)
 
 
-class TedDataETLPipeline(ETLPipelineABC):
+class TedETLException(Exception):
+    """
+        TedData ETL Exception
+    """
+    pass
 
+
+class TedDataETLPipeline(ETLPipelineABC):
+    """
+        ETL Class that gets data from TDA endpoint, transforms and inserts result to document storage
+    """
     def __init__(self):
         self.etl_metadata = {}
         self.pipeline_name = TED_DATA_ETL_PIPELINE_NAME
@@ -73,6 +89,10 @@ class TedDataETLPipeline(ETLPipelineABC):
         sparql_query_str = sparql_query_template.substitute(date_range=date_range)
         triple_store_endpoint = GraphDBAdapter().get_sparql_triple_store_endpoint(repository_name=TRIPLE_STORE_ENDPOINT)
         result_table = triple_store_endpoint.with_query(sparql_query_str).fetch_tabular()
+        if result_table.empy:
+            raise TedETLException("No data was been fetched from triple store!")
+        else:
+            logging.info(result_table.head())
         return {"data": result_table}
 
     def transform(self, extracted_data: Dict) -> Dict:
