@@ -87,19 +87,19 @@ class TedDataETLPipeline(ETLPipelineABC):
 
     def load(self, transformed_data: Dict):
         elastic_storage = ElasticStorage(elastic_index=TED_DATA_ETL_PIPELINE_NAME)
-        # data_table = transformed_data['data']
-        # documents = []
-        # for index, row in data_table.iterrows():
-        #     documents.append(
-        #         {
-        #             PUBLICATION_DATE_COLUMN_NAME: row[PUBLICATION_DATE_COLUMN_NAME],
-        #             WINNER_NAME_COLUMN_NAME: row[WINNER_NAME_COLUMN_NAME],
-        #             WINNER_NUTS_COLUMN_NAME: row[WINNER_NUTS_COLUMN_NAME],
-        #             AMMOUNT_VALUE_COLUMN_NAME: row[AMMOUNT_VALUE_COLUMN_NAME],
-        #             CURRENCY_COLUMN_NAME: row[CURRENCY_COLUMN_NAME],
-        #             PROCEDURE_TITLE_COLUMN_NAME: row[PROCEDURE_TITLE_COLUMN_NAME],
-        #             LOT_NUTS_COLUMN_NAME: row[LOT_NUTS_COLUMN_NAME],
-        #             PROCEDURE_TYPE_COLUMN_NAME: row[PROCEDURE_TYPE_COLUMN_NAME]
-        #         }
-        #     )
-        # load_documents_to_storage(documents=documents, storage=elastic_storage)
+        data_table = transformed_data['data']
+        documents = []
+        for index, row in data_table.iterrows():
+            documents.append(
+                {
+                    PUBLICATION_DATE_COLUMN_NAME: row[PUBLICATION_DATE_COLUMN_NAME],
+                    WINNER_NAME_COLUMN_NAME: row[WINNER_NAME_COLUMN_NAME],
+                    WINNER_NUTS_COLUMN_NAME: row[WINNER_NUTS_COLUMN_NAME],
+                    AMMOUNT_VALUE_COLUMN_NAME: row[AMMOUNT_VALUE_COLUMN_NAME],
+                    CURRENCY_COLUMN_NAME: row[CURRENCY_COLUMN_NAME],
+                    PROCEDURE_TITLE_COLUMN_NAME: row[PROCEDURE_TITLE_COLUMN_NAME],
+                    LOT_NUTS_COLUMN_NAME: row[LOT_NUTS_COLUMN_NAME],
+                    PROCEDURE_TYPE_COLUMN_NAME: row[PROCEDURE_TYPE_COLUMN_NAME]
+                }
+            )
+        load_documents_to_storage(documents=documents, storage=elastic_storage)
