@@ -1,3 +1,4 @@
+import time
 from typing import Dict, List
 from ted_data_eu import config
 from ted_data_eu.adapters.storage_abc import DocumentStorageABC
@@ -34,6 +35,7 @@ class ElasticStorage(DocumentStorageABC):
         basic_auth = (user or config.ELASTIC_USER, password or config.ELASTIC_PASSWORD)
         self.es_client = Elasticsearch(hosts=[f"{host}:443"], basic_auth=basic_auth)
         self.elastic_index = elastic_index
+        time.sleep(15)
         if not self.es_client.indices.exists(index=self.elastic_index):
             self.es_client.indices.create(index=self.elastic_index)
 
