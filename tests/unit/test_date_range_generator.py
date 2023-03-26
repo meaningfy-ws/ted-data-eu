@@ -1,8 +1,4 @@
-from string import Template
-
-from ted_data_eu import config
-from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import TedDataETLPipeline, \
-    generate_sparql_filter_by_date_range
+from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import generate_sparql_filter_by_date_range
 from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import generate_dates_by_date_range
 
 
