@@ -140,5 +140,4 @@ class TedDataETLPipeline(ETLPipelineABC):
             # Using Lot URL as id
             row_dict['_id'] = row[LOT_URL_COLUMN_NAME]
             documents.append(row_dict)
-        #print(documents)
         load_documents_to_storage(documents=documents, storage=elastic_storage)
