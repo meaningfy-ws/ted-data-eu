@@ -4,8 +4,10 @@ PREFIX cccev: <http://data.europa.eu/m8g/>
 PREFIX org: <http://www.w3.org/ns/org#>
 
 select distinct
+?lot
+?buyer_name
+?lot_cpv
 ?publication_date
-#?buyer_name
 ?winner_name
 ?winner_nuts
 ?ammount_value
@@ -13,16 +15,15 @@ select distinct
 ?procedure_title
 ?lot_nuts_code
 ?procedure_type
-?lot
 where {
     values ?publication_date {
             $date_range
     }
     OPTIONAL {
     ?result_notice a epo:ResultNotice;
-                   epo:hasPublicationDate ?publication_date.
-        #epo:announcesRole / epo:playedBy / epo:hasLegalName ?buyer_name;
-        ?result_notice epo:announcesContract / epo:resultsFromLotAwardOutcome ?lot_award_outcome.
+                   	epo:hasPublicationDate ?publication_date;
+        			epo:announcesRole / epo:playedBy / epo:hasLegalName ?buyer_name;
+        			epo:announcesContract / epo:resultsFromLotAwardOutcome ?lot_award_outcome.
         ?lot_award_outcome a epo:LotAwardOutcome;
                            epo:comprisesTenderAwardOutcome / epo:indicatesAwardOfLotToWinner / epo:playedBy ?Organization;
                            epo:hasAwardedValue / epo:hasAmountValue ?ammount_value;
@@ -32,7 +33,8 @@ where {
                       epo:hasLegalName ?winner_name;
                       cccev:registeredAddress / epo:hasNutsCode ?winner_nuts.
         ?lot a epo:Lot;
-             epo:foreseesContractSpecificTerm / epo:definesSpecificPlaceOfPerformance / epo:hasNutsCode ?lot_nuts_code.
+             	   epo:foreseesContractSpecificTerm / epo:definesSpecificPlaceOfPerformance / epo:hasNutsCode ?lot_nuts_code;
+                   epo:hasPurpose / epo:hasAdditionalClassification ?lot_cpv.
         ?procedure a epo:Procedure;
                    epo:hasTitle ?procedure_title;
                    epo:hasProcurementScopeDividedIntoLot ?lot;

@@ -1,19 +1,11 @@
 import pandas as pd
 
-from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import PROCEDURE_TYPE_COLUMN_NAME, \
-    WINNER_NUTS_COLUMN_NAME, LOT_NUTS_COLUMN_NAME, CURRENCY_COLUMN_NAME, PUBLICATION_DATE_COLUMN_NAME, \
-    WINNER_NAME_COLUMN_NAME, AMMOUNT_VALUE_COLUMN_NAME, PROCEDURE_TITLE_COLUMN_NAME
+from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import TED_DATA_COLUMNS
 
 
 def check_tda_etl_columns(data_columns: list):
-    assert PROCEDURE_TYPE_COLUMN_NAME in data_columns
-    assert WINNER_NUTS_COLUMN_NAME in data_columns
-    assert LOT_NUTS_COLUMN_NAME in data_columns
-    assert CURRENCY_COLUMN_NAME in data_columns
-    assert PUBLICATION_DATE_COLUMN_NAME in data_columns
-    assert WINNER_NAME_COLUMN_NAME in data_columns
-    assert AMMOUNT_VALUE_COLUMN_NAME in data_columns
-    assert PROCEDURE_TITLE_COLUMN_NAME in data_columns
+    for column in TED_DATA_COLUMNS:
+        assert column in data_columns
 
 
 def test_etl_pipeline(ted_data_etl_pipeline, etl_pipeline_config, graphdb_triple_store, example_notices,
@@ -30,6 +22,7 @@ def test_etl_pipeline(ted_data_etl_pipeline, etl_pipeline_config, graphdb_triple
     dataframe = data['data']
     assert isinstance(dataframe, pd.DataFrame)
     assert not dataframe.empty
+
     check_tda_etl_columns(list(dataframe.columns))
 
     data = ted_data_etl_pipeline.transform(data)
