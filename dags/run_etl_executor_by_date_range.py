@@ -8,6 +8,7 @@ from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 
 from dags import DEFAULT_DAG_ARGUMENTS
 from dags.dags_utils import get_dag_param
+from dags.etl_executor import ETL_EXECUTOR_DAG_NAME
 from dags.fetch_notices_by_date import WILD_CARD_DAG_KEY, TRIGGER_COMPLETE_WORKFLOW_DAG_KEY, \
     DAG_NAME as FETCH_NOTICES_BY_DATE_DAG_NAME
 from ted_sws.event_manager.adapters.event_log_decorator import event_log
@@ -17,8 +18,6 @@ from ted_sws.event_manager.model.event_message import TechnicalEventMessage, Eve
 from dags.operators.ETLStepOperator import ETL_METADATA_DAG_CONFIG_KEY
 from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import START_DATE_METADATA_FIELD, END_DATE_METADATA_FIELD, \
     TED_DATA_ETL_PIPELINE_NAME, generate_dates_by_date_range
-
-ETL_EXECUTOR_DAG_NAME = "etl_executor"
 
 RUN_ETL_EXECUTOR_BY_DATE_RANGE_DAG_NAME = "run_etl_executor_by_date_range"
 
@@ -41,7 +40,7 @@ def run_etl_executor_by_date_range():
         for date in date_range:
             TriggerDagRunOperator(
                 task_id=f'trigger_run_etl_pipeline_dag_{date}',
-                trigger_dag_id=FETCH_NOTICES_BY_DATE_DAG_NAME,
+                trigger_dag_id=ETL_EXECUTOR_DAG_NAME,
                 conf={ETL_METADATA_DAG_CONFIG_KEY:
                           {TED_DATA_ETL_PIPELINE_NAME:
                                {START_DATE_METADATA_FIELD: date, END_DATE_METADATA_FIELD: date}
