@@ -94,8 +94,12 @@ class TedDataETLPipeline(ETLPipelineABC):
         etl_metadata = self.get_metadata()
         etl_metadata_fields = etl_metadata.keys()
         if START_DATE_METADATA_FIELD in etl_metadata_fields and END_DATE_METADATA_FIELD in etl_metadata_fields:
-            date_range = generate_sparql_filter_by_date_range(etl_metadata[START_DATE_METADATA_FIELD], etl_metadata[END_DATE_METADATA_FIELD])
-            logging.info("Querying data from date range")
+            if START_DATE_METADATA_FIELD == END_DATE_METADATA_FIELD:
+                date_range = datetime.strptime(START_DATE_METADATA_FIELD, "\"%Y%m%d\"")
+                logging.info("Querying data from one day")
+            else:
+                date_range = generate_sparql_filter_by_date_range(etl_metadata[START_DATE_METADATA_FIELD], etl_metadata[END_DATE_METADATA_FIELD])
+                logging.info("Querying data from date range")
         else:
             logging.info("Querying data from yesterday")
             date_range = (date.today() - timedelta(days=1)).strftime("\"%Y%m%d\"")
