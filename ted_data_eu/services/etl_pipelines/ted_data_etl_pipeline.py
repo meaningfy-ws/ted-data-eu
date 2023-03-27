@@ -121,9 +121,9 @@ class TedDataETLPipeline(ETLPipelineABC):
 
     def transform(self, extracted_data: Dict) -> Dict:
         data_table: DataFrame = extracted_data['data']
-        # columns_wihtout_date = TED_DATA_COLUMNS.copy()
-        # columns_wihtout_date.remove(PUBLICATION_DATE_COLUMN_NAME)
-        # data_table.dropna(subset=columns_wihtout_date, how='all', inplace=True)
+        columns_wihtout_date = TED_DATA_COLUMNS.copy()
+        columns_wihtout_date.remove(PUBLICATION_DATE_COLUMN_NAME)
+        data_table.dropna(subset=columns_wihtout_date, how='all', inplace=True)
         if data_table.empty:
             raise TedETLException("No data was been fetched from triple store!")
         else:
