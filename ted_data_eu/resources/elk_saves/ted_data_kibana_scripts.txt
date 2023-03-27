@@ -1,0 +1,68 @@
+DELETE ted_data
+
+# Creat mapping for NUTS Codes by spliting by level
+PUT /ted_data/_mapping
+{
+  "properties": {
+
+    "lot_nuts0": {
+      "type": "keyword",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+          if(doc['lot_nuts_code'].size() != 0) {
+              def nuts = doc['lot_nuts_code'].value;
+              if(nuts.length() >= 2) {
+                  emit(nuts.substring(0, 2));
+              }
+          }
+      """
+      }
+    },
+
+    "lot_nuts1": {
+      "type": "keyword",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+          if(doc['lot_nuts_code'].size() != 0) {
+              def nuts = doc['lot_nuts_code'].value;
+              if(nuts.length() >= 3) {
+                  emit(nuts.substring(0, 3));
+              }
+          }
+      """
+      }
+    },
+
+    "lot_nuts2": {
+      "type": "keyword",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+          if(doc['lot_nuts_code'].size() != 0) {
+              def nuts = doc['lot_nuts_code'].value;
+              if(nuts.length() >= 4) {
+                  emit(nuts.substring(0, 4));
+              }
+          }
+      """
+      }
+    },
+
+    "lot_nuts3": {
+      "type": "keyword",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+          if(doc['lot_nuts_code'].size() != 0) {
+              def nuts = doc['lot_nuts_code'].value;
+              if(nuts.length() >= 5) {
+                  emit(nuts.substring(0, 5));
+              }
+          }
+      """
+      }
+    }
+  }
+}
