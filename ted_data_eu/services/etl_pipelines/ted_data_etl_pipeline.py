@@ -125,7 +125,6 @@ class TedDataETLPipeline(ETLPipelineABC):
         columns_wihtout_date.remove(PUBLICATION_DATE_COLUMN_NAME)
         data_table.dropna(subset=columns_wihtout_date, how='all', inplace=True)
         if data_table.empty:
-            logging.info(f"________--------_____ {config.GRAPHDB_HOST}")
             raise TedETLException("No data was been fetched from triple store!")
         else:
             logging.info(data_table.head())
