@@ -9,6 +9,7 @@ from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import TED_DATA_ET
 
 etl_pipelines_register = ETLPipelineRegister()
 
+ETL_EXECUTOR_DAG_NAME = 'etl_executor'
 
 def init_etl_pipelines_register():
     """

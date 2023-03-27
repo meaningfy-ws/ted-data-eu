@@ -26,6 +26,7 @@ PUBLICATION_DATE_COLUMN_NAME = "publication_date"
 WINNER_NAME_COLUMN_NAME = "winner_name"
 AMMOUNT_VALUE_COLUMN_NAME = "ammount_value"
 PROCEDURE_TITLE_COLUMN_NAME = "procedure_title"
+LOT_URL_COLUMN_NAME = 'lot'
 
 TED_DATA_COLUMNS = [
     PROCEDURE_TYPE_COLUMN_NAME,
@@ -35,7 +36,8 @@ TED_DATA_COLUMNS = [
     PUBLICATION_DATE_COLUMN_NAME,
     WINNER_NAME_COLUMN_NAME,
     AMMOUNT_VALUE_COLUMN_NAME,
-    PROCEDURE_TITLE_COLUMN_NAME
+    PROCEDURE_TITLE_COLUMN_NAME,
+    LOT_URL_COLUMN_NAME
 ]
 
 def generate_dates_by_date_range(start_date: str, end_date: str) -> list:
@@ -92,8 +94,12 @@ class TedDataETLPipeline(ETLPipelineABC):
         etl_metadata = self.get_metadata()
         etl_metadata_fields = etl_metadata.keys()
         if START_DATE_METADATA_FIELD in etl_metadata_fields and END_DATE_METADATA_FIELD in etl_metadata_fields:
-            date_range = generate_sparql_filter_by_date_range(etl_metadata[START_DATE_METADATA_FIELD], etl_metadata[END_DATE_METADATA_FIELD])
-            logging.info("Querying data from date range")
+            if START_DATE_METADATA_FIELD == END_DATE_METADATA_FIELD:
+                date_range = datetime.strptime(START_DATE_METADATA_FIELD, "\"%Y%m%d\"")
+                logging.info("Querying data from one day")
+            else:
+                date_range = generate_sparql_filter_by_date_range(etl_metadata[START_DATE_METADATA_FIELD], etl_metadata[END_DATE_METADATA_FIELD])
+                logging.info("Querying data from date range")
         else:
             logging.info("Querying data from yesterday")
             date_range = (date.today() - timedelta(days=1)).strftime("\"%Y%m%d\"")
@@ -132,16 +138,10 @@ class TedDataETLPipeline(ETLPipelineABC):
         data_table = transformed_data['data']
         documents = []
         for index, row in data_table.iterrows():
-            documents.append(
-                {
-                    PUBLICATION_DATE_COLUMN_NAME: row[PUBLICATION_DATE_COLUMN_NAME],
-                    WINNER_NAME_COLUMN_NAME: row[WINNER_NAME_COLUMN_NAME],
-                    WINNER_NUTS_COLUMN_NAME: row[WINNER_NUTS_COLUMN_NAME],
-                    AMMOUNT_VALUE_COLUMN_NAME: row[AMMOUNT_VALUE_COLUMN_NAME],
-                    CURRENCY_COLUMN_NAME: row[CURRENCY_COLUMN_NAME],
-                    PROCEDURE_TITLE_COLUMN_NAME: row[PROCEDURE_TITLE_COLUMN_NAME],
-                    LOT_NUTS_COLUMN_NAME: row[LOT_NUTS_COLUMN_NAME],
-                    PROCEDURE_TYPE_COLUMN_NAME: row[PROCEDURE_TYPE_COLUMN_NAME]
-                }
-            )
+            row_dict = {}
+            for column_name in TED_DATA_COLUMNS:
+                row_dict[column_name] = row[column_name]
+            # Using Lot URL as id
+            row_dict['_id'] = row[LOT_URL_COLUMN_NAME]
+            documents.append(row_dict)
         load_documents_to_storage(documents=documents, storage=elastic_storage)
