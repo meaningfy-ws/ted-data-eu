@@ -10,6 +10,7 @@ from ted_sws.core.model.transform import MappingSuite
 from ted_sws.data_manager.adapters.mapping_suite_repository import MappingSuiteRepositoryMongoDB, \
     MappingSuiteRepositoryInFileSystem
 from ted_sws.data_manager.adapters.notice_repository import NoticeRepository
+from ted_sws.event_manager.services.log import log_notice_error
 from ted_sws.notice_metadata_processor.services.notice_eligibility import check_package
 from ted_sws.notice_transformer.adapters.rml_mapper import RMLMapper
 from collections import defaultdict
@@ -58,7 +59,7 @@ def notice_eligibility_checker(notice: Notice, mapping_suites: List[MappingSuite
 
 class MappingSuiteTransformationPool:
 
-    def __init__(self, mongodb_client: MongoClient):
+    def __init__(self, mongodb_client: MongoClient, transformation_timeout: float = None):
         mapping_suite_repository = MappingSuiteRepositoryMongoDB(mongodb_client=mongodb_client)
         self.notice_repository = NoticeRepository(mongodb_client=mongodb_client)
         self.mapping_suites = []
@@ -67,7 +68,8 @@ class MappingSuiteTransformationPool:
             new_identifier = mapping_suite.get_mongodb_id()
             mapping_suite.identifier = new_identifier
             self.mapping_suites.append(mapping_suite)
-        self.rml_mapper = RMLMapper(rml_mapper_path=config.RML_MAPPER_PATH)
+        self.rml_mapper = RMLMapper(rml_mapper_path=config.RML_MAPPER_PATH,
+                                    transformation_timeout=transformation_timeout)
         self.mappings_pool_tmp_dirs = defaultdict(list)
         self.mappings_pool_dirs = {}
         self.mappings_pool_dir = make_temp_path()
@@ -75,7 +77,6 @@ class MappingSuiteTransformationPool:
         self.sync_mutex = Lock()
         for mapping_suite in self.mapping_suites:
             package_path = self.mappings_pool_dir / mapping_suite.identifier
-            print(package_path)
             mapping_suite_repository = MappingSuiteRepositoryInFileSystem(repository_path=self.mappings_pool_dir)
             mapping_suite_repository.add(mapping_suite=mapping_suite)
             data_source_path = package_path / DATA_SOURCE_PACKAGE
@@ -105,22 +106,26 @@ class MappingSuiteTransformationPool:
         if mapping_suite_id:
             notice.update_status_to(new_status=NoticeStatus.PREPROCESSED_FOR_TRANSFORMATION)
             working_package_path = self.reserve_mapping_suite_path_by_id(mapping_suite_id)
-            data_source_path = working_package_path / DATA_SOURCE_PACKAGE
-            print(list(working_package_path.iterdir()))
-            data_source_path.mkdir(parents=True, exist_ok=True)
-            notice_path = data_source_path / "source.xml"
-            notice_path.write_text(data=notice.xml_manifestation.object_data, encoding="utf-8")
-            rdf_result = self.rml_mapper.execute(package_path=working_package_path)
-            self.release_mapping_suite_path_by_id(mapping_suite_id, working_package_path)
-            notice.set_rdf_manifestation(
-                rdf_manifestation=RDFManifestation(mapping_suite_id=mapping_suite_id,
-                                                   object_data=rdf_result))
-        self.notice_repository.update(notice)
-
-        if mapping_suite_id:
-            return notice_id
-        else:
-            return None
+            try:
+                data_source_path = working_package_path / DATA_SOURCE_PACKAGE
+                data_source_path.mkdir(parents=True, exist_ok=True)
+                notice_path = data_source_path / "source.xml"
+                notice_path.write_text(data=notice.xml_manifestation.object_data, encoding="utf-8")
+                rdf_result = self.rml_mapper.execute(package_path=working_package_path)
+                notice.set_rdf_manifestation(
+                    rdf_manifestation=RDFManifestation(mapping_suite_id=mapping_suite_id,
+                                                       object_data=rdf_result))
+                self.notice_repository.update(notice)
+                self.release_mapping_suite_path_by_id(mapping_suite_id, working_package_path)
+                return notice_id
+            except Exception as e:
+                self.release_mapping_suite_path_by_id(mapping_suite_id, working_package_path)
+                notice_normalised_metadata = notice.normalised_metadata
+                log_notice_error(message=str(e), notice_id=notice_id, domain_action="rml_pool_transformation",
+                                 notice_form_number=notice_normalised_metadata.form_number if notice_normalised_metadata else None,
+                                 notice_status=notice.status if notice else None,
+                                 notice_eforms_subtype=notice_normalised_metadata.eforms_subtype if notice_normalised_metadata else None)
+                return None
 
     def close(self):
         shutil.rmtree(self.mappings_pool_dir)
