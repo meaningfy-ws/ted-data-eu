@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 
 from ted_data_eu.adapters.storage import ElasticStorage
@@ -61,7 +63,7 @@ def ted_data_etl_pipeline():
 
 @pytest.fixture
 def etl_pipeline_config():
-    return {"start_date": "20180314", "end_date": "20180314"}
+    return {"start_date": "20190131", "end_date": "20190131"}
 
 
 @pytest.fixture

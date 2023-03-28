@@ -1,7 +1,7 @@
 import pathlib
 from typing import Dict
 
-from ted_sws import TedConfigResolver, env_property
+from ted_sws import TedConfigResolver, env_property, AirflowAndEnvConfigResolver
 import dotenv
 
 dotenv.load_dotenv(verbose=True, override=True)
@@ -24,15 +24,15 @@ class BQResourcesConfig:
 
 class GraphDBConfig:
 
-    @env_property()
+    @env_property(config_resolver_class=AirflowAndEnvConfigResolver)
     def GRAPHDB_USER(self, config_value: str) -> str:
         return config_value
 
-    @env_property()
+    @env_property(config_resolver_class=AirflowAndEnvConfigResolver)
     def GRAPHDB_PASSWORD(self, config_value: str) -> str:
         return config_value
 
-    @env_property()
+    @env_property(config_resolver_class=AirflowAndEnvConfigResolver)
     def GRAPHDB_HOST(self, config_value: str) -> str:
         return config_value
 
