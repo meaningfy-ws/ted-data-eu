@@ -1,0 +1,923 @@
+# Delete index
+DELETE /opentender_updated
+
+# Create index
+PUT /opentender_updated
+
+PUT /opentender_updated/_settings
+{
+  "index.mapping.nested_objects.limit": 10000000
+}
+
+# Creat mapping for NUTS Codes by spliting by level
+PUT /opentender_updated/_mapping
+{
+  "properties": {
+    
+    "ot.nuts.nuts1": {
+      "type": "keyword",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+          if(doc['addressOfImplementation.nuts.keyword'].size() != 0) {
+              def nuts = doc['addressOfImplementation.nuts.keyword'].value;
+              if(nuts.length() >= 3) {
+                  emit(nuts.substring(0, 3));
+              }
+          }
+      """
+      }
+    },
+    
+    "ot.nuts.nuts2": {
+      "type": "keyword",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+          if(doc['addressOfImplementation.nuts.keyword'].size() != 0) {
+              def nuts = doc['addressOfImplementation.nuts.keyword'].value;
+              if(nuts.length() >= 4) {
+                  emit(nuts.substring(0, 4));
+              }
+          }
+      """
+      }
+    },
+    
+    "ot.nuts.nuts3": {
+      "type": "keyword",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+          if(doc['addressOfImplementation.nuts.keyword'].size() != 0) {
+              def nuts = doc['addressOfImplementation.nuts.keyword'].value;
+              if(nuts.length() >= 5) {
+                  emit(nuts.substring(0, 5));
+              }
+          }
+      """
+      }
+    }
+  }
+}
+
+# Mapping indigators field from flat to nested type
+PUT /opentender_updated/_mapping
+{
+  "properties": {
+    "ot": {
+      "properties": {
+        "scores": {
+          "type": "nested",
+          "properties": {
+            "status": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "type": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "value": {
+              "type": "float"
+            }
+          }
+        }
+      }
+    },
+    
+    "indicators": {
+      "type": "nested",
+      "properties": {
+        "status": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "type": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "value": {
+          "type": "float"
+        }
+      }
+    },
+    
+    "lots": {
+      "properties": {
+        "indicators": {
+          "type": "nested",
+          "properties": {
+            "status": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "type": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "value": {
+              "type": "float"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Mapping ot.scores indicators
+PUT /opentender_updated/_mapping
+{
+  "properties": {
+    "ot.integrity_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["ot"]["scores"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "INTEGRITY")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    "ot.transparency_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["ot"]["scores"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TRANSPARENCY")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    "ot.tender_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["ot"]["scores"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TENDER")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    "ot.administrative_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["ot"]["scores"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "ADMINISTRATIVE")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    }
+  }
+}
+
+
+# Mapping "indicators" field indicators
+PUT /opentender_updated/_mapping
+{
+  "properties": {
+    
+    "meaningfy.indicators.administrative.centralized_procurement_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "ADMINISTRATIVE_CENTRALIZED_PROCUREMENT")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.transparency.missing_or_incoplete_duration_info_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TRANSPARENCY_MISSING_OR_INCOMPLETE_DURATION_INFO")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.transparency.missing_or_incoplete_fundings_info_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TRANSPARENCY_MISSING_OR_INCOMPLETE_FUNDINGS_INFO")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.administrative.electronic_auction_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "ADMINISTRATIVE_ELECTRONIC_AUCTION")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.integrity.procedure_type_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "INTEGRITY_PROCEDURE_TYPE")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.administrative.framework_agreement_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "ADMINISTRATIVE_FRAMEWORK_AGREEMENT")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.administrative.notice_and_award_discrepancies_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "ADMINISTRATIVE_NOTICE_AND_AWARD_DISCREPANCIES")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.transparency.missing_eligible_bid_languages_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TRANSPARENCY_MISSING_ELIGIBLE_BID_LANGUAGES")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.integrity.single_bid_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "INTEGRITY_SINGLE_BID")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.transparency.missing_or_incomplete_award_criteria_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TRANSPARENCY_MISSING_OR_INCOMPLETE_AWARD_CRITERIA")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    
+    "meaningfy.indicators.administrative.covered_by_gpa_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "ADMINISTRATIVE_COVERED_BY_GPA")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.transparency.value_missing_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TRANSPARENCY_VALUE_MISSING")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.transparency.missing_selection_method_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TRANSPARENCY_MISSING_SELECTION_METHOD")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.integrity.tax_haven_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "INTEGRITY_TAX_HAVEN")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.integrity.advertisement_period_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "INTEGRITY_ADVERTISEMENT_PERIOD")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.integrity.call_for_tender_publication_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "INTEGRITY_CALL_FOR_TENDER_PUBLICATION")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.administrative.english_as_foreign_language_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "ADMINISTRATIVE_ENGLISH_AS_FOREIGN_LANGUAGE")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.transparency.missing_or_incoplete_cpvs_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TRANSPARENCY_MISSING_OR_INCOMPLETE_CPVS")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.transparency.missing_address_of_implementation_nuts_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TRANSPARENCY_MISSING_ADDRESS_OF_IMPLEMENTATION_NUTS")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.integrity.decision_period_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "INTEGRITY_DECISION_PERIOD")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.transparency.bidder_name_missing_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TRANSPARENCY_BIDDER_NAME_MISSING")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.transparency.missing_subcontracted_info_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TRANSPARENCY_MISSING_SUBCONTRACTED_INFO")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.indicators.integrity.new_company_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "INTEGRITY_NEW_COMPANY")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    }
+    
+  }
+}
+
+# Mapping "lots.indicators" field indicators
+PUT /opentender_updated/_mapping
+{
+  "properties": {
+    
+    "meaningfy.lots.indicators.transparency.value_missing_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["lots.indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TRANSPARENCY_VALUE_MISSING")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.lots.indicators.transparency.missing_or_incoplete_duration_info_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["lots.indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TRANSPARENCY_MISSING_OR_INCOMPLETE_DURATION_INFO")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.lots.indicators.transparency.missing_selection_method_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["lots.indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TRANSPARENCY_MISSING_SELECTION_METHOD")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.lots.indicators.transparency.missing_or_incoplete_fundings_info_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["lots.indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TRANSPARENCY_MISSING_OR_INCOMPLETE_FUNDINGS_INFO")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.lots.indicators.integrity.tax_haven_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["lots.indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "INTEGRITY_TAX_HAVEN")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+
+    "meaningfy.lots.indicators.integrity.new_company_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["lots.indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "INTEGRITY_NEW_COMPANY")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.lots.indicators.transparency.missing_or_incoplete_cpvs_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["lots.indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TRANSPARENCY_MISSING_OR_INCOMPLETE_CPVS")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.lots.indicators.integrity.single_bid_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["lots.indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "INTEGRITY_SINGLE_BID")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.lots.indicators.transparency.missing_or_incomplete_award_criteria_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["lots.indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TRANSPARENCY_MISSING_OR_INCOMPLETE_AWARD_CRITERIA")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.lots.indicators.integrity.decision_period_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["lots.indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "INTEGRITY_DECISION_PERIOD")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.lots.indicators.transparency.bidder_name_missing_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["lots.indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TRANSPARENCY_BIDDER_NAME_MISSING")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    },
+    
+    "meaningfy.lots.indicators.transparency.missing_subcontracted_info_indicator": {
+      "type": "double",
+      "on_script_error": "continue",
+      "script": {
+        "source": """
+            def indicators = params._source["lots.indicators"];
+            for(def indicator : indicators)
+            {
+              if(indicator["type"] == "TRANSPARENCY_MISSING_SUBCONTRACTED_INFO")
+              {
+                emit(indicator["value"]);
+                return;
+              }
+            }
+      """
+      }
+    }
+    
+  }
+}
+
+
+
+# Reindex opentender with updated one
+POST _reindex?wait_for_completion=false&refresh=false&timeout=5m
+{
+  "conflicts": "proceed", 
+  "source": {
+    "index": "opentender"
+  },
+  "dest": {
+    "index": "opentender_updated"
+  }
+}
+
+# Track ElasticSearch tasks
+GET /_cat/tasks
+
+GET /_tasks?actions=*reindex&wait_for_completion=false&detailed
+
+/*
+# Create a runtime field (takes too long query time!)
+PUT /opentender_updated/_mapping
+{
+    "runtime": {
+        "ot.integrity_indicator": {
+        "type": "double",
+          "script": {
+            "source": """
+                def indicators = params._source["ot"]["scores"];
+                for(def indicator : indicators)
+                {
+                  if(indicator["type"] == "INTEGRITY")
+                  {
+                    emit(indicator["value"]);
+                    return;
+                  }
+                }
+          """
+            }
+          }
+        }
+}*/
