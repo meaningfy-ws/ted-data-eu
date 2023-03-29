@@ -1,3 +1,4 @@
+import subprocess
 import tempfile
 from pathlib import Path
 from threading import Lock
@@ -70,6 +71,7 @@ class MappingSuiteTransformationPool:
             self.mapping_suites.append(mapping_suite)
         self.rml_mapper = RMLMapper(rml_mapper_path=config.RML_MAPPER_PATH,
                                     transformation_timeout=transformation_timeout)
+        self.clear_saxon_cache()
         self.mappings_pool_tmp_dirs = defaultdict(list)
         self.mappings_pool_dirs = {}
         self.mappings_pool_dir = make_temp_path()
@@ -82,6 +84,10 @@ class MappingSuiteTransformationPool:
             data_source_path = package_path / DATA_SOURCE_PACKAGE
             data_source_path.mkdir(parents=True, exist_ok=True)
             self.mappings_pool_dirs[mapping_suite.identifier] = package_path
+
+    def clear_saxon_cache(self):
+        clear_saxon_cache_script = "cd ~ && rm -rf .xmlresolver.org"
+        subprocess.run(clear_saxon_cache_script, shell=True, capture_output=True)
 
     def reserve_mapping_suite_path_by_id(self, mapping_suite_id: str) -> Path:
         self.sync_mutex.acquire()
