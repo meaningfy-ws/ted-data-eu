@@ -131,7 +131,9 @@ class MappingSuiteTransformationPool:
                                  notice_form_number=notice_normalised_metadata.form_number if notice_normalised_metadata else None,
                                  notice_status=notice.status if notice else None,
                                  notice_eforms_subtype=notice_normalised_metadata.eforms_subtype if notice_normalised_metadata else None)
-                return None
+
+        self.notice_repository.update(notice)
+        return None
 
     def close(self):
         shutil.rmtree(self.mappings_pool_dir)
