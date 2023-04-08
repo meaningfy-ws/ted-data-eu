@@ -1,5 +1,6 @@
 from airflow.decorators import dag, task
 from pymongo import MongoClient
+from ted_sws.event_manager.services.log import log_notice_error
 
 from dags import DEFAULT_DAG_ARGUMENTS
 from dags.dags_utils import get_dag_param
@@ -42,7 +43,14 @@ def load_notices_in_graphdb():
                 notice._status = NoticeStatus.PUBLISHED
                 notice_repository.update(notice)
             except Exception as e:
-                raise Exception(f"Error while loading notice {notice.ted_id} in graphdb: {e}")
+                notice._status = NoticeStatus.INELIGIBLE_FOR_PUBLISHING
+                notice_repository.update(notice)
+                notice_normalised_metadata = notice.normalised_metadata if notice else None
+                log_notice_error(message=f"Error while loading notice {notice.ted_id} in graphdb: {e}",
+                                 notice_id=notice.ted_id, domain_action="load_notice_in_graphdb",
+                                 notice_form_number=notice_normalised_metadata.form_number if notice_normalised_metadata else None,
+                                 notice_status=notice.status if notice else None,
+                                 notice_eforms_subtype=notice_normalised_metadata.eforms_subtype if notice_normalised_metadata else None)
 
 
     load_distilled_rdf_manifestations_in_graphdb()
