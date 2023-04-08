@@ -16,7 +16,7 @@ DAG_NAME = "reprocess_untransformed_notices_from_backlog"
 RE_TRANSFORM_TARGET_NOTICE_STATES = [NoticeStatus.NORMALISED_METADATA,
                                      # NoticeStatus.INELIGIBLE_FOR_TRANSFORMATION,
                                      NoticeStatus.ELIGIBLE_FOR_TRANSFORMATION,
-                                     NoticeStatus.PREPROCESSED_FOR_TRANSFORMATION,
+                                     # NoticeStatus.PREPROCESSED_FOR_TRANSFORMATION,
                                      # NoticeStatus.TRANSFORMED,
                                      # NoticeStatus.DISTILLED
                                      ]
