@@ -35,11 +35,14 @@ def load_notices_in_graphdb():
         notices = notice_repository.get_notices_by_status(notice_status=NoticeStatus[notice_status])
 
         for notice in notices:
-            load_rdf_manifestation_into_triple_store(rdf_manifestation=notice.rdf_manifestation,
-                                                     triple_store_repository=graphdb_repository,
-                                                     repository_name=graphdb_dataset_name)
-            notice._status = NoticeStatus.PUBLISHED
-            notice_repository.update(notice)
+            try:
+                load_rdf_manifestation_into_triple_store(rdf_manifestation=notice.rdf_manifestation,
+                                                         triple_store_repository=graphdb_repository,
+                                                         repository_name=graphdb_dataset_name)
+                notice._status = NoticeStatus.PUBLISHED
+                notice_repository.update(notice)
+            except Exception as e:
+                raise Exception(f"Error while loading notice {notice.ted_id} in graphdb: {e}")
 
 
     load_distilled_rdf_manifestations_in_graphdb()
