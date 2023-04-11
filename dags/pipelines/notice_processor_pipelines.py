@@ -12,9 +12,14 @@ def notice_normalisation_pipeline(notice: Notice, mongodb_client: MongoClient) -
     from ted_sws.notice_metadata_processor.services.metadata_normalizer import normalise_notice
     notice.update_status_to(new_status=NoticeStatus.RAW)
     indexed_notice = index_notice(notice=notice)
-    normalised_notice = normalise_notice(notice=indexed_notice)
+    try:
+        normalised_notice = normalise_notice(notice=indexed_notice)
+        return NoticePipelineOutput(notice=normalised_notice)
+    except Exception as e:
+        return NoticePipelineOutput(notice=indexed_notice, processed=False, store_result=True, error_message=str(e))
 
-    return NoticePipelineOutput(notice=normalised_notice)
+
+
 
 
 def notice_transformation_pipeline(notice: Notice, mongodb_client: MongoClient) -> NoticePipelineOutput:

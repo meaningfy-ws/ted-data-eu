@@ -118,6 +118,8 @@ class MappingSuiteTransformationPool:
                 notice_path = data_source_path / "source.xml"
                 notice_path.write_text(data=notice.xml_manifestation.object_data, encoding="utf-8")
                 rdf_result = self.rml_mapper.execute(package_path=working_package_path)
+                if not rdf_result:
+                    raise Exception("RML Mapper returned empty result")
                 notice.set_rdf_manifestation(
                     rdf_manifestation=RDFManifestation(mapping_suite_id=mapping_suite_id,
                                                        object_data=rdf_result))
