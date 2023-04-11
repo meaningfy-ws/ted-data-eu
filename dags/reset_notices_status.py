@@ -23,7 +23,7 @@ TARGET_NOTICE_STATUS_DAG_PARAM = "target_notice_status"
 
 @dag(default_args=DEFAULT_DAG_ARGUMENTS,
      schedule_interval=None,
-     tags=['selector', 'raw-notices'])
+     tags=['selector', 'reset-status'])
 def reset_notices_status():
     @task
     @event_log(TechnicalEventMessage(
