@@ -96,12 +96,14 @@ class NoticeBatchPipelineOperator(BaseOperator):
                         notice_event.notice_eforms_subtype = notice.normalised_metadata.eforms_subtype
                         notice_event.notice_status = str(notice.status)
                     logger.info(event_message=notice_event)
+                    error_message = result_notice_pipeline.error_message
                 except Exception as e:
-                    notice_normalised_metadata = notice.normalised_metadata if notice else None
-                    log_notice_error(message=str(e), notice_id=notice_id, domain_action=pipeline_name,
-                                     notice_form_number=notice_normalised_metadata.form_number if notice_normalised_metadata else None,
-                                     notice_status=notice.status if notice else None,
-                                     notice_eforms_subtype=notice_normalised_metadata.eforms_subtype if notice_normalised_metadata else None)
+                    error_message = str(e)
+                notice_normalised_metadata = notice.normalised_metadata if notice else None
+                log_notice_error(message=error_message, notice_id=notice_id, domain_action=pipeline_name,
+                                 notice_form_number=notice_normalised_metadata.form_number if notice_normalised_metadata else None,
+                                 notice_status=notice.status if notice else None,
+                                 notice_eforms_subtype=notice_normalised_metadata.eforms_subtype if notice_normalised_metadata else None)
 
             with ThreadPoolExecutor() as executor:
                 futures = [executor.submit(multithread_notice_processor, notice_id) for notice_id in
