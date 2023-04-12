@@ -13,12 +13,12 @@ POST opentender_updated/_search
     "bool": {
       "must": [
         {"exists": {
-          "field": "lots.bids.bidders.name.keyword"
+          "field": "description.keyword"
         }}
       ]
     }
   },
-  "_source": ["lots.bids.bidders.name"],
+  "_source": ["description"],
   "aggs": {},
   "size": 1
 }
