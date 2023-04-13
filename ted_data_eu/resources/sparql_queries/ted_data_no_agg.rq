@@ -7,23 +7,24 @@ PREFIX time: <http://www.w3.org/2006/time#>
 
 select distinct
 ?lot
-(sample(?publication_date) as ?publication_date)
-(sample(?notice_id) as ?notice_id)
-(GROUP_CONCAT(distinct ?winner_name; SEPARATOR=" ||| ") as ?winner_names)
-(GROUP_CONCAT(distinct ?winner_nuts; SEPARATOR=" ||| ") as ?winner_nuts)
-(sample(?subcontracting) as ?subcontracting)
-(sample(?lot_ammount) as ?lot_ammount)
-(sample(?lot_currency) as ?lot_currency)
-(sample(?place_of_performance) as ?place_of_performance)
-(sample(?contract_duration) as ?contract_duration)
-(GROUP_CONCAT(distinct ?main_cpvs; SEPARATOR=" ||| ") as ?main_cpvs)
-(sample(?procedure_title) as ?procedure_title)
-(sample(?procedure_type) as ?procedure_type)
-(sample(?awardet_cpb) as ?awardet_cpb)
-(sample(?ea_technique) as ?ea_technique)
-(sample(?fa_technique) as ?fa_technique)
-(sample(?is_gpa) as ?is_gpa)
-(sample(?using_eu_funds) as ?using_eu_funds)
+?publication_date
+?notice_id
+?winner_name # multiple winners per lot
+?winner_nuts # multiple nuts per lot
+?subcontracting
+?lot_ammount
+?lot_currency
+?place_of_performance
+?contract_duration
+?main_cpvs # posbile multiple cpvs per lot
+?procedure_title
+?procedure_type
+?awardet_cpb
+?ea_technique
+?fa_technique
+?is_gpa
+?using_eu_funds
+
 where {
      values ?publication_date {
             $date_range
@@ -105,4 +106,4 @@ where {
     optional {
         ?lot epo:isUsingEUFunds ?using_eu_funds .
     }
-} group by ?lot
+}
