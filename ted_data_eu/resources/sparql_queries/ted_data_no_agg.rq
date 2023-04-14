@@ -7,19 +7,21 @@ PREFIX time: <http://www.w3.org/2006/time#>
 
 select distinct
 ?lot
+
 ?publication_date
+(str(?buyer_name) as ?str_buyer_name) # multiple buyers per lot
 ?notice_id
-?winner_name # multiple winners per lot
+(str(?winner_name) as ?str_winner_name) # multiple winners per lot
 ?winner_nuts # multiple nuts per lot
 ?subcontracting
-?lot_ammount
+?lot_amount
 ?lot_currency
 ?place_of_performance
 ?contract_duration
 ?main_cpvs # posbile multiple cpvs per lot
-?procedure_title
+(str(?procedure_title) as ?str_procedure_title)
 ?procedure_type
-?awardet_cpb
+?awarded_cpb
 ?ea_technique
 ?fa_technique
 ?is_gpa
@@ -35,6 +37,10 @@ where {
                     epo:hasID / epo:hasIdentifierValue ?notice_id;
                     epo:refersToLot ?lot.
 
+    optional {
+        ?result_notice epo:announcesRole / epo:playedBy / epo:hasLegalName ?buyer_name .
+        #filter(lang(?buyer_name)='en')
+    }
 
     optional {
         ?lot_award_outcome epo:describesLot ?lot;
@@ -47,7 +53,7 @@ where {
             ?winner a org:Organization.
             optional {
                 ?winner epo:hasLegalName ?winner_name.
-                FILTER(lang(?winner_name)='en')
+                #FILTER(lang(?winner_name)='en')
             }
             optional {
                 ?winner cccev:registeredAddress / epo:hasNutsCode ?winner_nuts.
@@ -59,7 +65,7 @@ where {
         optional {
             ?lot_award_outcome epo:hasAwardedValue ?lot_value.
             ?lot_value a epo:MonetaryValue;
-                       epo:hasAmountValue ?lot_ammount;
+                       epo:hasAmountValue ?lot_amount;
                        epo:hasCurrency ?lot_currency.
         }
     }
@@ -83,13 +89,13 @@ where {
                    a epo:Procedure.
         optional {
             ?procedure epo:hasTitle ?procedure_title .
-            FILTER(lang(?procedure_title)='en')
+            #FILTER(lang(?procedure_title)='en')
         }
         optional {
             ?procedure epo:hasProcedureType ?procedure_type .
         }
         optional {
-            ?procedure epo:isSubjectToProcedureSpecificTerm / epo:isAwardedByCPB ?awardet_cpb.
+            ?procedure epo:isSubjectToProcedureSpecificTerm / epo:isAwardedByCPB ?awarded_cpb.
         }
         optional {
             ?procedure epo:usesTechnique ?ea_technique.

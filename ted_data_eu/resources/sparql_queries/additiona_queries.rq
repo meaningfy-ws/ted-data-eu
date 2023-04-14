@@ -1,0 +1,10 @@
+# Total number of lots and subcontracts
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+select (count(?tender) as ?nr_of_tenders) (count(?subcontract) as ?nr_of_subc) (((?nr_of_subc / ?nr_of_tenders) * 100) as ?percent) where {
+	?tender a epo:Tender.
+    optional {
+        ?tender epo:foreseesSubcontracting ?subcontract.
+        ?subcontract a epo:SubcontractingEstimate;
+                     epo:hasSubcontractingEstimatedValue ?value.
+    }
+}

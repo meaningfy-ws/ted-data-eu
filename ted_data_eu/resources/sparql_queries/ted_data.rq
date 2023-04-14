@@ -7,19 +7,20 @@ PREFIX time: <http://www.w3.org/2006/time#>
 
 select distinct
 ?lot
+
 (sample(?publication_date) as ?publication_date)
-(sample(?notice_id) as ?notice_id)
-(GROUP_CONCAT(distinct ?winner_name; SEPARATOR=" ||| ") as ?winner_names)
+(GROUP_CONCAT(distinct str(?buyer_name); SEPARATOR=" ||| ") as ?buyer_names)
+(GROUP_CONCAT(distinct str(?winner_name); SEPARATOR=" ||| ") as ?winner_names)
 (GROUP_CONCAT(distinct ?winner_nuts; SEPARATOR=" ||| ") as ?winner_nuts)
 (sample(?subcontracting) as ?subcontracting)
-(sample(?lot_ammount) as ?lot_ammount)
+(sample(?lot_amount) as ?lot_amount)
 (sample(?lot_currency) as ?lot_currency)
 (sample(?place_of_performance) as ?place_of_performance)
 (sample(?contract_duration) as ?contract_duration)
-(GROUP_CONCAT(distinct ?main_cpvs; SEPARATOR=" ||| ") as ?main_cpvs)
-(sample(?procedure_title) as ?procedure_title)
+(GROUP_CONCAT(distinct ?main_cpvs; SEPARATOR=" ||| ") as ?main_cpvs) # possible multiple cpvs per lot
+(sample(?procedure_title) as ?procedure_title) # possible multiple languages
 (sample(?procedure_type) as ?procedure_type)
-(sample(?awardet_cpb) as ?awardet_cpb)
+(sample(?awarded_cpb) as ?awarded_cpb)
 (sample(?ea_technique) as ?ea_technique)
 (sample(?fa_technique) as ?fa_technique)
 (sample(?is_gpa) as ?is_gpa)
@@ -31,10 +32,12 @@ where {
     ?lot a epo:Lot.
     ?result_notice a epo:ResultNotice;
                    	epo:hasPublicationDate ?publication_date;
-                    epo:hasID / epo:hasIdentifierValue ?notice_id;
                     epo:refersToLot ?lot.
 
-
+    optional {
+        ?result_notice epo:announcesRole / epo:playedBy / epo:hasLegalName ?buyer_name .
+        filter(lang(?buyer_name)='en')
+    }
     optional {
         ?lot_award_outcome epo:describesLot ?lot;
                            a epo:LotAwardOutcome;
@@ -58,7 +61,7 @@ where {
         optional {
             ?lot_award_outcome epo:hasAwardedValue ?lot_value.
             ?lot_value a epo:MonetaryValue;
-                       epo:hasAmountValue ?lot_ammount;
+                       epo:hasAmountValue ?lot_amount;
                        epo:hasCurrency ?lot_currency.
         }
     }
@@ -82,13 +85,13 @@ where {
                    a epo:Procedure.
         optional {
             ?procedure epo:hasTitle ?procedure_title .
-            FILTER(lang(?procedure_title)='en')
+            #FILTER(lang(?procedure_title)='en')
         }
         optional {
             ?procedure epo:hasProcedureType ?procedure_type .
         }
         optional {
-            ?procedure epo:isSubjectToProcedureSpecificTerm / epo:isAwardedByCPB ?awardet_cpb.
+            ?procedure epo:isSubjectToProcedureSpecificTerm / epo:isAwardedByCPB ?awarded_cpb.
         }
         optional {
             ?procedure epo:usesTechnique ?ea_technique.
