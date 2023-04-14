@@ -11,7 +11,8 @@ from dags.dags_utils import get_dag_param, chunks
 from ted_sws import config
 from ted_sws.core.model.notice import NoticeStatus
 from ted_sws.data_manager.adapters.notice_repository import NoticeRepository
-from ted_sws.notice_publisher_triple_store.services.load_transformed_notice_into_triple_store import  DEFAULT_NOTICE_RDF_MANIFESTATION_MIME_TYPE
+from ted_sws.notice_publisher_triple_store.services.load_transformed_notice_into_triple_store import \
+    DEFAULT_NOTICE_RDF_MANIFESTATION_MIME_TYPE
 
 from ted_data_eu.adapters.triple_store import GraphDBAdapter
 
@@ -20,13 +21,14 @@ NOTICE_STATUS_DAG_PARAM_KEY = "notice_status"
 DEFAULT_GRAPHDB_DATASET_NAME = "notices"
 PUBLISH_NOTICE_BATCH_SIZE = 100
 
+
 @dag(default_args=DEFAULT_DAG_ARGUMENTS,
      catchup=False,
      timetable=CronTriggerTimetable('0 5 * * *', timezone='UTC'),
      tags=['load', 'notices', 'graphdb'])
 def load_notices_in_graphdb():
     @task
-    def load_distilled_rdf_manifestations_in_graphdb():
+    def load_rdf_manifestations_in_graphdb():
         """
 
         :return:
@@ -71,9 +73,10 @@ def load_notices_in_graphdb():
             except Exception as e:
                 log_error(message=f"Error to load notices in graphdb: {e}")
 
-        with ThreadPoolExecutor(max_workers=4) as executor:
+        with ThreadPoolExecutor(max_workers=10) as executor:
             executor.map(batch_graphdb_loader, chunks(notices, PUBLISH_NOTICE_BATCH_SIZE))
 
-    load_distilled_rdf_manifestations_in_graphdb()
+    load_rdf_manifestations_in_graphdb()
+
 
 dag = load_notices_in_graphdb()
