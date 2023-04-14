@@ -264,10 +264,24 @@ class TedDataETLPipeline(ETLPipelineABC):
         load_documents_to_storage(documents=documents, storage=elastic_storage)
 
 
+
+def get_cpv_lvl(cpv_code: str)-> int:
+    cpv_levels = 6
+    cpv_reverse_lvl = 0
+    cpv_code = cpv_code[::-1]
+    while cpv_code[cpv_reverse_lvl] == '0':
+        cpv_reverse_lvl += 1
+
+    return cpv_levels - cpv_reverse_lvl
+
+
 if __name__ == "__main__":
-    etl = TedDataETLPipeline()
-    etl.set_metadata({"start_date": "20160716", "end_date": "20160716"})
-    df = etl.extract()['data']
+
+    print(get_cpv_lvl("09310000"))
+
+    # etl = TedDataETLPipeline()
+    # etl.set_metadata({"start_date": "20160716", "end_date": "20160716"})
+    # df = etl.extract()['data']
+    # # print(df.to_string())
+    # df = etl.transform({"data": df})['data']
     # print(df.to_string())
-    df = etl.transform({"data": df})['data']
-    print(df.to_string())
