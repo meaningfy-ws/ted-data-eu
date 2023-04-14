@@ -2,6 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import rdflib
 from airflow.decorators import dag, task
+from airflow.timetables.trigger import CronTriggerTimetable
 from pymongo import MongoClient
 from ted_sws.event_manager.services.log import log_notice_error, log_error
 
@@ -20,7 +21,8 @@ DEFAULT_GRAPHDB_DATASET_NAME = "notices"
 PUBLISH_NOTICE_BATCH_SIZE = 100
 
 @dag(default_args=DEFAULT_DAG_ARGUMENTS,
-     schedule_interval=None,
+     catchup=False,
+     timetable=CronTriggerTimetable('0 5 * * *', timezone='UTC'),
      tags=['load', 'notices', 'graphdb'])
 def load_notices_in_graphdb():
     @task
