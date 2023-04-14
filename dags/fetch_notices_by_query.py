@@ -21,6 +21,7 @@ FINISH_FETCH_BY_DATE_TASK_ID = "finish_fetch_by_query"
 
 
 @dag(default_args=DEFAULT_DAG_ARGUMENTS,
+     schedule_interval=None,
      catchup=False,
      tags=['fetch'])
 def fetch_notices_by_query():
