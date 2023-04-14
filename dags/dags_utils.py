@@ -12,6 +12,11 @@ def chunks(iterable: Iterable, chunk_size: int):
         yield chain([first], islice(iterator, chunk_size - 1))
 
 
+def batched(iterable:Iterable, chunk_size:int):
+    iterator = iter(iterable)
+    while chunk := tuple(islice(iterator, chunk_size)):
+        yield chunk
+
 def select_first_non_none(data):
     """
 
