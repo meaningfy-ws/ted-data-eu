@@ -1,16 +1,15 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
-from dateutil import rrule
 
 from airflow.decorators import dag, task
 from airflow.operators.python import get_current_context
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
+from airflow.timetables.trigger import CronTriggerTimetable
 
 from dags import DEFAULT_DAG_ARGUMENTS
 from dags.dags_utils import get_dag_param
 from dags.etl_executor import ETL_EXECUTOR_DAG_NAME
-from dags.fetch_notices_by_date import WILD_CARD_DAG_KEY, TRIGGER_COMPLETE_WORKFLOW_DAG_KEY, \
-    DAG_NAME as FETCH_NOTICES_BY_DATE_DAG_NAME
+
 from ted_sws.event_manager.adapters.event_log_decorator import event_log
 from ted_sws.event_manager.model.event_message import TechnicalEventMessage, EventMessageMetadata, \
     EventMessageProcessType
@@ -22,7 +21,10 @@ from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import START_DATE_
 RUN_ETL_EXECUTOR_BY_DATE_RANGE_DAG_NAME = "run_etl_executor_by_date_range"
 
 
-@dag(default_args=DEFAULT_DAG_ARGUMENTS, schedule_interval=None, tags=['master'])
+@dag(default_args=DEFAULT_DAG_ARGUMENTS,
+     catchup=False,
+     timetable=CronTriggerTimetable('0 8 * * *', timezone='UTC'),
+     tags=['master'])
 def run_etl_executor_by_date_range():
     @task
     @event_log(TechnicalEventMessage(
@@ -33,8 +35,12 @@ def run_etl_executor_by_date_range():
     )
     def run_etl_executor_for_each_date_in_range():
         context: Any = get_current_context()
-        start_date = get_dag_param(key=START_DATE_METADATA_FIELD, raise_error=True)
-        end_date = get_dag_param(key=END_DATE_METADATA_FIELD, raise_error=True)
+        start_date = get_dag_param(key=START_DATE_METADATA_FIELD)
+        end_date = get_dag_param(key=END_DATE_METADATA_FIELD)
+
+        if not start_date or not end_date:
+            start_date = (datetime.now() - timedelta(days=1)).strftime("%Y%m%d")
+            end_date = start_date
 
         date_range = generate_dates_by_date_range(start_date, end_date)
         for date in date_range:
