@@ -21,7 +21,7 @@ DEFAULT_GRAPHDB_DATASET_NAME = "notices"
 PUBLISH_NOTICE_BATCH_SIZE = 100
 
 @dag(default_args=DEFAULT_DAG_ARGUMENTS,
-     schedule_interval=None,
+     catchup=False,
      timetable=CronTriggerTimetable('0 5 * * *', timezone='UTC'),
      tags=['load', 'notices', 'graphdb'])
 def load_notices_in_graphdb():
