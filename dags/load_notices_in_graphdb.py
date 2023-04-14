@@ -7,7 +7,7 @@ from pymongo import MongoClient
 from ted_sws.event_manager.services.log import log_notice_error, log_error
 
 from dags import DEFAULT_DAG_ARGUMENTS
-from dags.dags_utils import get_dag_param, chunks
+from dags.dags_utils import get_dag_param, chunks, batched
 from ted_sws import config
 from ted_sws.core.model.notice import NoticeStatus
 from ted_sws.data_manager.adapters.notice_repository import NoticeRepository
@@ -43,7 +43,7 @@ def load_notices_in_graphdb():
             graphdb_repository.create_repository(repository_name=graphdb_dataset_name)
         notices = notice_repository.get_notices_by_status(notice_status=NoticeStatus[notice_status])
 
-        def batch_graphdb_loader(notices_batch: list):
+        def batch_graphdb_loader(notices_batch: tuple):
             result_graph = rdflib.Graph()
             eligible_notices = []
             for notice in notices_batch:
@@ -73,8 +73,15 @@ def load_notices_in_graphdb():
             except Exception as e:
                 log_error(message=f"Error to load notices in graphdb: {e}")
 
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            executor.map(batch_graphdb_loader, chunks(notices, PUBLISH_NOTICE_BATCH_SIZE))
+
+        notice_batches = batched(notices, PUBLISH_NOTICE_BATCH_SIZE)
+        features = []
+        with ThreadPoolExecutor(max_workers=16) as executor:
+            for notice_batch in notice_batches:
+               feature = executor.submit(batch_graphdb_loader, notice_batch)
+               features.append(feature)
+            for feature in features:
+                feature.result()
 
     load_rdf_manifestations_in_graphdb()
 
