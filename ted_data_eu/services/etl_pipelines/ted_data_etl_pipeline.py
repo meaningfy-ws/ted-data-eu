@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, date, timedelta
 from string import Template
-from typing import Dict
+from typing import Dict, Optional
 import re
 import pandas as pd
 from dateutil import rrule
@@ -55,11 +55,11 @@ BIDDER_NAME_AVAILABLE_INDICATOR = 'indicator_transparency_bidder_name_available'
 CONTRACT_VALUE_AVAILABLE_INDICATOR = 'indicator_transparency_contract_value_available'
 PROCEDURE_TYPE_INDICATOR = 'indicator_integrity_procedure_type'
 
-CPV_RANK_1 = 'cpv1'
-CPV_RANK_2 = 'cpv2'
-CPV_RANK_3 = 'cpv3'
+CPV_RANK_0 = 'cpv1'
+CPV_RANK_1 = 'cpv2'
+CPV_RANK_2 = 'cpv3'
+CPV_RANK_3 = 'cpv4'
 CPV_RANK_4 = 'cpv4'
-CPV_RANK_5 = 'cpv5'
 CPV_LEVELS = 'cpv_levels'
 CPV_PARENT = 'cpv_parent'
 
@@ -264,24 +264,10 @@ class TedDataETLPipeline(ETLPipelineABC):
         load_documents_to_storage(documents=documents, storage=elastic_storage)
 
 
-
-def get_cpv_lvl(cpv_code: str)-> int:
-    cpv_levels = 6
-    cpv_reverse_lvl = 0
-    cpv_code = cpv_code[::-1]
-    while cpv_code[cpv_reverse_lvl] == '0':
-        cpv_reverse_lvl += 1
-
-    return cpv_levels - cpv_reverse_lvl
-
-
 if __name__ == "__main__":
-
-    print(get_cpv_lvl("09310000"))
-
-    # etl = TedDataETLPipeline()
-    # etl.set_metadata({"start_date": "20160716", "end_date": "20160716"})
-    # df = etl.extract()['data']
-    # # print(df.to_string())
-    # df = etl.transform({"data": df})['data']
+    etl = TedDataETLPipeline()
+    etl.set_metadata({"start_date": "20160716", "end_date": "20160716"})
+    df = etl.extract()['data']
     # print(df.to_string())
+    df = etl.transform({"data": df})['data']
+    print(df.to_string())
