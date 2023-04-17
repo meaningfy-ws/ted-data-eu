@@ -4,6 +4,10 @@ from typing import Optional, List
 import pandas
 from pandas import DataFrame
 
+from ted_data_eu import PROJECT_RESOURCES_PATH
+
+CPV_TABLE_DEFAULT_PATH = PROJECT_RESOURCES_PATH / 'cpv_list.xlsx'
+
 CPV_SHEET_NAME = 'CPV codes'
 CPV_FULL_CODE_SHEET_NAME = 'FULL CODE'
 CPV_CODE_SHEET_NAME = 'CODE'
@@ -15,7 +19,7 @@ CPV_STR_LENGTH = 8
 
 
 class CPVAlgorithms(object):
-    def __init__(self, cpv_table_path: Path):
+    def __init__(self, cpv_table_path: Path = CPV_TABLE_DEFAULT_PATH):
         self.dataframe: DataFrame = pandas.read_excel(
             cpv_table_path,
             sheet_name=CPV_SHEET_NAME,
@@ -82,6 +86,8 @@ class CPVAlgorithms(object):
         return cpv_parent_rank
 
     def get_cpv_rank_code_list(self, cpv_codes: List[str], rank: int) -> Optional[List]:
+        if cpv_codes is None:
+            return None
         cpv_parent_ranks = []
         for cpv_code in cpv_codes:
             cpv_parent_rank = self.get_cpv_rank_code(cpv_code, rank)
@@ -91,24 +97,41 @@ class CPVAlgorithms(object):
         return list(dict.fromkeys(cpv_parent_ranks)) if cpv_parent_ranks else None
 
     def get_cpv_rank_list(self, cpv_codes: List[str]) -> Optional[List]:
+        if cpv_codes is None:
+            return None
         cpv_ranks = []
         for cpv_code in cpv_codes:
             cpv_ranks.append(self.get_cpv_rank(cpv_code))
 
         return cpv_ranks if cpv_ranks else None
 
+    def get_cpv_parent_list(self, cpv_codes: List[str]) -> Optional[List]:
+        if cpv_codes is None:
+            return None
+        cpv_parents = []
+        for cpv_code in cpv_codes:
+            cpv_rank = self.get_cpv_rank(cpv_code)
+            if cpv_rank is not None:
+                cpv_parent = self.get_cpv_rank_code(cpv_code, cpv_rank - 1)
+                if cpv_parent is not None:
+                    cpv_parents.append(cpv_parent)
 
-if __name__ == "__main__":
-    cpvalg = CPVAlgorithms(Path('C:\\Users\\user\\Desktop\\ted-data-eu\\ted_data_eu\\resources\\cpv_list.xlsx'))
-    cpvs = ['60112000', '60140000', '99999', '63712321', '63712311']
-    # print(cpvalg.dataframe.head())
-    print("alo")
-    print(cpvs)
-    print(
-        cpvalg.get_cpv_rank_list(cpvs)
-    )
-    print(
-        cpvalg.get_cpv_rank_code_list(cpv_codes=cpvs, rank=4)
-    )
+        return list(dict.fromkeys(cpv_parents)) if cpv_parents else None
 
-    print("salut")
+
+# if __name__ == "__main__":
+#     cpvalg = CPVAlgorithms()
+#     cpvs = ['60112000', '60140000', '99999', '63712321', '63712311']
+#     # print(cpvalg.dataframe.head())
+#     print("alo")
+#     print(cpvs)
+#     print(
+#         cpvalg.get_cpv_rank_list(cpvs)
+#     )
+#     print(
+#         cpvalg.get_cpv_rank_code_list(cpv_codes=cpvs, rank=3)
+#     )
+#     print(
+#         cpvalg.get_cpv_parent_list(cpvs)
+#     )
+#     print("salut")

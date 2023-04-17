@@ -8,6 +8,7 @@ from dateutil import rrule
 from pandas import DataFrame
 import numpy as np
 from ted_data_eu import config
+from ted_data_eu.adapters.cpv import CPVAlgorithms
 from ted_data_eu.adapters.etl_pipeline_abc import ETLPipelineABC
 from ted_data_eu.adapters.storage import ElasticStorage
 from ted_data_eu.adapters.triple_store import GraphDBAdapter
@@ -55,12 +56,12 @@ BIDDER_NAME_AVAILABLE_INDICATOR = 'indicator_transparency_bidder_name_available'
 CONTRACT_VALUE_AVAILABLE_INDICATOR = 'indicator_transparency_contract_value_available'
 PROCEDURE_TYPE_INDICATOR = 'indicator_integrity_procedure_type'
 
-CPV_RANK_0 = 'cpv1'
-CPV_RANK_1 = 'cpv2'
-CPV_RANK_2 = 'cpv3'
-CPV_RANK_3 = 'cpv4'
+CPV_RANK_0 = 'cpv0'
+CPV_RANK_1 = 'cpv1'
+CPV_RANK_2 = 'cpv2'
+CPV_RANK_3 = 'cpv3'
 CPV_RANK_4 = 'cpv4'
-CPV_LEVELS = 'cpv_levels'
+CPV_LEVEL = 'cpv_level'
 CPV_PARENT = 'cpv_parent'
 
 
@@ -248,6 +249,23 @@ class TedDataETLPipeline(ETLPipelineABC):
         data_table[PROCEDURE_TYPE_INDICATOR] = data_table.apply(
             lambda x: 100 if x[PROCEDURE_TYPE_COLUMN_NAME] == 'open' else 0, axis=1)
 
+        # add cpv fields
+        cpv_algorithms = CPVAlgorithms()
+        data_table[CPV_PARENT] = data_table.apply(
+            lambda x: cpv_algorithms.get_cpv_parent_list(x[LOT_CPV_COLUMN_NAME]), axis=1)
+        data_table[CPV_LEVEL] = data_table.apply(
+            lambda x: cpv_algorithms.get_cpv_rank_list(x[LOT_CPV_COLUMN_NAME]), axis=1)
+        data_table[CPV_RANK_4] = data_table.apply(
+            lambda x: cpv_algorithms.get_cpv_rank_code_list(x[LOT_CPV_COLUMN_NAME], rank=4), axis=1)
+        data_table[CPV_RANK_3] = data_table.apply(
+            lambda x: cpv_algorithms.get_cpv_rank_code_list(x[LOT_CPV_COLUMN_NAME], rank=3), axis=1)
+        data_table[CPV_RANK_2] = data_table.apply(
+            lambda x: cpv_algorithms.get_cpv_rank_code_list(x[LOT_CPV_COLUMN_NAME], rank=2), axis=1)
+        data_table[CPV_RANK_1] = data_table.apply(
+            lambda x: cpv_algorithms.get_cpv_rank_code_list(x[LOT_CPV_COLUMN_NAME], rank=1), axis=1)
+        data_table[CPV_RANK_0] = data_table.apply(
+            lambda x: cpv_algorithms.get_cpv_rank_code_list(x[LOT_CPV_COLUMN_NAME], rank=0), axis=1)
+
         return {"data": data_table}
 
     def load(self, transformed_data: Dict):
@@ -264,10 +282,11 @@ class TedDataETLPipeline(ETLPipelineABC):
         load_documents_to_storage(documents=documents, storage=elastic_storage)
 
 
-if __name__ == "__main__":
-    etl = TedDataETLPipeline()
-    etl.set_metadata({"start_date": "20160716", "end_date": "20160716"})
-    df = etl.extract()['data']
-    # print(df.to_string())
-    df = etl.transform({"data": df})['data']
-    print(df.to_string())
+# if __name__ == "__main__":
+#     etl = TedDataETLPipeline()
+#     # etl.set_metadata({"start_date": "20160716", "end_date": "20160716"})
+#     etl.set_metadata({"start_date": "20210326", "end_date": "20210326"})
+#     df = etl.extract()['data']
+#     # print(df.to_string())
+#     df = etl.transform({"data": df})['data']
+#     print(df.to_string())
