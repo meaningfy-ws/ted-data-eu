@@ -64,13 +64,36 @@ CPV_RANK_4 = 'cpv4'
 CPV_LEVEL = 'cpv_level'
 CPV_PARENT = 'cpv_parent'
 
+LOT_NUTS_0 = 'lots_nuts_0'
+LOT_NUTS_1 = 'lots_nuts_1'
+LOT_NUTS_2 = 'lots_nuts_2'
+LOT_NUTS_3 = 'lots_nuts_3'
+
+
+def generate_nuts_code_by_level(nuts_code: str, nuts_level: int) -> Optional[str]:
+    """
+        Given a nuts code and a nuts level returns the nuts code for that level
+    :param nuts_code: Nuts code
+    :param nuts_level: Nuts level
+    :return: Nuts code for the given level
+    """
+    if nuts_code is None:
+        return None
+
+    nuts_level += 2
+    nuts_code_length = len(nuts_code)
+    if nuts_code_length < nuts_level:
+        return None
+
+    return nuts_code[:nuts_level]
+
 
 def generate_dates_by_date_range(start_date: str, end_date: str) -> list:
     """
         Given a date range returns all daily dates in that range
-    :param start_date:
-    :param end_date:
-    :return:
+    :param start_date: Start date
+    :param end_date: End date
+    :return: List of dates in that range
     """
     return [dt.strftime('%Y%m%d')
             for dt in rrule.rrule(rrule.DAILY,
@@ -81,9 +104,9 @@ def generate_dates_by_date_range(start_date: str, end_date: str) -> list:
 def generate_sparql_filter_by_date_range(start_date: str, end_date: str) -> str:
     """
         Given a date range returns all daily dates in string format for sparql query
-    :param start_date:
-    :param end_date:
-    :return:
+    :param start_date: Start date
+    :param end_date: End date
+    :return: String with all dates in that range
     """
     date_range = generate_dates_by_date_range(start_date, end_date)
     result_string = list(map(lambda x: f"\"{x}\"", date_range))
@@ -104,19 +127,36 @@ class TedDataETLPipeline(ETLPipelineABC):
     """
 
     def __init__(self):
+        """
+            Constructor
+        """
         self.etl_metadata = {}
         self.pipeline_name = TED_DATA_ETL_PIPELINE_NAME
 
     def get_pipeline_name(self) -> str:
+        """
+            Returns the name of the pipeline
+        """
         return self.pipeline_name
 
     def set_metadata(self, etl_metadata: dict):
+        """
+            Sets the metadata for the pipeline
+            :param etl_metadata: Metadata for the pipeline
+        """
         self.etl_metadata = etl_metadata
 
     def get_metadata(self) -> dict:
+        """
+            Returns the metadata for the pipeline
+        """
         return self.etl_metadata
 
     def extract(self) -> Dict:
+        """
+            Execute extraction step of the pipeline
+            :return: Dictionary with the data extracted
+        """
         etl_metadata = self.get_metadata()
         etl_metadata_fields = etl_metadata.keys()
         if START_DATE_METADATA_FIELD in etl_metadata_fields and END_DATE_METADATA_FIELD in etl_metadata_fields:
@@ -138,6 +178,11 @@ class TedDataETLPipeline(ETLPipelineABC):
         return {"data": result_table}
 
     def transform(self, extracted_data: Dict) -> Dict:
+        """
+            Transforms the data extracted from the pipeline
+            :param extracted_data: Data extracted from the pipeline
+            :return: Dictionary with the data transformed
+        """
         data_table: DataFrame = extracted_data['data']
 
         # delete rows with all empty columns
@@ -148,28 +193,6 @@ class TedDataETLPipeline(ETLPipelineABC):
             raise TedETLException("No data was been fetched from triple store!")
         else:
             logging.info(data_table.head().to_string())
-
-        # set columns types
-        # data_table = data_table.astype({
-        #     PROCEDURE_TYPE_COLUMN_NAME: str,
-        #     WINNER_NUTS_COLUMN_NAME: str,
-        #     LOT_NUTS_COLUMN_NAME: str,
-        #     CURRENCY_COLUMN_NAME: str,
-        #     # PUBLICATION_DATE_COLUMN_NAME: str,
-        #     WINNER_NAME_COLUMN_NAME: str,
-        #     # AMOUNT_VALUE_COLUMN_NAME: str,
-        #     PROCEDURE_TITLE_COLUMN_NAME: str,
-        #     LOT_URL_COLUMN_NAME: str,
-        #     BUYER_NAME_COLUMN_NAME: str,
-        #     LOT_CPV_COLUMN_NAME: str,
-        #     #LOT_SUBCONTRACTING_COLUMN_NAME: str,
-        #     CONTRACT_DURATION_COLUMN_NAME: str,
-        #     AWARDED_CPB_COLUMN_NAME: str,
-        #     EA_TECHNIQUE_COLUMN_NAME: str,
-        #     FA_TECHNIQUE_COLUMN_NAME: str,
-        #     # IS_GPA_COLUMN_NAME: str,
-        #     # USING_EU_FUNDS_COLUMN_NAME: str,
-        # })
 
         # data transform
         data_table[WINNER_NUTS_COLUMN_NAME] = data_table[WINNER_NUTS_COLUMN_NAME].apply(
@@ -201,6 +224,11 @@ class TedDataETLPipeline(ETLPipelineABC):
             ), axis=1)
 
         def generate_notice_link(lot_url):
+            """
+                Generates the link to the notice from the lot url
+                :param lot_url: Url of the lot
+                :return: Link to the notice
+            """
             lot_id = re.search(r"id_(.*)_Lot_", lot_url).group(1)
             notice_year = lot_id.split('-')[0]
             notice_number = lot_id.split('-')[-1]
@@ -252,23 +280,37 @@ class TedDataETLPipeline(ETLPipelineABC):
         # add cpv fields
         cpv_algorithms = CPVProcessor()
         data_table[CPV_PARENT] = data_table.apply(
-            lambda x: cpv_algorithms.get_cpv_parent_list(x[LOT_CPV_COLUMN_NAME]), axis=1)
+            lambda x: cpv_algorithms.get_unique_cpvs_parent_codes(x[LOT_CPV_COLUMN_NAME]), axis=1)
         data_table[CPV_LEVEL] = data_table.apply(
-            lambda x: cpv_algorithms.get_cpv_rank_list(x[LOT_CPV_COLUMN_NAME]), axis=1)
+            lambda x: cpv_algorithms.get_cpvs_ranks(x[LOT_CPV_COLUMN_NAME]), axis=1)
         data_table[CPV_RANK_4] = data_table.apply(
-            lambda x: cpv_algorithms.get_cpv_rank_code_list(x[LOT_CPV_COLUMN_NAME], rank=4), axis=1)
+            lambda x: cpv_algorithms.get_unique_cpvs_parent_codes_by_rank(x[LOT_CPV_COLUMN_NAME], rank=4), axis=1)
         data_table[CPV_RANK_3] = data_table.apply(
-            lambda x: cpv_algorithms.get_cpv_rank_code_list(x[LOT_CPV_COLUMN_NAME], rank=3), axis=1)
+            lambda x: cpv_algorithms.get_unique_cpvs_parent_codes_by_rank(x[LOT_CPV_COLUMN_NAME], rank=3), axis=1)
         data_table[CPV_RANK_2] = data_table.apply(
-            lambda x: cpv_algorithms.get_cpv_rank_code_list(x[LOT_CPV_COLUMN_NAME], rank=2), axis=1)
+            lambda x: cpv_algorithms.get_unique_cpvs_parent_codes_by_rank(x[LOT_CPV_COLUMN_NAME], rank=2), axis=1)
         data_table[CPV_RANK_1] = data_table.apply(
-            lambda x: cpv_algorithms.get_cpv_rank_code_list(x[LOT_CPV_COLUMN_NAME], rank=1), axis=1)
+            lambda x: cpv_algorithms.get_unique_cpvs_parent_codes_by_rank(x[LOT_CPV_COLUMN_NAME], rank=1), axis=1)
         data_table[CPV_RANK_0] = data_table.apply(
-            lambda x: cpv_algorithms.get_cpv_rank_code_list(x[LOT_CPV_COLUMN_NAME], rank=0), axis=1)
+            lambda x: cpv_algorithms.get_unique_cpvs_parent_codes_by_rank(x[LOT_CPV_COLUMN_NAME], rank=0), axis=1)
+
+        # add nuts fields
+        data_table[LOT_NUTS_0] = data_table.apply(
+            lambda x: generate_nuts_code_by_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=0), axis=1)
+        data_table[LOT_NUTS_1] = data_table.apply(
+            lambda x: generate_nuts_code_by_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=1), axis=1)
+        data_table[LOT_NUTS_2] = data_table.apply(
+            lambda x: generate_nuts_code_by_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=2), axis=1)
+        data_table[LOT_NUTS_3] = data_table.apply(
+            lambda x: generate_nuts_code_by_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=3), axis=1)
 
         return {"data": data_table}
 
     def load(self, transformed_data: Dict):
+        """
+        Load data to storage (ElasticSearch)
+        :param transformed_data: data to load
+        """
         elastic_storage = ElasticStorage(elastic_index=TED_DATA_ETL_PIPELINE_NAME)
         data_table = transformed_data['data']
         documents = []
