@@ -64,6 +64,23 @@ CPV_RANK_4 = 'cpv4'
 CPV_LEVEL = 'cpv_level'
 CPV_PARENT = 'cpv_parent'
 
+LOT_NUTS_0 = 'lots_nuts_0'
+LOT_NUTS_1 = 'lots_nuts_1'
+LOT_NUTS_2 = 'lots_nuts_2'
+LOT_NUTS_3 = 'lots_nuts_3'
+
+
+def generate_nuts_lvl(nuts_code: str, lvl: int) -> Optional[str]:
+    if nuts_code is None:
+        return None
+
+    lvl += 2
+    nuts_code_length = len(nuts_code)
+    if nuts_code_length < lvl:
+        return None
+
+    return nuts_code[:lvl]
+
 
 def generate_dates_by_date_range(start_date: str, end_date: str) -> list:
     """
@@ -148,28 +165,6 @@ class TedDataETLPipeline(ETLPipelineABC):
             raise TedETLException("No data was been fetched from triple store!")
         else:
             logging.info(data_table.head().to_string())
-
-        # set columns types
-        # data_table = data_table.astype({
-        #     PROCEDURE_TYPE_COLUMN_NAME: str,
-        #     WINNER_NUTS_COLUMN_NAME: str,
-        #     LOT_NUTS_COLUMN_NAME: str,
-        #     CURRENCY_COLUMN_NAME: str,
-        #     # PUBLICATION_DATE_COLUMN_NAME: str,
-        #     WINNER_NAME_COLUMN_NAME: str,
-        #     # AMOUNT_VALUE_COLUMN_NAME: str,
-        #     PROCEDURE_TITLE_COLUMN_NAME: str,
-        #     LOT_URL_COLUMN_NAME: str,
-        #     BUYER_NAME_COLUMN_NAME: str,
-        #     LOT_CPV_COLUMN_NAME: str,
-        #     #LOT_SUBCONTRACTING_COLUMN_NAME: str,
-        #     CONTRACT_DURATION_COLUMN_NAME: str,
-        #     AWARDED_CPB_COLUMN_NAME: str,
-        #     EA_TECHNIQUE_COLUMN_NAME: str,
-        #     FA_TECHNIQUE_COLUMN_NAME: str,
-        #     # IS_GPA_COLUMN_NAME: str,
-        #     # USING_EU_FUNDS_COLUMN_NAME: str,
-        # })
 
         # data transform
         data_table[WINNER_NUTS_COLUMN_NAME] = data_table[WINNER_NUTS_COLUMN_NAME].apply(
@@ -265,6 +260,16 @@ class TedDataETLPipeline(ETLPipelineABC):
             lambda x: cpv_algorithms.get_cpv_rank_code_list(x[LOT_CPV_COLUMN_NAME], rank=1), axis=1)
         data_table[CPV_RANK_0] = data_table.apply(
             lambda x: cpv_algorithms.get_cpv_rank_code_list(x[LOT_CPV_COLUMN_NAME], rank=0), axis=1)
+
+        # add nuts fields
+        data_table[LOT_NUTS_0] = data_table.apply(
+            lambda x: generate_nuts_lvl(nuts_code=x[LOT_NUTS_COLUMN_NAME], lvl=0), axis=1)
+        data_table[LOT_NUTS_1] = data_table.apply(
+            lambda x: generate_nuts_lvl(nuts_code=x[LOT_NUTS_COLUMN_NAME], lvl=1), axis=1)
+        data_table[LOT_NUTS_2] = data_table.apply(
+            lambda x: generate_nuts_lvl(nuts_code=x[LOT_NUTS_COLUMN_NAME], lvl=2), axis=1)
+        data_table[LOT_NUTS_3] = data_table.apply(
+            lambda x: generate_nuts_lvl(nuts_code=x[LOT_NUTS_COLUMN_NAME], lvl=3), axis=1)
 
         return {"data": data_table}
 

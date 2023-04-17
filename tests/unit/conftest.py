@@ -21,3 +21,13 @@ def real_cpv():
 @pytest.fixture
 def problematic_cpv():
     return '60112000'
+
+
+@pytest.fixture
+def real_nuts():
+    return 'FRK26'
+
+
+@pytest.fixture
+def fake_nuts():
+    return None

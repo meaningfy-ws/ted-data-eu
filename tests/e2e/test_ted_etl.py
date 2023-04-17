@@ -4,7 +4,8 @@ from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import AMOUNT_VALU
     SUBCONTRACT_AVAILABLE_INDICATOR, DURATION_AVAILABLE_INDICATOR, JOINT_PROCUREMENT_INDICATOR, \
     USE_OF_FRAMEWORK_AGREEMENT_INDICATOR, ELECTRONIC_AUCTION_INDICATOR, USE_OF_WTO_INDICATOR, \
     IMPLEMENTATION_LOCATION_AVAILABLE_INDICATOR, FUNDINGS_INFO_AVAILABLE_INDICATOR, BIDDER_NAME_AVAILABLE_INDICATOR, \
-    CONTRACT_VALUE_AVAILABLE_INDICATOR, PROCEDURE_TYPE_INDICATOR, PRODUCT_CODES_AVAILABLE_INDICATOR
+    CONTRACT_VALUE_AVAILABLE_INDICATOR, PROCEDURE_TYPE_INDICATOR, PRODUCT_CODES_AVAILABLE_INDICATOR, LOT_NUTS_0, \
+    LOT_NUTS_1, LOT_NUTS_2, LOT_NUTS_3
 
 
 def test_etl_pipeline(ted_data_etl_pipeline, etl_pipeline_config, graphdb_triple_store, example_notices,
@@ -40,6 +41,11 @@ def test_etl_pipeline(ted_data_etl_pipeline, etl_pipeline_config, graphdb_triple
     assert BIDDER_NAME_AVAILABLE_INDICATOR in dataframe_columns
     assert CONTRACT_VALUE_AVAILABLE_INDICATOR in dataframe_columns
     assert PROCEDURE_TYPE_INDICATOR in dataframe_columns
+
+    assert LOT_NUTS_0 in dataframe_columns
+    assert LOT_NUTS_1 in dataframe_columns
+    assert LOT_NUTS_2 in dataframe_columns
+    assert LOT_NUTS_3 in dataframe_columns
 
     ted_data_etl_pipeline.load(data)
 
