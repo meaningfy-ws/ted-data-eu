@@ -9,3 +9,7 @@ def test_generate_sparql_filter_by_date_range():
 def test_date_range_generator():
     test_range = generate_dates_by_date_range("20151208", "20151223")
     assert len(test_range) == 16
+
+def test_date_range_generator_for_a_day():
+    test_range = generate_dates_by_date_range("20151208", "20151208")
+    assert len(test_range) == 1
