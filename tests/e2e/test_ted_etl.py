@@ -8,6 +8,7 @@ from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import AMOUNT_VALU
     LOT_NUTS_1, LOT_NUTS_2, LOT_NUTS_3
 
 
+
 def test_etl_pipeline(ted_data_etl_pipeline, etl_pipeline_config, graphdb_triple_store, example_notices,
                       tmp_repository_name):
     graphdb_repositories = graphdb_triple_store.list_repositories()

@@ -19,7 +19,16 @@ CPV_STR_LENGTH = 8
 
 
 class CPVProcessor(object):
+    """
+    CPVProcessor is a class that provides methods to process CPV codes.
+    It is used to check if a CPV code is valid and to get the rank of a CPV code.
+    It is also used to get the parent CPV code of a given CPV code at a given rank.
+    """
+
     def __init__(self, cpv_table_path: Path = CPV_TABLE_DEFAULT_PATH):
+        """
+        CPVProcessor constructor.
+        """
         self.dataframe: DataFrame = pandas.read_excel(
             cpv_table_path,
             sheet_name=CPV_SHEET_NAME,
@@ -32,9 +41,19 @@ class CPVProcessor(object):
         )
 
     def cpv_exists(self, cpv_code: str) -> bool:
+        """
+        Check if a CPV code exists in the CPV table.
+        :param cpv_code: CPV code to check.
+        :return: True if the CPV code exists, False otherwise.
+        """
         return cpv_code in self.dataframe[CPV_CODE_SHEET_NAME].values
 
     def get_cpv_rank(self, cpv_code: str) -> Optional[int]:
+        """
+        Get the rank of a CPV code.
+        :param cpv_code: CPV code to check.
+        :return: The rank of the CPV code if it exists, None otherwise.
+        """
         if not self.cpv_exists(cpv_code=cpv_code):
             return None
         if cpv_code.endswith('000000'):
@@ -48,6 +67,11 @@ class CPVProcessor(object):
         return CPV_MAX_RANK
 
     def _get_cpv_parent(self, cpv_code: str) -> Optional[str]:
+        """
+        Get the parent CPV code of a given CPV code.
+        :param cpv_code: CPV code to check.
+        :return: The parent CPV parent code if it exists, None otherwise.
+        """
         cpv_code_list = list(cpv_code)
         i = CPV_STR_LENGTH
 
@@ -66,7 +90,13 @@ class CPVProcessor(object):
             return cpv_parent
         return self._get_cpv_parent(cpv_code=cpv_parent)
 
-    def get_cpv_rank_code(self, cpv_code: str, rank: int) -> Optional[str]:
+    def get_cpv_parent_code_by_rank(self, cpv_code: str, rank: int) -> Optional[str]:
+        """
+        Get the parent CPV code of a given CPV code at a given rank.
+        :param cpv_code: CPV code to check.
+        :param rank: Rank of the parent CPV code.
+        :return: The parent CPV parent code if it exists, None otherwise.
+        """
         if (rank < CPV_MIN_RANK) or (rank > CPV_MAX_RANK):
             return None
 
@@ -84,18 +114,29 @@ class CPVProcessor(object):
             cpv_parent_rank = self._get_cpv_parent(cpv_parent_rank)
         return cpv_parent_rank
 
-    def get_cpv_rank_code_list(self, cpv_codes: List[str], rank: int) -> Optional[List]:
+    def get_unique_cpvs_parent_codes_by_rank(self, cpv_codes: List[str], rank: int) -> Optional[List]:
+        """
+        Get the parent CPV codes of a given list of CPV codes at a given rank.
+        :param cpv_codes: List of CPV codes to check.
+        :param rank: Rank of the parent CPV codes.
+        :return: The unique parent CPV codes if they exist, None otherwise.
+        """
         if cpv_codes is None:
             return None
-        cpv_parent_ranks = []
+        cpv_parent_codes = []
         for cpv_code in cpv_codes:
-            cpv_parent_rank = self.get_cpv_rank_code(cpv_code, rank)
-            if cpv_parent_rank is not None:
-                cpv_parent_ranks.append(cpv_parent_rank)
+            cpv_parent_code = self.get_cpv_parent_code_by_rank(cpv_code, rank)
+            if cpv_parent_code is not None:
+                cpv_parent_codes.append(cpv_parent_code)
 
-        return list(dict.fromkeys(cpv_parent_ranks)) if cpv_parent_ranks else None
+        return list(set(cpv_parent_codes)) if cpv_parent_codes else None
 
-    def get_cpv_rank_list(self, cpv_codes: List[str]) -> Optional[List]:
+    def get_cpvs_ranks(self, cpv_codes: List[str]) -> Optional[List]:
+        """
+        Get the ranks of a given list of CPV codes.
+        :param cpv_codes: List of CPV codes to check.
+        :return: The ranks of the CPV codes if they exist, None otherwise.
+        """
         if cpv_codes is None:
             return None
         cpv_ranks = []
@@ -104,15 +145,20 @@ class CPVProcessor(object):
 
         return cpv_ranks if cpv_ranks else None
 
-    def get_cpv_parent_list(self, cpv_codes: List[str]) -> Optional[List]:
+    def get_unique_cpvs_parent_codes(self, cpv_codes: List[str]) -> Optional[List]:
+        """
+        Get the parent CPV codes of a given list of CPV codes.
+        :param cpv_codes: List of CPV codes to check.
+        :return: The unique parent CPV codes if they exist, None otherwise.
+        """
         if cpv_codes is None:
             return None
         cpv_parents = []
         for cpv_code in cpv_codes:
             cpv_rank = self.get_cpv_rank(cpv_code)
             if cpv_rank is not None:
-                cpv_parent = self.get_cpv_rank_code(cpv_code, cpv_rank - 1)
+                cpv_parent = self.get_cpv_parent_code_by_rank(cpv_code, cpv_rank - 1)
                 if cpv_parent is not None:
                     cpv_parents.append(cpv_parent)
 
-        return list(dict.fromkeys(cpv_parents)) if cpv_parents else None
+        return list(set(cpv_parents)) if cpv_parents else None
