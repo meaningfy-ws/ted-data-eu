@@ -70,16 +70,16 @@ LOT_NUTS_2 = 'lots_nuts_2'
 LOT_NUTS_3 = 'lots_nuts_3'
 
 
-def generate_nuts_lvl(nuts_code: str, lvl: int) -> Optional[str]:
+def generate_nuts_level(nuts_code: str, nuts_level: int) -> Optional[str]:
     if nuts_code is None:
         return None
 
-    lvl += 2
+    nuts_level += 2
     nuts_code_length = len(nuts_code)
-    if nuts_code_length < lvl:
+    if nuts_code_length < nuts_level:
         return None
 
-    return nuts_code[:lvl]
+    return nuts_code[:nuts_level]
 
 
 def generate_dates_by_date_range(start_date: str, end_date: str) -> list:
@@ -263,13 +263,13 @@ class TedDataETLPipeline(ETLPipelineABC):
 
         # add nuts fields
         data_table[LOT_NUTS_0] = data_table.apply(
-            lambda x: generate_nuts_lvl(nuts_code=x[LOT_NUTS_COLUMN_NAME], lvl=0), axis=1)
+            lambda x: generate_nuts_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=0), axis=1)
         data_table[LOT_NUTS_1] = data_table.apply(
-            lambda x: generate_nuts_lvl(nuts_code=x[LOT_NUTS_COLUMN_NAME], lvl=1), axis=1)
+            lambda x: generate_nuts_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=1), axis=1)
         data_table[LOT_NUTS_2] = data_table.apply(
-            lambda x: generate_nuts_lvl(nuts_code=x[LOT_NUTS_COLUMN_NAME], lvl=2), axis=1)
+            lambda x: generate_nuts_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=2), axis=1)
         data_table[LOT_NUTS_3] = data_table.apply(
-            lambda x: generate_nuts_lvl(nuts_code=x[LOT_NUTS_COLUMN_NAME], lvl=3), axis=1)
+            lambda x: generate_nuts_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=3), axis=1)
 
         return {"data": data_table}
 
