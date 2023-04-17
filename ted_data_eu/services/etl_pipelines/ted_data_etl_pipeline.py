@@ -147,7 +147,7 @@ class TedDataETLPipeline(ETLPipelineABC):
         if data_table.empty:
             raise TedETLException("No data was been fetched from triple store!")
         else:
-            logging.info(data_table.head())
+            logging.info(data_table.head().to_string())
 
         # set columns types
         # data_table = data_table.astype({
@@ -280,6 +280,7 @@ class TedDataETLPipeline(ETLPipelineABC):
             row_dict['_id'] = getattr(row, LOT_URL_COLUMN_NAME)
             documents.append(row_dict)
         load_documents_to_storage(documents=documents, storage=elastic_storage)
+        logging.info("Loading done.")
 
 
 # if __name__ == "__main__":
@@ -290,3 +291,4 @@ class TedDataETLPipeline(ETLPipelineABC):
 #     # print(df.to_string())
 #     df = etl.transform({"data": df})['data']
 #     print(df.to_string())
+#     etl.load({'data': df})
