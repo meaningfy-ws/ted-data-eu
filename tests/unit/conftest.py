@@ -1,11 +1,11 @@
 import pytest
 
-from ted_data_eu.adapters.cpv import CPVAlgorithms
+from ted_data_eu.adapters.cpv_processor import CPVProcessor
 
 
 @pytest.fixture
-def cpv_algorithms_object():
-    return CPVAlgorithms()
+def cpv_processor():
+    return CPVProcessor()
 
 
 @pytest.fixture

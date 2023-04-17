@@ -8,7 +8,7 @@ from dateutil import rrule
 from pandas import DataFrame
 import numpy as np
 from ted_data_eu import config
-from ted_data_eu.adapters.cpv import CPVAlgorithms
+from ted_data_eu.adapters.cpv_processor import CPVProcessor
 from ted_data_eu.adapters.etl_pipeline_abc import ETLPipelineABC
 from ted_data_eu.adapters.storage import ElasticStorage
 from ted_data_eu.adapters.triple_store import GraphDBAdapter
@@ -250,7 +250,7 @@ class TedDataETLPipeline(ETLPipelineABC):
             lambda x: 100 if x[PROCEDURE_TYPE_COLUMN_NAME] == 'open' else 0, axis=1)
 
         # add cpv fields
-        cpv_algorithms = CPVAlgorithms()
+        cpv_algorithms = CPVProcessor()
         data_table[CPV_PARENT] = data_table.apply(
             lambda x: cpv_algorithms.get_cpv_parent_list(x[LOT_CPV_COLUMN_NAME]), axis=1)
         data_table[CPV_LEVEL] = data_table.apply(

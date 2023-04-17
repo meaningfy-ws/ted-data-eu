@@ -18,7 +18,7 @@ CPV_MAX_RANK = CPV_MIN_RANK + 4
 CPV_STR_LENGTH = 8
 
 
-class CPVAlgorithms(object):
+class CPVProcessor(object):
     def __init__(self, cpv_table_path: Path = CPV_TABLE_DEFAULT_PATH):
         self.dataframe: DataFrame = pandas.read_excel(
             cpv_table_path,
