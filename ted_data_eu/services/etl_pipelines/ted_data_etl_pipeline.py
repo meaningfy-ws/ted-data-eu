@@ -15,7 +15,7 @@ from ted_data_eu.adapters.triple_store import GraphDBAdapter
 from ted_data_eu.services.currency_convertor import convert_currency
 from ted_data_eu.services.data_load_service import load_documents_to_storage
 
-TED_DATA_ETL_PIPELINE_NAME = "tda_data"
+TED_DATA_ETL_PIPELINE_NAME = "ted_data"
 START_DATE_METADATA_FIELD = "start_date"
 END_DATE_METADATA_FIELD = "end_date"
 TRIPLE_STORE_ENDPOINT = "notices"
