@@ -11,6 +11,6 @@ def test_convert_currency():
     fake_currency = 'XYZ'
     real_date = datetime.strptime("20200115", "%Y%m%d")
 
-    assert convert_currency(sample_amount, sample_currency, sample_currency2, fake_date) is None
-    assert convert_currency(sample_amount, sample_currency, fake_currency) is None
-    assert convert_currency(sample_amount, sample_currency, sample_currency2, real_date) is not None
+    assert convert_currency(sample_amount, sample_currency, sample_currency2, fake_date) == 0.0
+    assert convert_currency(sample_amount, sample_currency, fake_currency) == 0.0
+    assert convert_currency(sample_amount, sample_currency, sample_currency2, real_date) != 0.0
