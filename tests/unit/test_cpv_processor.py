@@ -32,11 +32,10 @@ def test_cpv_algorithms(cpv_processor, fake_cpv, real_cpv, problematic_cpv):
     assert cpv_processor.get_cpv_parent_code_by_rank(cpv_code=fake_cpv, rank=5) is None
 
     assert cpv_processor.get_cpvs_ranks(cpv_codes=[real_cpv, fake_cpv, problematic_cpv]) == [4, None, 3]
-    assert cpv_processor.get_unique_cpvs_parent_codes(cpv_codes=[real_cpv, fake_cpv, problematic_cpv]) == ['63712000',
-                                                                                                  '60100000']
-    assert cpv_processor.get_unique_cpvs_parent_codes_by_rank(cpv_codes=[real_cpv, fake_cpv, problematic_cpv], rank=0) == [
-        '63000000',
-        '60000000']
+    assert set(cpv_processor.get_unique_cpvs_parent_codes(cpv_codes=[real_cpv, fake_cpv, problematic_cpv])) == {
+        '63712000', '60100000'}
+    assert set(cpv_processor.get_unique_cpvs_parent_codes_by_rank(cpv_codes=[real_cpv, fake_cpv, problematic_cpv],
+                                                                  rank=0)) == {'63000000', '60000000'}
 
     assert cpv_processor._get_cpv_parent(cpv_code='10000000') is None
     assert cpv_processor.get_cpv_rank(None) is None
