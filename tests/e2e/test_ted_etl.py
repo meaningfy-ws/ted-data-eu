@@ -1,11 +1,10 @@
 import pandas as pd
 
-from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import TED_DATA_COLUMNS
-
-
-def check_tda_etl_columns(data_columns: list):
-    for column in TED_DATA_COLUMNS:
-        assert column in data_columns
+from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import AMOUNT_VALUE_EUR_COLUMN_NAME, NOTICE_LINK, \
+    SUBCONTRACT_AVAILABLE_INDICATOR, DURATION_AVAILABLE_INDICATOR, JOINT_PROCUREMENT_INDICATOR, \
+    USE_OF_FRAMEWORK_AGREEMENT_INDICATOR, ELECTRONIC_AUCTION_INDICATOR, USE_OF_WTO_INDICATOR, \
+    IMPLEMENTATION_LOCATION_AVAILABLE_INDICATOR, FUNDINGS_INFO_AVAILABLE_INDICATOR, BIDDER_NAME_AVAILABLE_INDICATOR, \
+    CONTRACT_VALUE_AVAILABLE_INDICATOR, PROCEDURE_TYPE_INDICATOR, PRODUCT_CODES_AVAILABLE_INDICATOR
 
 
 def test_etl_pipeline(ted_data_etl_pipeline, etl_pipeline_config, graphdb_triple_store, example_notices,
@@ -23,11 +22,24 @@ def test_etl_pipeline(ted_data_etl_pipeline, etl_pipeline_config, graphdb_triple
     assert isinstance(dataframe, pd.DataFrame)
     assert not dataframe.empty
 
-    check_tda_etl_columns(list(dataframe.columns))
-
     data = ted_data_etl_pipeline.transform(data)
     dataframe = data['data']
-    check_tda_etl_columns(list(dataframe.columns))
+
+    dataframe_columns = list(dataframe.columns)
+    assert AMOUNT_VALUE_EUR_COLUMN_NAME in dataframe_columns
+    assert NOTICE_LINK in dataframe_columns
+    assert SUBCONTRACT_AVAILABLE_INDICATOR in dataframe_columns
+    assert DURATION_AVAILABLE_INDICATOR in dataframe_columns
+    assert JOINT_PROCUREMENT_INDICATOR in dataframe_columns
+    assert USE_OF_FRAMEWORK_AGREEMENT_INDICATOR in dataframe_columns
+    assert ELECTRONIC_AUCTION_INDICATOR in dataframe_columns
+    assert USE_OF_WTO_INDICATOR in dataframe_columns
+    assert IMPLEMENTATION_LOCATION_AVAILABLE_INDICATOR in dataframe_columns
+    assert FUNDINGS_INFO_AVAILABLE_INDICATOR in dataframe_columns
+    assert PRODUCT_CODES_AVAILABLE_INDICATOR in dataframe_columns
+    assert BIDDER_NAME_AVAILABLE_INDICATOR in dataframe_columns
+    assert CONTRACT_VALUE_AVAILABLE_INDICATOR in dataframe_columns
+    assert PROCEDURE_TYPE_INDICATOR in dataframe_columns
 
     ted_data_etl_pipeline.load(data)
 

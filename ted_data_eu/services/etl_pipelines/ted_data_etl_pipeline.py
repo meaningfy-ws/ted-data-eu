@@ -1,13 +1,14 @@
 import logging
 from datetime import datetime, date, timedelta
 from string import Template
-from typing import Dict
-
+from typing import Dict, Optional
+import re
 import pandas as pd
 from dateutil import rrule
 from pandas import DataFrame
-
+import numpy as np
 from ted_data_eu import config
+from ted_data_eu.adapters.cpv_processor import CPVProcessor
 from ted_data_eu.adapters.etl_pipeline_abc import ETLPipelineABC
 from ted_data_eu.adapters.storage import ElasticStorage
 from ted_data_eu.adapters.triple_store import GraphDBAdapter
@@ -18,34 +19,51 @@ TED_DATA_ETL_PIPELINE_NAME = "ted_data"
 START_DATE_METADATA_FIELD = "start_date"
 END_DATE_METADATA_FIELD = "end_date"
 TRIPLE_STORE_ENDPOINT = "notices"
+TED_NOTICES_LINK = 'https://ted.europa.eu/udl?uri=TED:NOTICE:{notice_id}:TEXT:EN:HTML'
 
 PROCEDURE_TYPE_COLUMN_NAME = "procedure_type"
 WINNER_NUTS_COLUMN_NAME = "winner_nuts"
-LOT_NUTS_COLUMN_NAME = "lot_nuts_code"
-CURRENCY_COLUMN_NAME = "currency"
+LOT_NUTS_COLUMN_NAME = "place_of_performance"
+CURRENCY_COLUMN_NAME = "lot_currency"
 PUBLICATION_DATE_COLUMN_NAME = "publication_date"
-WINNER_NAME_COLUMN_NAME = "winner_name"
-AMOUNT_VALUE_COLUMN_NAME = "ammount_value"
+WINNER_NAME_COLUMN_NAME = "winner_names"
+AMOUNT_VALUE_COLUMN_NAME = "lot_amount"
 PROCEDURE_TITLE_COLUMN_NAME = "procedure_title"
 LOT_URL_COLUMN_NAME = 'lot'
-BUYER_NAME_COLUMN_NAME = 'buyer_name'
-LOT_CPV_COLUMN_NAME = 'lot_cpv'
+BUYER_NAME_COLUMN_NAME = 'buyer_names'
+LOT_CPV_COLUMN_NAME = 'main_cpvs'
+LOT_SUBCONTRACTING_COLUMN_NAME = 'subcontracting'
+CONTRACT_DURATION_COLUMN_NAME = 'contract_duration'
+AWARDED_CPB_COLUMN_NAME = 'awarded_cpb'
+EA_TECHNIQUE_COLUMN_NAME = 'ea_technique'
+FA_TECHNIQUE_COLUMN_NAME = 'fa_technique'
+IS_GPA_COLUMN_NAME = 'is_gpa'
+USING_EU_FUNDS_COLUMN_NAME = 'using_eu_funds'
 
 AMOUNT_VALUE_EUR_COLUMN_NAME = 'amount_value_eur'
+NOTICE_LINK = 'notice_link'
 
-TED_DATA_COLUMNS = [
-    PROCEDURE_TYPE_COLUMN_NAME,
-    WINNER_NUTS_COLUMN_NAME,
-    LOT_NUTS_COLUMN_NAME,
-    CURRENCY_COLUMN_NAME,
-    PUBLICATION_DATE_COLUMN_NAME,
-    WINNER_NAME_COLUMN_NAME,
-    AMOUNT_VALUE_COLUMN_NAME,
-    PROCEDURE_TITLE_COLUMN_NAME,
-    LOT_URL_COLUMN_NAME,
-    BUYER_NAME_COLUMN_NAME,
-    LOT_CPV_COLUMN_NAME
-]
+SUBCONTRACT_AVAILABLE_INDICATOR = 'indicator_transparency_subcontract_info_available'
+DURATION_AVAILABLE_INDICATOR = 'indicator_transparency_duration_available'
+JOINT_PROCUREMENT_INDICATOR = 'indicator_administrative_joint_procurement'
+USE_OF_FRAMEWORK_AGREEMENT_INDICATOR = 'indicator_administrative_use_of_framework_agreement'
+ELECTRONIC_AUCTION_INDICATOR = 'indicator_administrative_electronic_auction'
+USE_OF_WTO_INDICATOR = 'indicator_administrative_use_of_wto'
+IMPLEMENTATION_LOCATION_AVAILABLE_INDICATOR = 'indicator_transparency_implementation_location_available'
+FUNDINGS_INFO_AVAILABLE_INDICATOR = 'indicator_transparency_funding_info_available'
+PRODUCT_CODES_AVAILABLE_INDICATOR = 'indicator_transparency_product_codes_available'
+BIDDER_NAME_AVAILABLE_INDICATOR = 'indicator_transparency_bidder_name_available'
+CONTRACT_VALUE_AVAILABLE_INDICATOR = 'indicator_transparency_contract_value_available'
+PROCEDURE_TYPE_INDICATOR = 'indicator_integrity_procedure_type'
+
+CPV_RANK_0 = 'cpv0'
+CPV_RANK_1 = 'cpv1'
+CPV_RANK_2 = 'cpv2'
+CPV_RANK_3 = 'cpv3'
+CPV_RANK_4 = 'cpv4'
+CPV_LEVEL = 'cpv_level'
+CPV_PARENT = 'cpv_parent'
+
 
 def generate_dates_by_date_range(start_date: str, end_date: str) -> list:
     """
@@ -121,30 +139,39 @@ class TedDataETLPipeline(ETLPipelineABC):
 
     def transform(self, extracted_data: Dict) -> Dict:
         data_table: DataFrame = extracted_data['data']
-        columns_wihtout_date = TED_DATA_COLUMNS.copy()
-        columns_wihtout_date.remove(PUBLICATION_DATE_COLUMN_NAME)
-        data_table.dropna(subset=columns_wihtout_date, how='all', inplace=True)
+
+        # delete rows with all empty columns
+        data_table.dropna(how='all', inplace=True)
+        data_table = data_table.replace({np.nan: None})
+
         if data_table.empty:
             raise TedETLException("No data was been fetched from triple store!")
         else:
-            logging.info(data_table.head())
+            logging.info(data_table.head().to_string())
 
-        data_table = data_table.astype({
-            WINNER_NUTS_COLUMN_NAME: str,
-            PROCEDURE_TYPE_COLUMN_NAME: str,
-            LOT_NUTS_COLUMN_NAME: str,
-            CURRENCY_COLUMN_NAME: str,
-            LOT_CPV_COLUMN_NAME: str,
-            PROCEDURE_TITLE_COLUMN_NAME: str
-        })
+        # set columns types
+        # data_table = data_table.astype({
+        #     PROCEDURE_TYPE_COLUMN_NAME: str,
+        #     WINNER_NUTS_COLUMN_NAME: str,
+        #     LOT_NUTS_COLUMN_NAME: str,
+        #     CURRENCY_COLUMN_NAME: str,
+        #     # PUBLICATION_DATE_COLUMN_NAME: str,
+        #     WINNER_NAME_COLUMN_NAME: str,
+        #     # AMOUNT_VALUE_COLUMN_NAME: str,
+        #     PROCEDURE_TITLE_COLUMN_NAME: str,
+        #     LOT_URL_COLUMN_NAME: str,
+        #     BUYER_NAME_COLUMN_NAME: str,
+        #     LOT_CPV_COLUMN_NAME: str,
+        #     #LOT_SUBCONTRACTING_COLUMN_NAME: str,
+        #     CONTRACT_DURATION_COLUMN_NAME: str,
+        #     AWARDED_CPB_COLUMN_NAME: str,
+        #     EA_TECHNIQUE_COLUMN_NAME: str,
+        #     FA_TECHNIQUE_COLUMN_NAME: str,
+        #     # IS_GPA_COLUMN_NAME: str,
+        #     # USING_EU_FUNDS_COLUMN_NAME: str,
+        # })
 
-
-        aggregations = dict.fromkeys(data_table, 'first')
-        aggregations[BUYER_NAME_COLUMN_NAME] = lambda x: list(x)
-        del aggregations[LOT_URL_COLUMN_NAME]
-
-        data_table = data_table.groupby(LOT_URL_COLUMN_NAME).agg(aggregations).reset_index()
-
+        # data transform
         data_table[WINNER_NUTS_COLUMN_NAME] = data_table[WINNER_NUTS_COLUMN_NAME].apply(
             lambda x: x.split('/')[-1] if x else x)
         data_table[PROCEDURE_TYPE_COLUMN_NAME] = data_table[PROCEDURE_TYPE_COLUMN_NAME].apply(
@@ -153,19 +180,91 @@ class TedDataETLPipeline(ETLPipelineABC):
             lambda x: x.split('/')[-1] if x else x)
         data_table[CURRENCY_COLUMN_NAME] = data_table[CURRENCY_COLUMN_NAME].apply(
             lambda x: x.split('/')[-1] if x else x)
+        data_table[WINNER_NAME_COLUMN_NAME] = data_table[WINNER_NAME_COLUMN_NAME].apply(
+            lambda x: x.split(' ||| ') if x else x)
+        data_table[BUYER_NAME_COLUMN_NAME] = data_table[BUYER_NAME_COLUMN_NAME].apply(
+            lambda x: x.split(' ||| ') if x else x)
         data_table[LOT_CPV_COLUMN_NAME] = data_table[LOT_CPV_COLUMN_NAME].apply(
-            lambda x: x.split('/')[-1] if x else x)
+            lambda x: [cpv.split('/')[-1] for cpv in x.split(' ||| ')] if x else x)
         data_table[PROCEDURE_TITLE_COLUMN_NAME] = data_table[PROCEDURE_TITLE_COLUMN_NAME].apply(
             lambda x: x.strip() if x else x)
         data_table[PUBLICATION_DATE_COLUMN_NAME] = data_table[PUBLICATION_DATE_COLUMN_NAME].apply(
             lambda x: pd.to_datetime(str(x), format='%Y%m%d') if x else x)
 
-        data_table[AMOUNT_VALUE_EUR_COLUMN_NAME] = data_table.apply(lambda x: x[AMOUNT_VALUE_COLUMN_NAME] if x[CURRENCY_COLUMN_NAME] == 'EUR' else convert_currency(
-            amount=x[AMOUNT_VALUE_COLUMN_NAME],
-            currency=x[CURRENCY_COLUMN_NAME],
-            new_currency='EUR',
-            date=x[PUBLICATION_DATE_COLUMN_NAME].date()
-        ), axis=1)
+        # add new columns
+        data_table[AMOUNT_VALUE_EUR_COLUMN_NAME] = data_table.apply(
+            lambda x: x[AMOUNT_VALUE_COLUMN_NAME] if x[CURRENCY_COLUMN_NAME] == 'EUR' else convert_currency(
+                amount=x[AMOUNT_VALUE_COLUMN_NAME],
+                currency=x[CURRENCY_COLUMN_NAME],
+                new_currency='EUR',
+                date=x[PUBLICATION_DATE_COLUMN_NAME].date()
+            ), axis=1)
+
+        def generate_notice_link(lot_url):
+            lot_id = re.search(r"id_(.*)_Lot_", lot_url).group(1)
+            notice_year = lot_id.split('-')[0]
+            notice_number = lot_id.split('-')[-1]
+            return TED_NOTICES_LINK.format(notice_id=f"{notice_number}-{notice_year}")
+
+        data_table[NOTICE_LINK] = data_table.apply(
+            lambda x: generate_notice_link(x[LOT_URL_COLUMN_NAME]),
+            axis=1)
+
+        # rename columns with indicator
+        data_table.rename(columns={
+            LOT_SUBCONTRACTING_COLUMN_NAME: SUBCONTRACT_AVAILABLE_INDICATOR,
+            CONTRACT_DURATION_COLUMN_NAME: DURATION_AVAILABLE_INDICATOR,
+            AWARDED_CPB_COLUMN_NAME: JOINT_PROCUREMENT_INDICATOR,
+            FA_TECHNIQUE_COLUMN_NAME: USE_OF_FRAMEWORK_AGREEMENT_INDICATOR,
+            EA_TECHNIQUE_COLUMN_NAME: ELECTRONIC_AUCTION_INDICATOR,
+            IS_GPA_COLUMN_NAME: USE_OF_WTO_INDICATOR,
+            USING_EU_FUNDS_COLUMN_NAME: FUNDINGS_INFO_AVAILABLE_INDICATOR,
+        }, inplace=True)
+
+        # calculate renamed columns to indicators
+        data_table[SUBCONTRACT_AVAILABLE_INDICATOR] = data_table[SUBCONTRACT_AVAILABLE_INDICATOR].apply(
+            lambda x: 100 if x else 0)
+        data_table[DURATION_AVAILABLE_INDICATOR] = data_table[DURATION_AVAILABLE_INDICATOR].apply(
+            lambda x: 100 if x else 0)
+        data_table[JOINT_PROCUREMENT_INDICATOR] = data_table[JOINT_PROCUREMENT_INDICATOR].apply(
+            lambda x: 100 if x else 0)
+        data_table[USE_OF_FRAMEWORK_AGREEMENT_INDICATOR] = data_table[USE_OF_FRAMEWORK_AGREEMENT_INDICATOR].apply(
+            lambda x: 100 if x else 0)
+        data_table[ELECTRONIC_AUCTION_INDICATOR] = data_table[ELECTRONIC_AUCTION_INDICATOR].apply(
+            lambda x: 100 if x else 0)
+        data_table[USE_OF_WTO_INDICATOR] = data_table[USE_OF_WTO_INDICATOR].apply(
+            lambda x: 100 if x else 0)
+        data_table[FUNDINGS_INFO_AVAILABLE_INDICATOR] = data_table[FUNDINGS_INFO_AVAILABLE_INDICATOR].apply(
+            lambda x: 100 if x else 0)
+
+        # add other indicators in calculate them
+        data_table[IMPLEMENTATION_LOCATION_AVAILABLE_INDICATOR] = data_table.apply(
+            lambda x: 100 if x[LOT_NUTS_COLUMN_NAME] else 0, axis=1)
+        data_table[PRODUCT_CODES_AVAILABLE_INDICATOR] = data_table.apply(
+            lambda x: 100 if x[LOT_CPV_COLUMN_NAME] else 0, axis=1)
+        data_table[BIDDER_NAME_AVAILABLE_INDICATOR] = data_table.apply(
+            lambda x: 100 if x[WINNER_NAME_COLUMN_NAME] else 0, axis=1)
+        data_table[CONTRACT_VALUE_AVAILABLE_INDICATOR] = data_table.apply(
+            lambda x: 100 if x[AMOUNT_VALUE_COLUMN_NAME] else 0, axis=1)
+        data_table[PROCEDURE_TYPE_INDICATOR] = data_table.apply(
+            lambda x: 100 if x[PROCEDURE_TYPE_COLUMN_NAME] == 'open' else 0, axis=1)
+
+        # add cpv fields
+        cpv_algorithms = CPVProcessor()
+        data_table[CPV_PARENT] = data_table.apply(
+            lambda x: cpv_algorithms.get_cpv_parent_list(x[LOT_CPV_COLUMN_NAME]), axis=1)
+        data_table[CPV_LEVEL] = data_table.apply(
+            lambda x: cpv_algorithms.get_cpv_rank_list(x[LOT_CPV_COLUMN_NAME]), axis=1)
+        data_table[CPV_RANK_4] = data_table.apply(
+            lambda x: cpv_algorithms.get_cpv_rank_code_list(x[LOT_CPV_COLUMN_NAME], rank=4), axis=1)
+        data_table[CPV_RANK_3] = data_table.apply(
+            lambda x: cpv_algorithms.get_cpv_rank_code_list(x[LOT_CPV_COLUMN_NAME], rank=3), axis=1)
+        data_table[CPV_RANK_2] = data_table.apply(
+            lambda x: cpv_algorithms.get_cpv_rank_code_list(x[LOT_CPV_COLUMN_NAME], rank=2), axis=1)
+        data_table[CPV_RANK_1] = data_table.apply(
+            lambda x: cpv_algorithms.get_cpv_rank_code_list(x[LOT_CPV_COLUMN_NAME], rank=1), axis=1)
+        data_table[CPV_RANK_0] = data_table.apply(
+            lambda x: cpv_algorithms.get_cpv_rank_code_list(x[LOT_CPV_COLUMN_NAME], rank=0), axis=1)
 
         return {"data": data_table}
 
@@ -181,3 +280,4 @@ class TedDataETLPipeline(ETLPipelineABC):
             row_dict['_id'] = getattr(row, LOT_URL_COLUMN_NAME)
             documents.append(row_dict)
         load_documents_to_storage(documents=documents, storage=elastic_storage)
+        logging.info("Loading done.")

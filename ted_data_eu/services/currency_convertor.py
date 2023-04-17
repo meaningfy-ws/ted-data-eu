@@ -1,16 +1,15 @@
 import logging
-from typing import Optional
+from datetime import date
 
 from currency_converter import CurrencyConverter, RateNotFoundError
-from datetime import date
 
 cur_converter = CurrencyConverter()
 
 
-def convert_currency(amount: float, currency: str, new_currency: str, date: date = None) -> Optional[float]:
+def convert_currency(amount: float, currency: str, new_currency: str, date: date = None) -> float:
     try:
         return cur_converter.convert(amount=amount, currency=currency, new_currency=new_currency, date=date)
     except (RateNotFoundError, ValueError) as e:
-        logging.warning(str(e) + ". None value will be used")
+        logging.warning(str(e) + ". 0.0 value will be used")
 
-    return None
+    return 0.0
