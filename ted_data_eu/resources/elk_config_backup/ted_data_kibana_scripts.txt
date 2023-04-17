@@ -1,17 +1,66 @@
+#Example search
+POST ted_data/_search
+{
+  "_source": ["winner_name"],
+  "aggs": {},
+  "size": 1
+}
+
+#Example search
+POST opentender_updated/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {"exists": {
+          "field": "description.keyword"
+        }}
+      ]
+    }
+  },
+  "_source": ["description"],
+  "aggs": {},
+  "size": 1
+}
+
+#Example search
+POST opentender_updated/_search
+{
+  "query": {
+    "term": {
+      "lots.bids.bidders.name": {
+        "value": "FARMEXIM S.A."
+      }
+    }
+  },
+  "_source": ["lots.bids.bidders.name"],
+  "aggs": {},
+  "size": 1
+}
+
+#Delete index
 DELETE ted_data
+
+# Create index
+PUT /ted_data
+
+PUT /ted_data/_settings
+{
+  "index.mapping.nested_objects.limit": 10000000
+}
 
 # Creat mapping for NUTS Codes by spliting by level
 PUT /ted_data/_mapping
 {
   "properties": {
 
-    "lot_nuts0": {
+    "lot_nuts.lot_nuts0": {
       "type": "keyword",
       "on_script_error": "continue",
       "script": {
         "source": """
-          if(doc['lot_nuts_code'].size() != 0) {
-              def nuts = doc['lot_nuts_code'].value;
+          if(doc['lot_nuts_code.keyword'].size() != 0) {
+              def nuts = doc['lot_nuts_code.keyword'].value;
               if(nuts.length() >= 2) {
                   emit(nuts.substring(0, 2));
               }
@@ -20,13 +69,13 @@ PUT /ted_data/_mapping
       }
     },
 
-    "lot_nuts1": {
+    "lot_nuts.lot_nuts1": {
       "type": "keyword",
       "on_script_error": "continue",
       "script": {
         "source": """
-          if(doc['lot_nuts_code'].size() != 0) {
-              def nuts = doc['lot_nuts_code'].value;
+          if(doc['lot_nuts_code.keyword'].size() != 0) {
+              def nuts = doc['lot_nuts_code.keyword'].value;
               if(nuts.length() >= 3) {
                   emit(nuts.substring(0, 3));
               }
@@ -35,13 +84,13 @@ PUT /ted_data/_mapping
       }
     },
 
-    "lot_nuts2": {
+    "lot_nuts.lot_nuts2": {
       "type": "keyword",
       "on_script_error": "continue",
       "script": {
         "source": """
-          if(doc['lot_nuts_code'].size() != 0) {
-              def nuts = doc['lot_nuts_code'].value;
+          if(doc['lot_nuts_code.keyword'].size() != 0) {
+              def nuts = doc['lot_nuts_code.keyword'].value;
               if(nuts.length() >= 4) {
                   emit(nuts.substring(0, 4));
               }
@@ -50,13 +99,13 @@ PUT /ted_data/_mapping
       }
     },
 
-    "lot_nuts3": {
+    "lot_nuts.lot_nuts3": {
       "type": "keyword",
       "on_script_error": "continue",
       "script": {
         "source": """
-          if(doc['lot_nuts_code'].size() != 0) {
-              def nuts = doc['lot_nuts_code'].value;
+          if(doc['lot_nuts_code.keyword'].size() != 0) {
+              def nuts = doc['lot_nuts_code.keyword'].value;
               if(nuts.length() >= 5) {
                   emit(nuts.substring(0, 5));
               }
