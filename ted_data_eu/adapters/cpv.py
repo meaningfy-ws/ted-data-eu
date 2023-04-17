@@ -37,14 +37,13 @@ class CPVAlgorithms(object):
     def get_cpv_rank(self, cpv_code: str) -> Optional[int]:
         if not self.cpv_exists(cpv_code=cpv_code):
             return None
-        cpv_code = cpv_code[::-1]
-        if cpv_code.startswith('000000'):
+        if cpv_code.endswith('000000'):
             return CPV_MIN_RANK
-        elif cpv_code.startswith('00000'):
+        elif cpv_code.endswith('00000'):
             return CPV_MIN_RANK + 1
-        elif cpv_code.startswith('0000'):
+        elif cpv_code.endswith('0000'):
             return CPV_MIN_RANK + 2
-        elif cpv_code.startswith('000'):
+        elif cpv_code.endswith('000'):
             return CPV_MIN_RANK + 3
         return CPV_MAX_RANK
 
@@ -72,7 +71,7 @@ class CPVAlgorithms(object):
             return None
 
         cpv_code_rank = self.get_cpv_rank(cpv_code=cpv_code)
-        if cpv_code_rank is None or cpv_code_rank < rank or cpv_code_rank == CPV_MIN_RANK:
+        if (cpv_code_rank is None) or (cpv_code_rank < rank) or (cpv_code_rank == CPV_MIN_RANK):
             return None
 
         if cpv_code_rank == rank:
@@ -117,21 +116,3 @@ class CPVAlgorithms(object):
                     cpv_parents.append(cpv_parent)
 
         return list(dict.fromkeys(cpv_parents)) if cpv_parents else None
-
-
-# if __name__ == "__main__":
-#     cpvalg = CPVAlgorithms()
-#     cpvs = ['60112000', '60140000', '99999', '63712321', '63712311']
-#     # print(cpvalg.dataframe.head())
-#     print("alo")
-#     print(cpvs)
-#     print(
-#         cpvalg.get_cpv_rank_list(cpvs)
-#     )
-#     print(
-#         cpvalg.get_cpv_rank_code_list(cpv_codes=cpvs, rank=3)
-#     )
-#     print(
-#         cpvalg.get_cpv_parent_list(cpvs)
-#     )
-#     print("salut")

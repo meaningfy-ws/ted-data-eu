@@ -281,14 +281,3 @@ class TedDataETLPipeline(ETLPipelineABC):
             documents.append(row_dict)
         load_documents_to_storage(documents=documents, storage=elastic_storage)
         logging.info("Loading done.")
-
-
-# if __name__ == "__main__":
-#     etl = TedDataETLPipeline()
-#     # etl.set_metadata({"start_date": "20160716", "end_date": "20160716"})
-#     etl.set_metadata({"start_date": "20210326", "end_date": "20210326"})
-#     df = etl.extract()['data']
-#     # print(df.to_string())
-#     df = etl.transform({"data": df})['data']
-#     print(df.to_string())
-#     etl.load({'data': df})
