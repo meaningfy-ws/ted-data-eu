@@ -45,3 +45,6 @@ def test_cpv_algorithms(cpv_processor, fake_cpv, real_cpv, problematic_cpv):
 
     assert cpv_processor.get_all_cpvs_name_as_list() is not None
     assert cpv_processor.get_all_cpvs_label_as_list() is not None
+
+    assert cpv_processor.get_cpv_label_by_code(cpv_code=real_cpv) == 'Tunnel toll services'
+    assert cpv_processor.get_cpv_label_by_code(cpv_code=fake_cpv) is None
