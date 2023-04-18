@@ -99,6 +99,7 @@ services:
       context: kibana/
       args:
         ELASTIC_VERSION: ${ELASTIC_VERSION}
+        KIBANA_PLUGIN_VERSION_URL: "https://github.com/meaningfy-ws/kibana-custom-theme-plugin/raw/main/builds/customKibanaTheme-${ELASTIC_VERSION}.zip"
     volumes:
       - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
 #    ports:
