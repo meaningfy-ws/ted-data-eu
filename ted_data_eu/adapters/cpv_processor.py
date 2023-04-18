@@ -9,9 +9,9 @@ from ted_data_eu import PROJECT_RESOURCES_PATH
 CPV_TABLE_DEFAULT_PATH = PROJECT_RESOURCES_PATH / 'cpv_list.xlsx'
 
 CPV_SHEET_NAME = 'CPV codes'
-CPV_FULL_CODE_SHEET_NAME = 'FULL CODE'
-CPV_CODE_SHEET_NAME = 'CODE'
-CPV_NAME_SHEET_NAME = 'EN'
+CPV_FULL_CODE_COLUMN_NAME = 'FULL CODE'
+CPV_CODE_COLUMN_NAME = 'CODE'
+CPV_LABEL_COLUMN_NAME = 'EN'
 
 CPV_MIN_RANK = 0
 CPV_MAX_RANK = CPV_MIN_RANK + 4
@@ -34,11 +34,12 @@ class CPVProcessor(object):
             sheet_name=CPV_SHEET_NAME,
             header=0,
             dtype={
-                CPV_FULL_CODE_SHEET_NAME: str,
-                CPV_CODE_SHEET_NAME: str,
-                CPV_NAME_SHEET_NAME: str
+                CPV_FULL_CODE_COLUMN_NAME: str,
+                CPV_CODE_COLUMN_NAME: str,
+                CPV_LABEL_COLUMN_NAME: str
             }
         )
+        self.dataframe.fillna(0)
 
     def cpv_exists(self, cpv_code: str) -> bool:
         """
@@ -46,7 +47,7 @@ class CPVProcessor(object):
         :param cpv_code: CPV code to check.
         :return: True if the CPV code exists, False otherwise.
         """
-        return cpv_code in self.dataframe[CPV_CODE_SHEET_NAME].values
+        return cpv_code in self.dataframe[CPV_CODE_COLUMN_NAME].values
 
     def get_cpv_rank(self, cpv_code: str) -> Optional[int]:
         """
@@ -162,3 +163,30 @@ class CPVProcessor(object):
                     cpv_parents.append(cpv_parent)
 
         return list(set(cpv_parents)) if cpv_parents else None
+
+
+    def get_cpv_label_by_code(self, cpv_code: str) -> Optional[str]:
+        """
+        Get the label of a CPV code.
+        :param cpv_code: CPV code to check.
+        :return: The label of the CPV code if it exists, None otherwise.
+        """
+        if not self.cpv_exists(cpv_code=cpv_code):
+            return None
+        return self.dataframe.loc[self.dataframe[CPV_CODE_COLUMN_NAME] == cpv_code, CPV_LABEL_COLUMN_NAME].iloc[0]
+
+
+    def get_all_cpvs_name_as_list(self) -> list:
+        """
+        Returns list of CPVs
+        :return: CPV list
+        """
+        return self.dataframe[CPV_CODE_COLUMN_NAME].to_list()
+
+    def get_all_cpvs_label_as_list(self) -> list:
+        """
+            Returns list of CPV labels
+            :return: Label list
+        """
+        return self.dataframe[CPV_LABEL_COLUMN_NAME].to_list()
+
