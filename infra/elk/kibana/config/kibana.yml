@@ -93,3 +93,6 @@ xpack.security.authc.providers:
 xpack.security.sameSiteCookies: "None"
 xpack.security.secureCookies: true
 
+kibana:
+  autocompleteTerminateAfter: 50000000
+  autocompleteTimeout: 10000
