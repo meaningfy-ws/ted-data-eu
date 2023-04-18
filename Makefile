@@ -364,7 +364,7 @@ start-elk: build-externals
 
 stop-elk:
 	@ echo -e "$(BUILD_PRINT)Stopping the ELK services $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/elk/docker-compose.yml --env-file ${ENV_FILE} down
+	@ docker-compose -p ${ENVIRONMENT} --file ./infra/elk/docker-compose.yml --env-file ${ENV_FILE} down rm -f
 
 start-grafana: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting the Grafana services $(END_BUILD_PRINT)"
