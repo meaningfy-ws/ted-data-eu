@@ -42,3 +42,6 @@ def test_cpv_algorithms(cpv_processor, fake_cpv, real_cpv, problematic_cpv):
     assert cpv_processor.get_unique_cpvs_parent_codes_by_rank(None, rank=0) is None
     assert cpv_processor.get_cpvs_ranks(None) is None
     assert cpv_processor.get_unique_cpvs_parent_codes(None) is None
+
+    assert cpv_processor.get_all_cpvs_name_as_list() is not None
+    assert cpv_processor.get_all_cpvs_label_as_list() is not None

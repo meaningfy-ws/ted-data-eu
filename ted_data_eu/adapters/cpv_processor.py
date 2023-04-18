@@ -190,8 +190,3 @@ class CPVProcessor(object):
         """
         return self.dataframe[CPV_LABEL_COLUMN_NAME].to_list()
 
-
-if __name__ == "__main__":
-    ob = CPVProcessor()
-    #print(ob.get_cpv_label_by_code('60112000'))
-    print(ob.get_all_cpvs_label_as_list())
