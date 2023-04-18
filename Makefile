@@ -360,7 +360,7 @@ stop-graphdb:
 
 start-elk: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting the ELK services $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/elk/docker-compose.yml --env-file ${ENV_FILE} up -d
+	@ docker-compose -p ${ENVIRONMENT} --file ./infra/elk/docker-compose.yml --env-file ${ENV_FILE} up -d --force-recreate
 
 stop-elk:
 	@ echo -e "$(BUILD_PRINT)Stopping the ELK services $(END_BUILD_PRINT)"
