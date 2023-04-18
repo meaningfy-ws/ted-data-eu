@@ -99,7 +99,6 @@ services:
       context: kibana/
       args:
         ELASTIC_VERSION: ${ELASTIC_VERSION}
-        KIBANA_PLUGIN_VERSION_URL: "https://github.com/meaningfy-ws/kibana-custom-theme-plugin/raw/main/builds/customKibanaTheme-${ELASTIC_VERSION}.zip"
     volumes:
       - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
 #    ports:
@@ -109,6 +108,7 @@ services:
       ANONYMOUS_KIBANA_SYSTEM_PASSWORD: ${ANONYMOUS_KIBANA_SYSTEM_PASSWORD:-}
       SERVER_PUBLICBASEURL: ${KIBANA_HOST:-}
       SERVER_MAXPAYLOADBYTES: 3145728
+      KIBANA_PLUGIN_VERSION_URL: "https://github.com/meaningfy-ws/kibana-custom-theme-plugin/raw/main/builds/customKibanaTheme-${ELASTIC_VERSION}.zip"
     networks:
       - elk
       - proxy-net
