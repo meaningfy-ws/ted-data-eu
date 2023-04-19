@@ -5,8 +5,15 @@ from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import AMOUNT_VALU
     USE_OF_FRAMEWORK_AGREEMENT_INDICATOR, ELECTRONIC_AUCTION_INDICATOR, USE_OF_WTO_INDICATOR, \
     IMPLEMENTATION_LOCATION_AVAILABLE_INDICATOR, FUNDINGS_INFO_AVAILABLE_INDICATOR, BIDDER_NAME_AVAILABLE_INDICATOR, \
     CONTRACT_VALUE_AVAILABLE_INDICATOR, PROCEDURE_TYPE_INDICATOR, PRODUCT_CODES_AVAILABLE_INDICATOR, LOT_NUTS_0, \
-    LOT_NUTS_1, LOT_NUTS_2, LOT_NUTS_3
+    LOT_NUTS_1, LOT_NUTS_2, LOT_NUTS_3, get_country_name_by_code
 
+
+def test_get_country_name_by_code(real_country_code_alpha_2, fake_country_code_alpha_2, real_country_code_alpha_3,
+                                  fake_country_code_alpha_3):
+    assert get_country_name_by_code(real_country_code_alpha_2) == "Spain"
+    assert get_country_name_by_code(fake_country_code_alpha_2) is None
+    assert get_country_name_by_code(real_country_code_alpha_3) == "Spain"
+    assert get_country_name_by_code(fake_country_code_alpha_3) is None
 
 
 def test_etl_pipeline(ted_data_etl_pipeline, etl_pipeline_config, graphdb_triple_store, example_notices,
