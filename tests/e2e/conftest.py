@@ -69,3 +69,23 @@ def etl_pipeline_config():
 @pytest.fixture
 def example_notices():
     return list(TEST_NOTICES_PATH.iterdir())
+
+
+@pytest.fixture
+def real_country_code_alpha_2():
+    return "ES"
+
+
+@pytest.fixture
+def fake_country_code_alpha_2():
+    return "XX"
+
+
+@pytest.fixture
+def real_country_code_alpha_3():
+    return "ESP"
+
+
+@pytest.fixture
+def fake_country_code_alpha_3():
+    return "XXX"

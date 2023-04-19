@@ -125,6 +125,24 @@ def generate_sparql_filter_by_date_range(start_date: str, end_date: str) -> str:
     return " ".join(result_string)
 
 
+def get_country_name_by_code(country_code: str) -> Optional[str]:
+    """
+        Given a country code returns the country name
+    :param country_code: Country code
+    :return: Country name
+    """
+    if country_code is None:
+        return None
+    if len(country_code) == 2:
+        country_name = pycountry.countries.get(alpha_2=country_code)
+    else:
+        country_name = pycountry.countries.get(alpha_3=country_code)
+    if country_name is None:
+        logging.error(f"Country code {country_code} not found")
+        return None
+    return country_name.name
+
+
 class TedETLException(Exception):
     """
         TedData ETL Exception
@@ -317,7 +335,7 @@ class TedDataETLPipeline(ETLPipelineABC):
 
         # change field codes with labels
         data_table[LOT_NUTS_0] = data_table[LOT_NUTS_0].apply(
-            lambda x: pycountry.countries.get(alpha_2=x).name if x else None)
+            lambda x: get_country_name_by_code(x))
 
         data_table[CPV_RANK_0] = data_table[CPV_RANK_0].apply(
             lambda x: [cpv_algorithms.get_cpv_label_by_code(cpv_code) for cpv_code in x] if x else None)
