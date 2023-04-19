@@ -1,12 +1,16 @@
 import logging
+import re
 from datetime import datetime, date, timedelta
 from string import Template
 from typing import Dict, Optional
-import re
+
+import numpy
+import numpy as np
 import pandas as pd
+import pycountry
 from dateutil import rrule
 from pandas import DataFrame
-import numpy as np
+
 from ted_data_eu import config
 from ted_data_eu.adapters.cpv_processor import CPVProcessor
 from ted_data_eu.adapters.etl_pipeline_abc import ETLPipelineABC
@@ -45,15 +49,17 @@ NOTICE_LINK = 'notice_link'
 
 SUBCONTRACT_AVAILABLE_INDICATOR = 'indicator_transparency_subcontract_info_available'
 DURATION_AVAILABLE_INDICATOR = 'indicator_transparency_duration_available'
-JOINT_PROCUREMENT_INDICATOR = 'indicator_administrative_joint_procurement'
-USE_OF_FRAMEWORK_AGREEMENT_INDICATOR = 'indicator_administrative_use_of_framework_agreement'
-ELECTRONIC_AUCTION_INDICATOR = 'indicator_administrative_electronic_auction'
-USE_OF_WTO_INDICATOR = 'indicator_administrative_use_of_wto'
 IMPLEMENTATION_LOCATION_AVAILABLE_INDICATOR = 'indicator_transparency_implementation_location_available'
 FUNDINGS_INFO_AVAILABLE_INDICATOR = 'indicator_transparency_funding_info_available'
 PRODUCT_CODES_AVAILABLE_INDICATOR = 'indicator_transparency_product_codes_available'
 BIDDER_NAME_AVAILABLE_INDICATOR = 'indicator_transparency_bidder_name_available'
 CONTRACT_VALUE_AVAILABLE_INDICATOR = 'indicator_transparency_contract_value_available'
+
+JOINT_PROCUREMENT_INDICATOR = 'indicator_administrative_joint_procurement'
+USE_OF_FRAMEWORK_AGREEMENT_INDICATOR = 'indicator_administrative_use_of_framework_agreement'
+ELECTRONIC_AUCTION_INDICATOR = 'indicator_administrative_electronic_auction'
+USE_OF_WTO_INDICATOR = 'indicator_administrative_use_of_wto'
+
 PROCEDURE_TYPE_INDICATOR = 'indicator_integrity_procedure_type'
 
 CPV_RANK_0 = 'cpv0'
@@ -68,6 +74,11 @@ LOT_NUTS_0 = 'lots_nuts_0'
 LOT_NUTS_1 = 'lots_nuts_1'
 LOT_NUTS_2 = 'lots_nuts_2'
 LOT_NUTS_3 = 'lots_nuts_3'
+
+GOOD_PROCUREMENT_SCORE = 'good_procurement_score'
+TRANSPARENCY_SCORE = 'transparency_score'
+ADMINISTRATIVE_SCORE = 'administrative_score'
+INTEGRITY_SCORE = 'integrity_score'
 
 
 def generate_nuts_code_by_level(nuts_code: str, nuts_level: int) -> Optional[str]:
@@ -303,6 +314,47 @@ class TedDataETLPipeline(ETLPipelineABC):
             lambda x: generate_nuts_code_by_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=2), axis=1)
         data_table[LOT_NUTS_3] = data_table.apply(
             lambda x: generate_nuts_code_by_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=3), axis=1)
+
+        # change field codes with labels
+        data_table[LOT_NUTS_0] = data_table[LOT_NUTS_0].apply(
+            lambda x: pycountry.countries.get(alpha_2=x).name if x else None)
+
+        data_table[CPV_RANK_0] = data_table[CPV_RANK_0].apply(
+            lambda x: [cpv_algorithms.get_cpv_label_by_code(cpv_code) for cpv_code in x] if x else None)
+        data_table[CPV_RANK_1] = data_table[CPV_RANK_1].apply(
+            lambda x: [cpv_algorithms.get_cpv_label_by_code(cpv_code) for cpv_code in x] if x else None)
+        data_table[CPV_RANK_2] = data_table[CPV_RANK_2].apply(
+            lambda x: [cpv_algorithms.get_cpv_label_by_code(cpv_code) for cpv_code in x] if x else None)
+        data_table[CPV_RANK_3] = data_table[CPV_RANK_3].apply(
+            lambda x: [cpv_algorithms.get_cpv_label_by_code(cpv_code) for cpv_code in x] if x else None)
+        data_table[CPV_RANK_4] = data_table[CPV_RANK_4].apply(
+            lambda x: [cpv_algorithms.get_cpv_label_by_code(cpv_code) for cpv_code in x] if x else None)
+        data_table[LOT_CPV_COLUMN_NAME] = data_table[LOT_CPV_COLUMN_NAME].apply(
+            lambda x: [cpv_algorithms.get_cpv_label_by_code(cpv_code) for cpv_code in x] if x else None)
+        data_table[CPV_PARENT] = data_table[CPV_PARENT].apply(
+            lambda x: [cpv_algorithms.get_cpv_label_by_code(cpv_code) for cpv_code in x] if x else None)
+
+        # calculate main indicators
+        data_table[INTEGRITY_SCORE] = data_table.apply(
+            lambda x: round(numpy.mean([x[PROCEDURE_TYPE_INDICATOR]]), 2)
+            , axis=1)
+
+        data_table[ADMINISTRATIVE_SCORE] = data_table.apply(
+            lambda x: round(numpy.mean(
+                [x[USE_OF_WTO_INDICATOR], x[ELECTRONIC_AUCTION_INDICATOR], x[USE_OF_FRAMEWORK_AGREEMENT_INDICATOR],
+                 x[JOINT_PROCUREMENT_INDICATOR]]), 2)
+            , axis=1)
+
+        data_table[TRANSPARENCY_SCORE] = data_table.apply(
+            lambda x: round(numpy.mean([x[SUBCONTRACT_AVAILABLE_INDICATOR], x[DURATION_AVAILABLE_INDICATOR],
+                                        x[IMPLEMENTATION_LOCATION_AVAILABLE_INDICATOR],
+                                        x[FUNDINGS_INFO_AVAILABLE_INDICATOR], x[PRODUCT_CODES_AVAILABLE_INDICATOR],
+                                        x[BIDDER_NAME_AVAILABLE_INDICATOR], x[CONTRACT_VALUE_AVAILABLE_INDICATOR]]), 2)
+            , axis=1)
+
+        data_table[GOOD_PROCUREMENT_SCORE] = data_table.apply(
+            lambda x: round(numpy.mean([x[INTEGRITY_SCORE], x[ADMINISTRATIVE_SCORE], x[TRANSPARENCY_SCORE]]), 2)
+            , axis=1)
 
         return {"data": data_table}
 
