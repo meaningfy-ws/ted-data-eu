@@ -335,7 +335,7 @@ class TedDataETLPipeline(ETLPipelineABC):
 
         # change field codes with labels
         data_table[LOT_NUTS_0] = data_table[LOT_NUTS_0].apply(
-            lambda x: get_country_name_by_code(x) if x else None)
+            lambda x: get_country_name_by_code(x))
 
         data_table[CPV_RANK_0] = data_table[CPV_RANK_0].apply(
             lambda x: [cpv_algorithms.get_cpv_label_by_code(cpv_code) for cpv_code in x] if x else None)
