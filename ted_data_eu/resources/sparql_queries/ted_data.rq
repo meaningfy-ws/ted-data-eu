@@ -128,4 +128,4 @@ where {
     optional {
         ?lot epo:isUsingEUFunds ?using_eu_funds .
     }
-} group by ?lot limit 50
+} group by ?lot
