@@ -10,15 +10,19 @@ select distinct
 
 (sample(?publication_date) as ?publication_date)
 (GROUP_CONCAT(distinct str(?buyer_name); SEPARATOR=" ||| ") as ?buyer_names)
-(GROUP_CONCAT(distinct str(?winner_name); SEPARATOR=" ||| ") as ?winner_names)
+(GROUP_CONCAT(distinct ?buyer_nuts; SEPARATOR=" ||| ") as ?buyer_nuts) # new
+(sample(?procedure) as ?procedure) # new
+(sample(?procedure_id) as ?procedure_id) # new
+(sample(?procedure_description) as ?procedure_description) # new
+(GROUP_CONCAT(distinct str(?winner_name); SEPARATOR=" ||| ") as ?winner_names) # multiple winners per lot
 (GROUP_CONCAT(distinct ?winner_nuts; SEPARATOR=" ||| ") as ?winner_nuts)
 (sample(?subcontracting) as ?subcontracting)
 (sample(?lot_amount) as ?lot_amount)
 (sample(?lot_currency) as ?lot_currency)
 (sample(?place_of_performance) as ?place_of_performance)
 (sample(?contract_duration) as ?contract_duration)
-(GROUP_CONCAT(distinct ?main_cpvs; SEPARATOR=" ||| ") as ?main_cpvs) # possible multiple cpvs per lot
-(sample(?procedure_title) as ?procedure_title) # possible multiple languages
+(GROUP_CONCAT(distinct ?main_cpvs; SEPARATOR=" ||| ") as ?main_cpvs) # multiple cpvs per lot
+(sample(?procedure_title) as ?procedure_title) # multiple languages
 (sample(?procedure_type) as ?procedure_type)
 (sample(?awarded_cpb) as ?awarded_cpb)
 (sample(?ea_technique) as ?ea_technique)
@@ -26,17 +30,28 @@ select distinct
 (sample(?is_gpa) as ?is_gpa)
 (sample(?using_eu_funds) as ?using_eu_funds)
 where {
-     values ?publication_date {
-            $date_range
+    values ?publication_date {
+        $date_range
     }
     ?lot a epo:Lot.
     ?result_notice a epo:ResultNotice;
-                   	epo:hasPublicationDate ?publication_date;
-                    epo:refersToLot ?lot.
-
+                   epo:hasPublicationDate ?publication_date;
+                   epo:refersToLot ?lot.
     optional {
-        ?result_notice epo:announcesRole / epo:playedBy / epo:hasLegalName ?buyer_name .
-        filter(lang(?buyer_name)='en')
+        ?result_notice epo:announcesRole ?buyer.
+        ?buyer a epo:Buyer;
+               epo:playedBy ?buyer_org.
+        optional {
+            ?buyer_org a org:Organization.
+            optional {
+                ?buyer_org cccev:registeredAddress / epo:hasNutsCode ?buyer_nuts.
+            }
+            optional {
+                ?buyer_org epo:hasLegalName ?buyer_name .
+                # Temporary solution
+                filter(lang(?buyer_name) = 'en')
+            }
+        }
     }
     optional {
         ?lot_award_outcome epo:describesLot ?lot;
@@ -65,7 +80,6 @@ where {
                        epo:hasCurrency ?lot_currency.
         }
     }
-
     optional {
         ?lot epo:foreseesContractSpecificTerm ?contract_term.
         ?contract_term a epo:ContractTerm .
@@ -83,6 +97,12 @@ where {
     optional {
         ?procedure epo:hasProcurementScopeDividedIntoLot ?lot;
                    a epo:Procedure.
+        optional {
+            ?procedure epo:hasDescription ?procedure_description.
+        }
+        optional {
+            ?procedure epo:hasID / epo:hasIdentifierValue ?procedure_id.
+        }
         optional {
             ?procedure epo:hasTitle ?procedure_title .
             #FILTER(lang(?procedure_title)='en')
@@ -108,4 +128,4 @@ where {
     optional {
         ?lot epo:isUsingEUFunds ?using_eu_funds .
     }
-} group by ?lot
+} group by ?lot limit 50

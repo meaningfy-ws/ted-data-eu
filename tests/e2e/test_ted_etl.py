@@ -5,7 +5,8 @@ from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import AMOUNT_VALU
     USE_OF_FRAMEWORK_AGREEMENT_INDICATOR, ELECTRONIC_AUCTION_INDICATOR, USE_OF_WTO_INDICATOR, \
     IMPLEMENTATION_LOCATION_AVAILABLE_INDICATOR, FUNDINGS_INFO_AVAILABLE_INDICATOR, BIDDER_NAME_AVAILABLE_INDICATOR, \
     CONTRACT_VALUE_AVAILABLE_INDICATOR, PROCEDURE_TYPE_INDICATOR, PRODUCT_CODES_AVAILABLE_INDICATOR, LOT_NUTS_0, \
-    LOT_NUTS_1, LOT_NUTS_2, LOT_NUTS_3, get_country_name_by_code
+    LOT_NUTS_1, LOT_NUTS_2, LOT_NUTS_3, get_country_name_by_code, BUYER_NUTS_COLUMN_NAME, PROCEDURE_ID_COLUMN_NAME, \
+    PROCEDURE_DESCRIPTION_COLUMN_NAME, PROCEDURE_COLUMN_NAME
 
 
 def test_get_country_name_by_code(real_country_code_alpha_2, fake_country_code_alpha_2, real_country_code_alpha_3,
@@ -54,6 +55,11 @@ def test_etl_pipeline(ted_data_etl_pipeline, etl_pipeline_config, graphdb_triple
     assert LOT_NUTS_1 in dataframe_columns
     assert LOT_NUTS_2 in dataframe_columns
     assert LOT_NUTS_3 in dataframe_columns
+
+    assert BUYER_NUTS_COLUMN_NAME in dataframe_columns
+    assert PROCEDURE_ID_COLUMN_NAME in dataframe_columns
+    assert PROCEDURE_DESCRIPTION_COLUMN_NAME in dataframe_columns
+    assert PROCEDURE_COLUMN_NAME in dataframe_columns
 
     ted_data_etl_pipeline.load(data)
 

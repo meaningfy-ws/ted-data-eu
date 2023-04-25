@@ -44,6 +44,11 @@ FA_TECHNIQUE_COLUMN_NAME = 'fa_technique'
 IS_GPA_COLUMN_NAME = 'is_gpa'
 USING_EU_FUNDS_COLUMN_NAME = 'using_eu_funds'
 
+BUYER_NUTS_COLUMN_NAME = 'buyer_nuts'
+PROCEDURE_COLUMN_NAME = 'procedure'
+PROCEDURE_ID_COLUMN_NAME = 'procedure_id'
+PROCEDURE_DESCRIPTION_COLUMN_NAME = 'procedure_description'
+
 AMOUNT_VALUE_EUR_COLUMN_NAME = 'amount_value_eur'
 NOTICE_LINK = 'notice_link'
 
@@ -225,7 +230,7 @@ class TedDataETLPipeline(ETLPipelineABC):
 
         # data transform
         data_table[WINNER_NUTS_COLUMN_NAME] = data_table[WINNER_NUTS_COLUMN_NAME].apply(
-            lambda x: x.split('/')[-1] if x else x)
+            lambda x: [cpv.split('/')[-1] for cpv in x.split(' ||| ')] if x else x)
         data_table[PROCEDURE_TYPE_COLUMN_NAME] = data_table[PROCEDURE_TYPE_COLUMN_NAME].apply(
             lambda x: x.split('/')[-1] if x else x)
         data_table[LOT_NUTS_COLUMN_NAME] = data_table[LOT_NUTS_COLUMN_NAME].apply(
@@ -242,6 +247,13 @@ class TedDataETLPipeline(ETLPipelineABC):
             lambda x: x.strip() if x else x)
         data_table[PUBLICATION_DATE_COLUMN_NAME] = data_table[PUBLICATION_DATE_COLUMN_NAME].apply(
             lambda x: pd.to_datetime(str(x), format='%Y%m%d') if x else x)
+        data_table[PROCEDURE_COLUMN_NAME] = data_table[PROCEDURE_COLUMN_NAME].apply(
+            lambda x: x.split('/')[-1] if x else x)
+        
+        data_table[BUYER_NUTS_COLUMN_NAME] = data_table[BUYER_NUTS_COLUMN_NAME].apply(
+            lambda x: [cpv.split('/')[-1] for cpv in x.split(' ||| ')] if x else x)
+        data_table[PROCEDURE_DESCRIPTION_COLUMN_NAME] = data_table[PROCEDURE_DESCRIPTION_COLUMN_NAME].apply(
+            lambda x: x.strip() if x else x)
 
         # add new columns
         data_table[AMOUNT_VALUE_EUR_COLUMN_NAME] = data_table.apply(
@@ -323,7 +335,7 @@ class TedDataETLPipeline(ETLPipelineABC):
         data_table[CPV_RANK_0] = data_table.apply(
             lambda x: cpv_algorithms.get_unique_cpvs_parent_codes_by_rank(x[LOT_CPV_COLUMN_NAME], rank=0), axis=1)
 
-        # add nuts fields
+        # add lot nuts fields
         data_table[LOT_NUTS_0] = data_table.apply(
             lambda x: generate_nuts_code_by_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=0), axis=1)
         data_table[LOT_NUTS_1] = data_table.apply(
@@ -332,6 +344,18 @@ class TedDataETLPipeline(ETLPipelineABC):
             lambda x: generate_nuts_code_by_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=2), axis=1)
         data_table[LOT_NUTS_3] = data_table.apply(
             lambda x: generate_nuts_code_by_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=3), axis=1)
+
+        # add buyer nuts fields
+        for i in range(4):
+            data_table[f"{BUYER_NUTS_COLUMN_NAME}_{str(i)}"] = data_table.apply(
+                lambda x: [generate_nuts_code_by_level(nuts_code=nuts, nuts_level=i) for nuts in
+                           x[BUYER_NUTS_COLUMN_NAME]] if x[BUYER_NUTS_COLUMN_NAME] else None, axis=1)
+
+        # add winner nuts fields
+        for i in range(4):
+            data_table[f"{WINNER_NUTS_COLUMN_NAME}_{str(i)}"] = data_table.apply(
+                lambda x: [generate_nuts_code_by_level(nuts_code=nuts, nuts_level=i) for nuts in
+                           x[WINNER_NUTS_COLUMN_NAME]] if x[WINNER_NUTS_COLUMN_NAME] else None, axis=1)
 
         # change field codes with labels
         data_table[LOT_NUTS_0] = data_table[LOT_NUTS_0].apply(
