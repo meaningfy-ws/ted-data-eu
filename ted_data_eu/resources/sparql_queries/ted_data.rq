@@ -32,6 +32,8 @@ select distinct
 where {
     values ?publication_date {
         $date_range
+        #"20210326"
+        #"20191031"
     }
     ?lot a epo:Lot.
     ?result_notice a epo:ResultNotice;
@@ -46,26 +48,46 @@ where {
             optional {
                 ?buyer_org cccev:registeredAddress / epo:hasNutsCode ?buyer_nuts.
             }
+
             optional {
-                ?buyer_org epo:hasLegalName ?buyer_name .
-                # Temporary solution
-                filter(lang(?buyer_name) = 'en')
+                ?buyer_org epo:hasLegalName ?buyer_name_en .
+                filter(lang(?buyer_name_en) = 'en')
             }
+            {
+                SELECT ?buyer_org (SAMPLE (?buyer_name_internal) as ?buyer_name_oth)
+                {
+                    ?buyer_org epo:hasLegalName ?buyer_name_internal .
+                }
+                GROUP BY ?buyer_org order by ?buyer_name_internal
+            }
+            BIND(COALESCE(?buyer_name_en, ?buyer_name_oth) as ?buyer_name)
+
+
         }
     }
     optional {
         ?lot_award_outcome epo:describesLot ?lot;
                            a epo:LotAwardOutcome;
                            epo:comprisesTenderAwardOutcome ?tender_award_outcome.
-        ?tender_award_outcome a epo:TenderAwardOutcome.
+        ?tender_award_outcome a epo:TenderAwardOutcome;
+                              epo:indicatesAwardOfLotToWinner / epo:playedBy ?winner.
 
         optional {
-            ?tender_award_outcome epo:indicatesAwardOfLotToWinner / epo:playedBy ?winner.
             ?winner a org:Organization.
             optional {
-                ?winner epo:hasLegalName ?winner_name.
-                FILTER(lang(?winner_name)='en')
+                ?winner epo:hasLegalName ?winner_name_en .
+                filter(lang(?winner_name_en) = 'en')
             }
+            {
+                SELECT ?winner (SAMPLE (?winner_name_internal) as ?winner_name_oth)
+                {
+                    ?winner epo:hasLegalName ?winner_name_internal .
+                }
+                GROUP BY ?winner order by ?winner_name_internal
+            }
+            BIND(COALESCE(?winner_name_en, ?winner_name_oth) as ?winner_name)
+
+
             optional {
                 ?winner cccev:registeredAddress / epo:hasNutsCode ?winner_nuts.
             }
@@ -105,7 +127,6 @@ where {
         }
         optional {
             ?procedure epo:hasTitle ?procedure_title .
-            #FILTER(lang(?procedure_title)='en')
         }
         optional {
             ?procedure epo:hasProcedureType ?procedure_type .
