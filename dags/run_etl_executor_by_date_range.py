@@ -45,9 +45,10 @@ def run_etl_executor_by_date_range():
 
         date_range = generate_dates_by_date_range(start_date, end_date)
         for date in date_range:
-            free_index_start_date = date - timedelta(days=TDA_INDEX_DAYS_LIMIT[TDA_FREE_INDEX_NAME])
-            started_index_start_date = date - timedelta(days=TDA_INDEX_DAYS_LIMIT[TDA_STARTER_INDEX_NAME])
-            premium_index_start_date = date - timedelta(days=TDA_INDEX_DAYS_LIMIT[TDA_PREMIUM_INDEX_NAME])
+
+            free_index_start_date = (datetime.strptime(date, "%Y%m%d") - timedelta(days=TDA_INDEX_DAYS_LIMIT[TDA_FREE_INDEX_NAME])).strftime("%Y%m%d")
+            started_index_start_date = (datetime.strptime(date, "%Y%m%d") - timedelta(days=TDA_INDEX_DAYS_LIMIT[TDA_STARTER_INDEX_NAME])).strftime("%Y%m%d")
+            premium_index_start_date = (datetime.strptime(date, "%Y%m%d") - timedelta(days=TDA_INDEX_DAYS_LIMIT[TDA_PREMIUM_INDEX_NAME])).strftime("%Y%m%d")
             TriggerDagRunOperator(
                 task_id=f'trigger_run_etl_pipeline_dag_{date}',
                 trigger_dag_id=ETL_EXECUTOR_DAG_NAME,
