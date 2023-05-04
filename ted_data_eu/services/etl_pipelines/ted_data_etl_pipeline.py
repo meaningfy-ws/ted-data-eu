@@ -89,6 +89,7 @@ LOT_NUTS_0 = 'lots_nuts_0'
 LOT_NUTS_1 = 'lots_nuts_1'
 LOT_NUTS_2 = 'lots_nuts_2'
 LOT_NUTS_3 = 'lots_nuts_3'
+LOT_COUNTRY = 'lots_country'
 
 GOOD_PROCUREMENT_SCORE = 'good_procurement_score'
 TRANSPARENCY_SCORE = 'transparency_score'
@@ -373,8 +374,8 @@ class TedDataETLPipeline(ETLPipelineABC):
                 lambda x: [generate_nuts_code_by_level(nuts_code=nuts, nuts_level=i) for nuts in
                            x[WINNER_NUTS_COLUMN_NAME]] if x[WINNER_NUTS_COLUMN_NAME] else None, axis=1)
 
-        # change field codes with labels
-        data_table[LOT_NUTS_0] = data_table[LOT_NUTS_0].apply(
+        # add lot country name as field
+        data_table[LOT_COUNTRY] = data_table[LOT_NUTS_0].apply(
             lambda x: get_country_name_by_code(x))
 
         data_table[CPV_RANK_0] = data_table[CPV_RANK_0].apply(

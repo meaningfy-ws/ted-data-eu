@@ -7,7 +7,7 @@ from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import AMOUNT_VALU
     CONTRACT_VALUE_AVAILABLE_INDICATOR, PROCEDURE_TYPE_INDICATOR, PRODUCT_CODES_AVAILABLE_INDICATOR, LOT_NUTS_0, \
     LOT_NUTS_1, LOT_NUTS_2, LOT_NUTS_3, get_country_name_by_code, BUYER_NUTS_COLUMN_NAME, PROCEDURE_ID_COLUMN_NAME, \
     PROCEDURE_DESCRIPTION_COLUMN_NAME, PROCEDURE_COLUMN_NAME, TDA_FREE_INDEX_NAME, TDA_STARTER_INDEX_NAME, CPV_RANK_4, \
-    CPV_RANK_2, CPV_RANK_1, CPV_RANK_3
+    CPV_RANK_2, CPV_RANK_1, CPV_RANK_3, LOT_COUNTRY
 
 
 def test_get_country_name_by_code(real_country_code_alpha_2, fake_country_code_alpha_2, real_country_code_alpha_3,
@@ -54,6 +54,7 @@ def test_etl_pipeline(ted_data_etl_pipelines, etl_pipeline_config, graphdb_tripl
         assert PROCEDURE_TYPE_INDICATOR in dataframe_columns
 
         assert LOT_NUTS_0 in dataframe_columns
+        assert LOT_COUNTRY in dataframe_columns
 
 
         assert BUYER_NUTS_COLUMN_NAME in dataframe_columns
