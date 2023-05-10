@@ -360,11 +360,11 @@ stop-graphdb:
 
 start-elk: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting the ELK services $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/elk/docker-compose.yml --env-file ${ENV_FILE} up -d --build --force-recreate
+	@ docker-compose -p ${ENVIRONMENT} --file ./infra/elk/docker-compose.yml --env-file ${ENV_FILE} up -d --build
 
 stop-elk:
 	@ echo -e "$(BUILD_PRINT)Stopping the ELK services $(END_BUILD_PRINT)"
-	@ docker-compose -p ${ENVIRONMENT} --file ./infra/elk/docker-compose.yml --env-file ${ENV_FILE} down rm -f
+	@ docker-compose -p ${ENVIRONMENT} --file ./infra/elk/docker-compose.yml --env-file ${ENV_FILE} down
 
 start-grafana: build-externals
 	@ echo -e "$(BUILD_PRINT)Starting the Grafana services $(END_BUILD_PRINT)"
