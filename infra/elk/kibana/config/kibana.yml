@@ -94,5 +94,5 @@ xpack.security.sameSiteCookies: "None"
 xpack.security.secureCookies: true
 
 kibana:
-  autocompleteTerminateAfter: 500000
-  autocompleteTimeout: 10000
+  autocompleteTerminateAfter: 1000000
+  autocompleteTimeout: 1000
