@@ -16,7 +16,8 @@ from ted_sws.event_manager.model.event_message import TechnicalEventMessage, Eve
 
 from dags.operators.ETLStepOperator import ETL_METADATA_DAG_CONFIG_KEY
 from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import START_DATE_METADATA_FIELD, END_DATE_METADATA_FIELD, \
-    TED_DATA_ETL_PIPELINE_NAME, generate_dates_by_date_range
+    TDA_FREE_INDEX_NAME, generate_dates_by_date_range, TDA_STARTER_INDEX_NAME, TDA_PREMIUM_INDEX_NAME, \
+    TDA_INDEX_DAYS_LIMIT
 
 RUN_ETL_EXECUTOR_BY_DATE_RANGE_DAG_NAME = "run_etl_executor_by_date_range"
 
@@ -44,13 +45,22 @@ def run_etl_executor_by_date_range():
 
         date_range = generate_dates_by_date_range(start_date, end_date)
         for date in date_range:
+
+            free_index_start_date = (datetime.strptime(date, "%Y%m%d") - timedelta(days=TDA_INDEX_DAYS_LIMIT[TDA_FREE_INDEX_NAME])).strftime("%Y%m%d")
+            started_index_start_date = (datetime.strptime(date, "%Y%m%d") - timedelta(days=TDA_INDEX_DAYS_LIMIT[TDA_STARTER_INDEX_NAME])).strftime("%Y%m%d")
+            premium_index_start_date = (datetime.strptime(date, "%Y%m%d") - timedelta(days=TDA_INDEX_DAYS_LIMIT[TDA_PREMIUM_INDEX_NAME])).strftime("%Y%m%d")
             TriggerDagRunOperator(
                 task_id=f'trigger_run_etl_pipeline_dag_{date}',
                 trigger_dag_id=ETL_EXECUTOR_DAG_NAME,
                 conf={ETL_METADATA_DAG_CONFIG_KEY:
-                          {TED_DATA_ETL_PIPELINE_NAME:
-                               {START_DATE_METADATA_FIELD: date, END_DATE_METADATA_FIELD: date}
+                          {TDA_FREE_INDEX_NAME:
+                               {START_DATE_METADATA_FIELD: free_index_start_date , END_DATE_METADATA_FIELD: free_index_start_date},
+                           TDA_STARTER_INDEX_NAME:
+                               {START_DATE_METADATA_FIELD: started_index_start_date, END_DATE_METADATA_FIELD: started_index_start_date},
+                           TDA_PREMIUM_INDEX_NAME:
+                               {START_DATE_METADATA_FIELD: premium_index_start_date, END_DATE_METADATA_FIELD: premium_index_start_date},
                            }
+
                       }
             ).execute(context=context)
 

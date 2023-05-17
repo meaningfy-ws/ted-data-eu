@@ -5,18 +5,25 @@ from airflow.utils.task_group import TaskGroup
 from dags import DEFAULT_DAG_ARGUMENTS
 from dags.operators.ETLStepOperator import ExtractStepOperator, TransformStepOperator, LoadStepOperator
 from ted_data_eu.adapters.etl_pipeline_register import ETLPipelineRegister
-from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import TED_DATA_ETL_PIPELINE_NAME, TedDataETLPipeline
+from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import TDA_FREE_INDEX_NAME, TedDataETLPipeline, \
+    TDA_STARTER_INDEX_NAME, TDA_PREMIUM_INDEX_NAME
 
 etl_pipelines_register = ETLPipelineRegister()
 
 ETL_EXECUTOR_DAG_NAME = 'etl_executor'
+
 
 def init_etl_pipelines_register():
     """
         This function is used for register all ETL pipelines inside DAG.
     :return:
     """
-    etl_pipelines_register.register(etl_pipeline_name=TED_DATA_ETL_PIPELINE_NAME, etl_pipeline=TedDataETLPipeline())
+    etl_pipelines_register.register(etl_pipeline_name=TDA_FREE_INDEX_NAME,
+                                    etl_pipeline=TedDataETLPipeline(business_pack_name=TDA_FREE_INDEX_NAME))
+    etl_pipelines_register.register(etl_pipeline_name=TDA_STARTER_INDEX_NAME,
+                                    etl_pipeline=TedDataETLPipeline(business_pack_name=TDA_STARTER_INDEX_NAME))
+    etl_pipelines_register.register(etl_pipeline_name=TDA_PREMIUM_INDEX_NAME,
+                                    etl_pipeline=TedDataETLPipeline(business_pack_name=TDA_PREMIUM_INDEX_NAME))
 
 
 @dag(default_args=DEFAULT_DAG_ARGUMENTS,

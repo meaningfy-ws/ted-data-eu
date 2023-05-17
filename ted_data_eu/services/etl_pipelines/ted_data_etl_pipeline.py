@@ -19,7 +19,17 @@ from ted_data_eu.adapters.triple_store import GraphDBAdapter
 from ted_data_eu.services.currency_convertor import convert_currency
 from ted_data_eu.services.data_load_service import load_documents_to_storage
 
-TED_DATA_ETL_PIPELINE_NAME = "ted_data"
+TDA_FREE_INDEX_NAME = "tda_free_index"
+TDA_STARTER_INDEX_NAME = "tda_starter_index"
+TDA_PREMIUM_INDEX_NAME = "tda_premium_index"
+
+TDA_INDEX_DAYS_LIMIT = {
+    TDA_FREE_INDEX_NAME: 180,
+    TDA_STARTER_INDEX_NAME: 90,
+    TDA_PREMIUM_INDEX_NAME: 0
+}
+
+SPARQL_QUERY_NAME = 'ted_data'
 START_DATE_METADATA_FIELD = "start_date"
 END_DATE_METADATA_FIELD = "end_date"
 TRIPLE_STORE_ENDPOINT = "notices"
@@ -43,6 +53,11 @@ EA_TECHNIQUE_COLUMN_NAME = 'ea_technique'
 FA_TECHNIQUE_COLUMN_NAME = 'fa_technique'
 IS_GPA_COLUMN_NAME = 'is_gpa'
 USING_EU_FUNDS_COLUMN_NAME = 'using_eu_funds'
+
+BUYER_NUTS_COLUMN_NAME = 'buyer_nuts'
+PROCEDURE_COLUMN_NAME = 'procedure'
+PROCEDURE_ID_COLUMN_NAME = 'procedure_id'
+PROCEDURE_DESCRIPTION_COLUMN_NAME = 'procedure_description'
 
 AMOUNT_VALUE_EUR_COLUMN_NAME = 'amount_value_eur'
 NOTICE_LINK = 'notice_link'
@@ -74,6 +89,7 @@ LOT_NUTS_0 = 'lots_nuts_0'
 LOT_NUTS_1 = 'lots_nuts_1'
 LOT_NUTS_2 = 'lots_nuts_2'
 LOT_NUTS_3 = 'lots_nuts_3'
+LOT_COUNTRY = 'lots_country'
 
 GOOD_PROCUREMENT_SCORE = 'good_procurement_score'
 TRANSPARENCY_SCORE = 'transparency_score'
@@ -155,18 +171,18 @@ class TedDataETLPipeline(ETLPipelineABC):
         ETL Class that gets data from TDA endpoint, transforms and inserts result to document storage
     """
 
-    def __init__(self):
+    def __init__(self, business_pack_name: str):
         """
             Constructor
         """
         self.etl_metadata = {}
-        self.pipeline_name = TED_DATA_ETL_PIPELINE_NAME
+        self.business_pack_name = business_pack_name
 
     def get_pipeline_name(self) -> str:
         """
             Returns the name of the pipeline
         """
-        return self.pipeline_name
+        return self.business_pack_name
 
     def set_metadata(self, etl_metadata: dict):
         """
@@ -200,7 +216,7 @@ class TedDataETLPipeline(ETLPipelineABC):
             logging.info("Querying data from yesterday")
             date_range = (date.today() - timedelta(days=1)).strftime("\"%Y%m%d\"")
 
-        sparql_query_template = Template(config.BQ_PATHS[TED_DATA_ETL_PIPELINE_NAME].read_text(encoding='utf-8'))
+        sparql_query_template = Template(config.BQ_PATHS[SPARQL_QUERY_NAME].read_text(encoding='utf-8'))
         sparql_query_str = sparql_query_template.substitute(date_range=date_range)
         triple_store_endpoint = GraphDBAdapter().get_sparql_triple_store_endpoint(repository_name=TRIPLE_STORE_ENDPOINT)
         result_table = triple_store_endpoint.with_query(sparql_query_str).fetch_tabular()
@@ -225,7 +241,7 @@ class TedDataETLPipeline(ETLPipelineABC):
 
         # data transform
         data_table[WINNER_NUTS_COLUMN_NAME] = data_table[WINNER_NUTS_COLUMN_NAME].apply(
-            lambda x: x.split('/')[-1] if x else x)
+            lambda x: [cpv.split('/')[-1] for cpv in x.split(' ||| ')] if x else x)
         data_table[PROCEDURE_TYPE_COLUMN_NAME] = data_table[PROCEDURE_TYPE_COLUMN_NAME].apply(
             lambda x: x.split('/')[-1] if x else x)
         data_table[LOT_NUTS_COLUMN_NAME] = data_table[LOT_NUTS_COLUMN_NAME].apply(
@@ -242,6 +258,13 @@ class TedDataETLPipeline(ETLPipelineABC):
             lambda x: x.strip() if x else x)
         data_table[PUBLICATION_DATE_COLUMN_NAME] = data_table[PUBLICATION_DATE_COLUMN_NAME].apply(
             lambda x: pd.to_datetime(str(x), format='%Y%m%d') if x else x)
+        data_table[PROCEDURE_COLUMN_NAME] = data_table[PROCEDURE_COLUMN_NAME].apply(
+            lambda x: x.split('/')[-1] if x else x)
+        
+        data_table[BUYER_NUTS_COLUMN_NAME] = data_table[BUYER_NUTS_COLUMN_NAME].apply(
+            lambda x: [cpv.split('/')[-1] for cpv in x.split(' ||| ')] if x else x)
+        data_table[PROCEDURE_DESCRIPTION_COLUMN_NAME] = data_table[PROCEDURE_DESCRIPTION_COLUMN_NAME].apply(
+            lambda x: x.strip() if x else x)
 
         # add new columns
         data_table[AMOUNT_VALUE_EUR_COLUMN_NAME] = data_table.apply(
@@ -312,41 +335,63 @@ class TedDataETLPipeline(ETLPipelineABC):
             lambda x: cpv_algorithms.get_unique_cpvs_parent_codes(x[LOT_CPV_COLUMN_NAME]), axis=1)
         data_table[CPV_LEVEL] = data_table.apply(
             lambda x: cpv_algorithms.get_cpvs_ranks(x[LOT_CPV_COLUMN_NAME]), axis=1)
-        data_table[CPV_RANK_4] = data_table.apply(
-            lambda x: cpv_algorithms.get_unique_cpvs_parent_codes_by_rank(x[LOT_CPV_COLUMN_NAME], rank=4), axis=1)
-        data_table[CPV_RANK_3] = data_table.apply(
-            lambda x: cpv_algorithms.get_unique_cpvs_parent_codes_by_rank(x[LOT_CPV_COLUMN_NAME], rank=3), axis=1)
-        data_table[CPV_RANK_2] = data_table.apply(
-            lambda x: cpv_algorithms.get_unique_cpvs_parent_codes_by_rank(x[LOT_CPV_COLUMN_NAME], rank=2), axis=1)
-        data_table[CPV_RANK_1] = data_table.apply(
-            lambda x: cpv_algorithms.get_unique_cpvs_parent_codes_by_rank(x[LOT_CPV_COLUMN_NAME], rank=1), axis=1)
+
+        # add cpv and lot nuts fields for premium and starter
+        lvl_limit = 1
+        if self.business_pack_name == TDA_PREMIUM_INDEX_NAME or self.business_pack_name == TDA_STARTER_INDEX_NAME:
+            data_table[CPV_RANK_1] = data_table.apply(
+                lambda x: cpv_algorithms.get_unique_cpvs_parent_codes_by_rank(x[LOT_CPV_COLUMN_NAME], rank=1), axis=1)
+            data_table[LOT_NUTS_1] = data_table.apply(
+                lambda x: generate_nuts_code_by_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=1), axis=1)
+            lvl_limit = 2
+            if self.business_pack_name == TDA_PREMIUM_INDEX_NAME:
+                data_table[CPV_RANK_4] = data_table.apply(
+                    lambda x: cpv_algorithms.get_unique_cpvs_parent_codes_by_rank(x[LOT_CPV_COLUMN_NAME], rank=4), axis=1)
+                data_table[CPV_RANK_3] = data_table.apply(
+                    lambda x: cpv_algorithms.get_unique_cpvs_parent_codes_by_rank(x[LOT_CPV_COLUMN_NAME], rank=3), axis=1)
+                data_table[CPV_RANK_2] = data_table.apply(
+                    lambda x: cpv_algorithms.get_unique_cpvs_parent_codes_by_rank(x[LOT_CPV_COLUMN_NAME], rank=2), axis=1)
+                data_table[LOT_NUTS_2] = data_table.apply(
+                    lambda x: generate_nuts_code_by_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=2), axis=1)
+                data_table[LOT_NUTS_3] = data_table.apply(
+                    lambda x: generate_nuts_code_by_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=3), axis=1)
+                lvl_limit = 4
         data_table[CPV_RANK_0] = data_table.apply(
             lambda x: cpv_algorithms.get_unique_cpvs_parent_codes_by_rank(x[LOT_CPV_COLUMN_NAME], rank=0), axis=1)
-
-        # add nuts fields
         data_table[LOT_NUTS_0] = data_table.apply(
             lambda x: generate_nuts_code_by_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=0), axis=1)
-        data_table[LOT_NUTS_1] = data_table.apply(
-            lambda x: generate_nuts_code_by_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=1), axis=1)
-        data_table[LOT_NUTS_2] = data_table.apply(
-            lambda x: generate_nuts_code_by_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=2), axis=1)
-        data_table[LOT_NUTS_3] = data_table.apply(
-            lambda x: generate_nuts_code_by_level(nuts_code=x[LOT_NUTS_COLUMN_NAME], nuts_level=3), axis=1)
 
-        # change field codes with labels
-        data_table[LOT_NUTS_0] = data_table[LOT_NUTS_0].apply(
+
+        # add buyer nuts fields
+        for i in range(lvl_limit):
+            data_table[f"{BUYER_NUTS_COLUMN_NAME}_{str(i)}"] = data_table.apply(
+                lambda x: [generate_nuts_code_by_level(nuts_code=nuts, nuts_level=i) for nuts in
+                           x[BUYER_NUTS_COLUMN_NAME]] if x[BUYER_NUTS_COLUMN_NAME] else None, axis=1)
+
+        # add winner nuts fields
+        for i in range(lvl_limit):
+            data_table[f"{WINNER_NUTS_COLUMN_NAME}_{str(i)}"] = data_table.apply(
+                lambda x: [generate_nuts_code_by_level(nuts_code=nuts, nuts_level=i) for nuts in
+                           x[WINNER_NUTS_COLUMN_NAME]] if x[WINNER_NUTS_COLUMN_NAME] else None, axis=1)
+
+        # add lot country name as field
+        data_table[LOT_COUNTRY] = data_table[LOT_NUTS_0].apply(
             lambda x: get_country_name_by_code(x))
 
         data_table[CPV_RANK_0] = data_table[CPV_RANK_0].apply(
             lambda x: [cpv_algorithms.get_cpv_label_by_code(cpv_code) for cpv_code in x] if x else None)
-        data_table[CPV_RANK_1] = data_table[CPV_RANK_1].apply(
-            lambda x: [cpv_algorithms.get_cpv_label_by_code(cpv_code) for cpv_code in x] if x else None)
-        data_table[CPV_RANK_2] = data_table[CPV_RANK_2].apply(
-            lambda x: [cpv_algorithms.get_cpv_label_by_code(cpv_code) for cpv_code in x] if x else None)
-        data_table[CPV_RANK_3] = data_table[CPV_RANK_3].apply(
-            lambda x: [cpv_algorithms.get_cpv_label_by_code(cpv_code) for cpv_code in x] if x else None)
-        data_table[CPV_RANK_4] = data_table[CPV_RANK_4].apply(
-            lambda x: [cpv_algorithms.get_cpv_label_by_code(cpv_code) for cpv_code in x] if x else None)
+        if self.business_pack_name == TDA_PREMIUM_INDEX_NAME or self.business_pack_name == TDA_STARTER_INDEX_NAME:
+            data_table[CPV_RANK_1] = data_table[CPV_RANK_1].apply(
+                lambda x: [cpv_algorithms.get_cpv_label_by_code(cpv_code) for cpv_code in x] if x else None)
+            if self.business_pack_name == TDA_PREMIUM_INDEX_NAME:
+                data_table[CPV_RANK_2] = data_table[CPV_RANK_2].apply(
+                    lambda x: [cpv_algorithms.get_cpv_label_by_code(cpv_code) for cpv_code in x] if x else None)
+                data_table[CPV_RANK_3] = data_table[CPV_RANK_3].apply(
+                    lambda x: [cpv_algorithms.get_cpv_label_by_code(cpv_code) for cpv_code in x] if x else None)
+                data_table[CPV_RANK_4] = data_table[CPV_RANK_4].apply(
+                    lambda x: [cpv_algorithms.get_cpv_label_by_code(cpv_code) for cpv_code in x] if x else None)
+
+
         data_table[LOT_CPV_COLUMN_NAME] = data_table[LOT_CPV_COLUMN_NAME].apply(
             lambda x: [cpv_algorithms.get_cpv_label_by_code(cpv_code) for cpv_code in x] if x else None)
         data_table[CPV_PARENT] = data_table[CPV_PARENT].apply(
@@ -381,7 +426,7 @@ class TedDataETLPipeline(ETLPipelineABC):
         Load data to storage (ElasticSearch)
         :param transformed_data: data to load
         """
-        elastic_storage = ElasticStorage(elastic_index=TED_DATA_ETL_PIPELINE_NAME)
+        elastic_storage = ElasticStorage(elastic_index=self.business_pack_name)
         data_table = transformed_data['data']
         documents = []
         for row_index, row in data_table.iterrows():

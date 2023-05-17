@@ -4,7 +4,8 @@ import pytest
 
 from ted_data_eu.adapters.storage import ElasticStorage
 from ted_data_eu.adapters.triple_store import GraphDBAdapter
-from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import TedDataETLPipeline
+from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import TedDataETLPipeline, TDA_FREE_INDEX_NAME, \
+    TDA_STARTER_INDEX_NAME, TDA_PREMIUM_INDEX_NAME
 from tests.test_data import TEST_RDF_MANIFESTATIONS_PATH, TEST_DOCUMENTS_PATH, TEST_NOTICES_PATH
 
 REPOSITORY_NAME = "unknown_repository_123456677"
@@ -57,8 +58,10 @@ def elastic_query():
 
 
 @pytest.fixture
-def ted_data_etl_pipeline():
-    return TedDataETLPipeline()
+def ted_data_etl_pipelines():
+    return [TedDataETLPipeline(business_pack_name=TDA_FREE_INDEX_NAME),
+            TedDataETLPipeline(business_pack_name=TDA_STARTER_INDEX_NAME),
+            TedDataETLPipeline(business_pack_name=TDA_PREMIUM_INDEX_NAME)]
 
 
 @pytest.fixture
