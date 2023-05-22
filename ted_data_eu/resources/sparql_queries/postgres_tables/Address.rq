@@ -1,0 +1,35 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX locn: <http://www.w3.org/ns/locn#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
+
+select distinct
+?AddressId
+(afn:localname(?hasCountryCode) as ?CountryCode)
+(afn:localname(?hasNUTSId) as ?NUTSId)
+?PostCode
+?PostName
+?Thoroughfare
+?FullAddress
+where {
+    ?AddressId a locn:Address.
+
+    optional {
+       ?AddressId epo:hasCountryCode ?hasCountryCode .
+    }
+    optional {
+       ?AddressId epo:hasNutsCode ?hasNUTSId.
+    }
+    optional {
+       ?AddressId locn:postCode ?PostCode.
+    }
+    optional {
+       ?AddressId locn:postName ?PostName.
+    }
+    optional {
+       ?AddressId locn:thoroughfare ?Thoroughfare.
+    }
+    optional {
+       ?AddressId locn:fullAddress ?FullAddress.
+    }
+}

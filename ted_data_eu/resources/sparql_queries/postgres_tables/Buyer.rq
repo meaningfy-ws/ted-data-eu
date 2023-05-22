@@ -1,0 +1,12 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+
+select distinct
+?BuyerId
+?OrganizationId
+where {
+    ?NoticeId a epo:ResultNotice;
+                   epo:hasPublicationDate ?NoticePublicationDate;
+				   epo:announcesRole ?BuyerId.
+        ?BuyerId a epo:Buyer;
+               epo:playedBy ?OrganizationId.
+}

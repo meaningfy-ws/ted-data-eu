@@ -1,0 +1,42 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+
+select
+?LotId
+?ProcedureId
+?LotSpecificCPV
+?LotTitle
+?isUsingEUFunds
+?EstimatedValue
+?RestatedEstimatedValue
+?PlaceOfPerformance
+?LotAwardOutcomeId
+where {
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?PublicationDate;
+              epo:refersToLot ?LotId.
+    ?LotId a epo:Lot.
+    ?ProcedureId epo:hasProcurementScopeDividedIntoLot ?LotId.
+
+    optional{
+        ?LotId epo:hasPurpose ?LotSpecificCPV.
+    }
+    optional{
+        ?LotId  epo:hasTitle ?LotTitle.
+    }
+    optional{
+        ?LotId epo:isUsingEUFunds ?isUsingEUFunds.
+    }
+    optional{
+        ?LotId epo:hasRestatedEstimatedValue ?RestatedEstimatedValue.
+    }
+    optional{
+        ?LotId epo:hasEstimatedValue ?EstimatedValue.
+    }
+    optional {
+        ?LotId epo:foreseesContractSpecificTerm / epo:definesSpecificPlaceOfPerformance ?PlaceOfPerformance.
+    }
+    optional{
+        ?LotAwardOutcomeId epo:describesLot ?LotId;
+                           a epo:LotAwardOutcome.
+    }
+}

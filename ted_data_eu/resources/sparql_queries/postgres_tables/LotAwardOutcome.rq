@@ -1,0 +1,39 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
+
+select
+?LotAwardOutcomeId
+(afn:localname(?hasAwardStatus) as ?AwardStatus)
+?AwardedValue
+?BargainPrice
+?AwardDecisionDate
+?WinnerId
+?SubmissionStatisticalInformationId
+where {
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?PublicationDate;
+              epo:refersToLot ?LotId.
+    ?LotId a epo:Lot.
+    ?LotAwardOutcomeId epo:describesLot ?LotId;
+                       a epo:LotAwardOutcome.
+
+    optional {
+        ?LotAwardOutcomeId epo:hasAwardStatus ?hasAwardStatus.
+    }
+    optional {
+        ?LotAwardOutcomeId epo:hasAwardedValue ?AwardedValue.
+    }
+    optional {
+        ?LotAwardOutcomeId epo:hasBargainPrice ?BargainPrice.
+    }
+    optional {
+        ?LotAwardOutcomeId epo:hasAwardDecisionDate ?AwardDecisionDate.
+    }
+    optional {
+        ?LotAwardOutcomeId epo:comprisesTenderAwardOutcome / epo:indicatesAwardOfLotToWinner ?WinnerId.
+    }
+    optional {
+        ?SubmissionStatisticalInformationId epo:summarisesInformationForLotAwardOutcome ?LotAwardOutcomeId;
+                                            a epo:SubmissionStatisticalInformation.
+    }
+}

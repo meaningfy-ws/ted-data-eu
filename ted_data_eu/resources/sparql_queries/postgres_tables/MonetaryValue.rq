@@ -1,0 +1,12 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
+
+select
+?MonetaryValueId
+(afn:localname(?hasCurrency) as ?CurrencyId)
+?AmountValue
+where {
+    ?MonetaryValueId a epo:MonetaryValue;
+                     epo:hasCurrency ?hasCurrency;
+                     epo:hasAmountValue ?AmountValue.
+}

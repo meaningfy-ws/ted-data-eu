@@ -1,0 +1,15 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+
+select
+?NoticeId
+?NoticePublicationDate
+?ProcedureId
+?TotalAwardedValue
+where {
+    ?NoticeId a epo:ResultNotice;
+                   epo:hasPublicationDate ?NoticePublicationDate;
+                   epo:refersToProcedure ?ProcedureId.
+    optional {
+    	?NoticeId epo:announcesNoticeAwardInformation / epo:hasTotalAwardedValue ?TotalAwardedValue.
+    }
+}

@@ -1,0 +1,40 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
+
+select
+?ProcedureId
+?ProcedureTitle
+?ReferenceNumber
+?ProcedureCPV
+?EstimatedValue
+?BuyerId
+(afn:localname(?hasProcedureType) as ?ProcedureType)
+?isCoveredByGPA
+where {
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?PublicationDate;
+              epo:refersToProcedure ?ProcedureId;
+              epo:announcesRole ?BuyerId.
+    ?BuyerId a epo:Buyer.
+    ?ProcedureId a epo:Procedure.
+
+    optional {
+        ?ProcedureId epo:hasTitle ?ProcedureTitle.
+    }
+    optional {
+        ?ProcedureId epo:hasID / epo:hasIdentifierValue ?ReferenceNumber.
+    }
+    optional {
+        ?ProcedureId epo:hasPurpose ?ProcedureCPV.
+    }
+    optional {
+        ?ProcedureId epo:hasEstimatedValue ?EstimatedValue.
+    }
+    optional {
+        ?ProcedureId epo:hasProcedureType ?hasProcedureType.
+    }
+    optional {
+        ?ProcedureId epo:isCoveredByGPA ?isCoveredByGPA.
+    }
+
+}
