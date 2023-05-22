@@ -10,6 +10,18 @@ PROJECT_RESOURCES_PATH = pathlib.Path(__file__).parent.resolve() / "resources"
 PROJECT_RESOURCES_BQ_FOLDER_PATH = PROJECT_RESOURCES_PATH / "sparql_queries"
 
 
+class PostgresTablesConfig:
+
+    @property
+    def TABLE_QUERY_PATHS(self) -> Dict:
+        query_paths = PROJECT_RESOURCES_BQ_FOLDER_PATH / "postgres_tables"
+        query_paths_map = {}
+        for query_path in query_paths.iterdir():
+            if query_path.is_file():
+                query_paths_map[query_path.stem] = query_path
+        return query_paths_map
+
+
 class BQResourcesConfig:
 
     @property
@@ -60,7 +72,7 @@ class ElasticConfig:
         return config_value
 
 
-class TedDataConfigResolver(TedConfigResolver, BQResourcesConfig, GraphDBConfig, ElasticConfig):
+class TedDataConfigResolver(TedConfigResolver, BQResourcesConfig, GraphDBConfig, ElasticConfig, PostgresTablesConfig):
     """
         This class is used for automatic config discovery.
     """
