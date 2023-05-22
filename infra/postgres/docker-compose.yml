@@ -8,15 +8,21 @@ services:
       POSTGRES_PASSWORD: admin
       POSTGRES_DB: postgres
       PGDATA: /var/lib/postgresql/data
-    ports:
-       - "5446:5432"
+#    ports:
+#       - "5432:5432"
     volumes:
       - postgres-db:/var/lib/postgresql/data
     networks:
       - proxy-net
     labels:
-      - 'traefik.enable=false'
-
+      #### Labels define the behavior and rules of the traefik proxy for this container ####
+      - "traefik.enable=true" # <== Enable traefik to proxy this container
+      - "traefik.http.routers.${ENVIRONMENT}-postgres-tda.rule=Host(`postgres-tda.${SUBDOMAIN}${DOMAIN}`)" # <== Your Domain Name goes here for the http rule
+      - "traefik.http.routers.${ENVIRONMENT}-postgres-tda.entrypoints=web" # <== Defining the entrypoint for http, **ref: line 30
+      - "traefik.http.routers.${ENVIRONMENT}-postgres-tda.middlewares=redirect@file" # <== This is a middleware to redirect to https
+      - "traefik.http.routers.${ENVIRONMENT}-postgres-tda-secured.rule=Host(`postgres-tda.${SUBDOMAIN}${DOMAIN}`)" # <== Your Domain Name for the https rule
+      - "traefik.http.routers.${ENVIRONMENT}-postgres-tda-secured.entrypoints=web-secured" # <== Defining entrypoint for https, **ref: line 31
+      - "traefik.http.routers.${ENVIRONMENT}-postgres-tda-secured.tls.certresolver=mytlschallenge" # <== Defining certsresolvers for https
 
 
   pgadmin:
