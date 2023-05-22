@@ -1,0 +1,52 @@
+version: "3.8"
+services:
+  postgres:
+    image: postgres:13
+    container_name: postgres-tda-${ENVIRONMENT}
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: postgres
+      PGDATA: /var/lib/postgresql/data
+    ports:
+       - "5446:5432"
+    volumes:
+      - postgres-db:/var/lib/postgresql/data
+    networks:
+      - proxy-net
+    labels:
+      - 'traefik.enable=false'
+
+
+
+  pgadmin:
+    container_name: pgadmin-tda-${ENVIRONMENT}
+    image: dpage/pgadmin4:7.1
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: secret
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - proxy-net
+    labels:
+      #### Labels define the behavior and rules of the traefik proxy for this container ####
+      - "traefik.enable=true" # <== Enable traefik to proxy this container
+      - "traefik.http.routers.${ENVIRONMENT}-pgadmin.rule=Host(`pgadmin.${SUBDOMAIN}${DOMAIN}`)" # <== Your Domain Name goes here for the http rule
+      - "traefik.http.routers.${ENVIRONMENT}-pgadmin.entrypoints=web" # <== Defining the entrypoint for http, **ref: line 30
+      - "traefik.http.routers.${ENVIRONMENT}-pgadmin.middlewares=redirect@file" # <== This is a middleware to redirect to https
+      - "traefik.http.routers.${ENVIRONMENT}-pgadmin-secured.rule=Host(`pgadmin.${SUBDOMAIN}${DOMAIN}`)" # <== Your Domain Name for the https rule
+      - "traefik.http.routers.${ENVIRONMENT}-pgadmin-secured.entrypoints=web-secured" # <== Defining entrypoint for https, **ref: line 31
+      - "traefik.http.routers.${ENVIRONMENT}-pgadmin-secured.tls.certresolver=mytlschallenge" # <== Defining certsresolvers for https
+
+
+volumes:
+  postgres-db:
+    name: postgres-tda-${ENVIRONMENT}
+  pgadmin-data:
+    name: pgadmin-tda-${ENVIRONMENT}
+
+networks:
+  proxy-net:
+    external:
+      name: proxy-net

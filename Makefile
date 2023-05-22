@@ -178,6 +178,13 @@ stop-minio:
 	@ echo -e "$(BUILD_PRINT)Stopping the Minio services $(END_BUILD_PRINT)"
 	@ docker-compose -p ${ENVIRONMENT} --file ./infra/minio/docker-compose.yml --env-file ${ENV_FILE} down
 
+start-postgres: build-externals
+	@ echo -e "$(BUILD_PRINT)Starting the Postgres services $(END_BUILD_PRINT)"
+	@ docker-compose -p ${ENVIRONMENT} --file ./infra/postgres/docker-compose.yml --env-file ${ENV_FILE} up -d
+
+stop-postgres:
+	@ echo -e "$(BUILD_PRINT)Stopping the Postgres services $(END_BUILD_PRINT)"
+	@ docker-compose -p ${ENVIRONMENT} --file ./infra/postgres/docker-compose.yml --env-file ${ENV_FILE} down
 
 #	------------------------
 start-dash: build-externals
