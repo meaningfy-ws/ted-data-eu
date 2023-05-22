@@ -4,12 +4,12 @@ services:
     image: postgres:14.8-alpine
     container_name: postgres-tda-${ENVIRONMENT}
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: postgres
+      POSTGRES_USER: ${POSTGRES_TDA_DB_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_TDA_DB_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_TDA_DB_NAME}
       PGDATA: /var/lib/postgresql/data
     ports:
-       - "5466:5432"
+       - ${POSTGRES_TDA_DB_PORT}:5432
     volumes:
       - postgres-db:/var/lib/postgresql/data
     networks:
@@ -29,8 +29,8 @@ services:
     container_name: pgadmin-tda-${ENVIRONMENT}
     image: dpage/pgadmin4:7.1
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: secret
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_USER_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_USER_PASSWORD}
     volumes:
       - pgadmin-data:/var/lib/pgadmin
     networks:
