@@ -10,6 +10,17 @@ PROJECT_RESOURCES_PATH = pathlib.Path(__file__).parent.resolve() / "resources"
 PROJECT_RESOURCES_BQ_FOLDER_PATH = PROJECT_RESOURCES_PATH / "sparql_queries"
 
 
+class CommonConfig:
+
+    @env_property()
+    def DOMAIN(self, config_value: str) -> str:
+        return config_value
+
+    @env_property()
+    def SUBDOMAIN(self, config_value: str) -> str:
+        return config_value
+
+
 class PostgresTablesConfig:
 
     @property
@@ -20,6 +31,22 @@ class PostgresTablesConfig:
             if query_path.is_file():
                 query_paths_map[query_path.stem] = query_path
         return query_paths_map
+
+    @env_property()
+    def POSTGRES_TDA_DB_USER(self, config_value: str) -> str:
+        return config_value
+
+    @env_property()
+    def POSTGRES_TDA_DB_PASSWORD(self, config_value: str) -> str:
+        return config_value
+
+    @env_property()
+    def POSTGRES_TDA_DB_NAME(self, config_value: str) -> str:
+        return config_value
+
+    @env_property()
+    def POSTGRES_TDA_DB_PORT(self, config_value: str) -> str:
+        return config_value
 
 
 class BQResourcesConfig:
@@ -72,7 +99,8 @@ class ElasticConfig:
         return config_value
 
 
-class TedDataConfigResolver(TedConfigResolver, BQResourcesConfig, GraphDBConfig, ElasticConfig, PostgresTablesConfig):
+class TedDataConfigResolver(TedConfigResolver, BQResourcesConfig, GraphDBConfig, ElasticConfig, PostgresTablesConfig,
+                            CommonConfig):
     """
         This class is used for automatic config discovery.
     """

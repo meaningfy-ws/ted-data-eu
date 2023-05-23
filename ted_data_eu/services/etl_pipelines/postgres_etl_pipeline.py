@@ -1,15 +1,78 @@
 import re
 from pathlib import Path
 from typing import Dict
+
 import sqlalchemy
 from pandas import DataFrame
 
 from ted_data_eu import config, PROJECT_RESOURCES_BQ_FOLDER_PATH
+from ted_data_eu.adapters.cpv_processor import CPVProcessor, CPV_MAX_RANK, CPV_MIN_RANK
 from ted_data_eu.adapters.etl_pipeline_abc import ETLPipelineABC
+from ted_data_eu.adapters.nuts_processor import NUTSProcessor, NUTS_MIN_RANK, NUTS_MAX_RANK
 from ted_data_eu.adapters.triple_store import GraphDBAdapter
+from ted_data_eu.services.currency_convertor import convert_currency, \
+    get_last_available_date_for_currency
 
 TED_NOTICES_LINK = 'https://ted.europa.eu/udl?uri=TED:NOTICE:{notice_id}:TEXT:EN:HTML'
 TRIPLE_STORE_ENDPOINT = "notices"
+POSTGRES_URL = f"postgresql://{config.POSTGRES_TDA_DB_USER}:{config.POSTGRES_TDA_DB_PASSWORD}@{config.SUBDOMAIN}{config.DOMAIN}:{config.POSTGRES_TDA_DB_PORT}/{config.POSTGRES_TDA_DB_NAME}"
+
+
+def transform_monetary_value_table(data_table: DataFrame) -> DataFrame:
+    data_table["AmountValueEUR"] = data_table.apply(
+        lambda x: convert_currency(amount=x["AmountValue"], currency=x["CurrencyId"], new_currency="EUR"),
+        axis=1)
+    data_table["ConversionToEURDate"] = data_table.apply(
+        lambda x: get_last_available_date_for_currency(currency=x["CurrencyId"]), axis=1)
+
+    return data_table
+
+
+def transform_notice_table(data_table: DataFrame) -> DataFrame:
+    data_table["NoticeLink"] = data_table.apply(
+        lambda x: generate_link_to_notice(x["NoticeId"]), axis=1)
+
+    return data_table
+
+
+def transform_purpose_table(data_table: DataFrame) -> DataFrame:
+    cpv_processor = CPVProcessor()
+    data_table["OriginalCPVLabel"] = data_table.apply(
+        lambda x: cpv_processor.get_cpv_label_by_code(x['OriginalCPV']), axis=1)
+    data_table["OriginalCPVLevel"] = data_table.apply(
+        lambda x: cpv_processor.get_cpv_rank(x['OriginalCPV']), axis=1)
+
+    for cpv_lvl in range(CPV_MIN_RANK, CPV_MAX_RANK + 1):
+        data_table[f"CPV{cpv_lvl}"] = data_table.apply(
+            lambda x: cpv_processor.get_cpv_parent_code_by_rank(x['OriginalCPV'], cpv_lvl), axis=1)
+        data_table[f"CPV{cpv_lvl}Label"] = data_table.apply(
+            lambda x: cpv_processor.get_cpv_label_by_code(x[f"CPV{cpv_lvl}"]), axis=1)
+
+    return data_table
+
+
+def transform_nuts_table(data_table: DataFrame) -> DataFrame:
+    nuts_processor = NUTSProcessor()
+    data_table["NUTSLabel"] = data_table.apply(
+        lambda x: nuts_processor.get_nuts_label_by_code(x['NUTSId']), axis=1)
+    data_table["NUTSLevel"] = data_table.apply(
+        lambda x: nuts_processor.get_nuts_level_by_code(x['NUTSId']), axis=1)
+
+    for cpv_lvl in range(NUTS_MIN_RANK, NUTS_MAX_RANK + 1):
+        data_table[f"NUTS{cpv_lvl}"] = data_table.apply(
+            lambda x: nuts_processor.get_nuts_code_by_level(x['NUTSId'], cpv_lvl), axis=1)
+        data_table[f"NUTS{cpv_lvl}Label"] = data_table.apply(
+            lambda x: nuts_processor.get_nuts_label_by_code(x[f"NUTS{cpv_lvl}"]), axis=1)
+
+    return data_table
+
+
+TRANFORMERS = {
+    "MonetaryValue": transform_monetary_value_table,
+    "Notice": transform_notice_table,
+    "Purpose": transform_purpose_table,
+    "NUTS": transform_nuts_table
+}
 
 
 def generate_link_to_notice(notice_uri: str):
@@ -72,21 +135,19 @@ class PostgresETLPipeline(ETLPipelineABC):
         return {"data": result_table}
 
     def transform(self, extracted_data: Dict) -> Dict:
-        # TODO: transform step
-        return {"data": extracted_data["data"]}
+        data_table: DataFrame = extracted_data["data"]
+        if data_table.empty:
+            raise PostgresETLException("No data was been fetched from triple store!")
+
+        if self.table_name in TRANFORMERS.keys():
+            data_table = TRANFORMERS[self.table_name](data_table)
+
+        return {"data": data_table}
 
     def load(self, transformed_data: Dict):
         data_table: DataFrame = transformed_data["data"]
-        sql_engine = sqlalchemy.create_engine('', echo=False) # TODO: to add sql endpoint to .env
+        sql_engine = sqlalchemy.create_engine(POSTGRES_URL, echo=False)
         with sql_engine.connect() as sql_connection:
             data_table.to_sql(self.table_name, con=sql_connection, if_exists='replace')
+
         return {"data": transformed_data["data"]}
-
-
-# Test
-if __name__ == "__main__":
-    etl = PostgresETLPipeline(table_name="NUTS", sparql_query_path=PROJECT_RESOURCES_BQ_FOLDER_PATH / "postgres_tables" / "NUTS.rq")
-    #etl.set_metadata({"start_date": "20191031", "end_date": "20191031"})
-    df = etl.extract()['data']
-    df = etl.transform({"data": df})['data']
-    print(df.to_string())
