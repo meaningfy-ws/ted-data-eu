@@ -17,6 +17,9 @@ NUTS_LEVEL_COLUMN_NAME = 'NUTS level'
 NUTS_MIN_RANK = 0
 NUTS_MAX_RANK = 3
 class NUTSProcessor(object):
+    """
+    NUTSProcessor is a class that processes NUTS codes.
+    """
 
     def __init__(self, nuts_table_path: Path = NUTS_TABLE_DEFAULT_PATH):
         """
@@ -51,7 +54,7 @@ class NUTSProcessor(object):
         """
         if not self.nuts_exists(nuts_code=nuts_code):
             return None
-        return self.dataframe[self.dataframe[NUTS_CODE_COLUMN_NAME] == nuts_code][NUTS_LEVEL_COLUMN_NAME].values[0]
+        return int(self.dataframe[self.dataframe[NUTS_CODE_COLUMN_NAME] == nuts_code][NUTS_LEVEL_COLUMN_NAME].values[0])
 
     def get_nuts_label_by_code(self, nuts_code: str) -> Optional[str]:
         """
