@@ -1,6 +1,6 @@
 PREFIX epo: <http://data.europa.eu/a4g/ontology#>
 
-select
+select distinct
 ?LotId
 ?ProcedureId
 ?LotSpecificCPV

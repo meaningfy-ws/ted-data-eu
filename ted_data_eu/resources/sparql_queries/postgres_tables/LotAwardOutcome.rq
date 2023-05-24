@@ -1,7 +1,7 @@
 PREFIX epo: <http://data.europa.eu/a4g/ontology#>
 PREFIX afn: <http://jena.apache.org/ARQ/function#>
 
-select
+select distinct
 ?LotAwardOutcomeId
 (afn:localname(?hasAwardStatus) as ?AwardStatus)
 ?AwardedValue
