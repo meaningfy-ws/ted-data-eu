@@ -32,8 +32,7 @@ def init_etl_pipelines_register():
     #     etl_pipelines_register.register(etl_pipeline_name=table_name,
     #                                     etl_pipeline=PostgresETLPipeline(table_name=table_name,
     #                                                                     sparql_query_path=query_path))
-
-    PostgresETLPipeline(table_name="Address", sparql_query_path=config.TABLE_QUERY_PATHS['Address'])
+    etl_pipelines_register.register(etl_pipeline_name="Address", etl_pipeline=PostgresETLPipeline(table_name="Address", sparql_query_path=config.TABLE_QUERY_PATHS['Address']))
 
 
 @dag(default_args=DEFAULT_DAG_ARGUMENTS,
