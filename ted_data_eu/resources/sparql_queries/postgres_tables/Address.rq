@@ -2,6 +2,7 @@ PREFIX epo: <http://data.europa.eu/a4g/ontology#>
 PREFIX locn: <http://www.w3.org/ns/locn#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX afn: <http://jena.apache.org/ARQ/function#>
+PREFIX cccev: <http://data.europa.eu/m8g/>
 
 select distinct
 ?AddressId
@@ -12,6 +13,16 @@ select distinct
 ?Thoroughfare
 ?FullAddress
 where {
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?NoticePublicationDate;
+              epo:refersToProcedure ?ProcedureId.
+
+    values ?NoticePublicationDate {
+        $date_range
+    }
+
+    ?NoticeId epo:announcesRole / epo:playedBy ?Organization.
+    ?Organization cccev:registeredAddress ?AddressId.
     ?AddressId a locn:Address.
 
     optional {
@@ -32,4 +43,4 @@ where {
     optional {
        ?AddressId locn:fullAddress ?FullAddress.
     }
-}
+} limit 100

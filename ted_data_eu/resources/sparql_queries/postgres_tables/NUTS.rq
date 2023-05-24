@@ -1,10 +1,17 @@
 PREFIX epo: <http://data.europa.eu/a4g/ontology#>
 PREFIX locn: <http://www.w3.org/ns/locn#>
 PREFIX afn: <http://jena.apache.org/ARQ/function#>
+PREFIX cccev: <http://data.europa.eu/m8g/>
 
 select distinct
 (afn:localname(?hasNUTSId) as ?NUTSId)
 where {
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?NoticePublicationDate.
+    values ?NoticePublicationDate {
+        $date_range
+    }
+    ?NoticeId epo:announcesRole / epo:playedBy / cccev:registeredAddress ?AddressId.
     ?AddressId a locn:Address;
                epo:hasNutsCode ?hasNUTSId.
 }

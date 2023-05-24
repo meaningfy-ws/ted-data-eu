@@ -2,6 +2,7 @@ PREFIX epo: <http://data.europa.eu/a4g/ontology#>
 PREFIX org: <http://www.w3.org/ns/org#>
 PREFIX cccev: <http://data.europa.eu/m8g/>
 PREFIX afn: <http://jena.apache.org/ARQ/function#>
+PREFIX locn: <http://www.w3.org/ns/locn#>
 
 select distinct
 ?OrganizationId
@@ -11,6 +12,16 @@ select distinct
 ?PrimaryContactPointTelephone
 ?PrimaryContactPointFax
 where {
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?NoticePublicationDate;
+              epo:refersToProcedure ?ProcedureId.
+
+    values ?NoticePublicationDate {
+        $date_range
+    }
+
+    ?NoticeId epo:announcesRole / epo:playedBy ?OrganizationId.
+
     ?OrganizationId a org:Organization.
     optional {
         ?OrganizationId cccev:registeredAddress ?AddressId.
