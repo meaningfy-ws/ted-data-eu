@@ -46,24 +46,32 @@ def run_etl_executor_by_date_range():
 
         date_range = generate_dates_by_date_range(start_date, end_date)
         for date in date_range:
+            free_index_start_date = (datetime.strptime(date, "%Y%m%d") - timedelta(
+                days=TDA_INDEX_DAYS_LIMIT[TDA_FREE_INDEX_NAME])).strftime("%Y%m%d")
+            started_index_start_date = (datetime.strptime(date, "%Y%m%d") - timedelta(
+                days=TDA_INDEX_DAYS_LIMIT[TDA_STARTER_INDEX_NAME])).strftime("%Y%m%d")
+            premium_index_start_date = (datetime.strptime(date, "%Y%m%d") - timedelta(
+                days=TDA_INDEX_DAYS_LIMIT[TDA_PREMIUM_INDEX_NAME])).strftime("%Y%m%d")
+            elastic_table_names = {TDA_FREE_INDEX_NAME:
+                                       {START_DATE_METADATA_FIELD: free_index_start_date,
+                                        END_DATE_METADATA_FIELD: free_index_start_date},
+                                   TDA_STARTER_INDEX_NAME:
+                                       {START_DATE_METADATA_FIELD: started_index_start_date,
+                                        END_DATE_METADATA_FIELD: started_index_start_date},
+                                   TDA_PREMIUM_INDEX_NAME:
+                                       {START_DATE_METADATA_FIELD: premium_index_start_date,
+                                        END_DATE_METADATA_FIELD: premium_index_start_date},
+                                   }
+            postgres_table_names = {
+                table_name: {START_DATE_METADATA_FIELD: start_date, END_DATE_METADATA_FIELD: end_date} for table_name in
+                config.TABLE_QUERY_PATHS.keys()}
 
-            free_index_start_date = (datetime.strptime(date, "%Y%m%d") - timedelta(days=TDA_INDEX_DAYS_LIMIT[TDA_FREE_INDEX_NAME])).strftime("%Y%m%d")
-            started_index_start_date = (datetime.strptime(date, "%Y%m%d") - timedelta(days=TDA_INDEX_DAYS_LIMIT[TDA_STARTER_INDEX_NAME])).strftime("%Y%m%d")
-            premium_index_start_date = (datetime.strptime(date, "%Y%m%d") - timedelta(days=TDA_INDEX_DAYS_LIMIT[TDA_PREMIUM_INDEX_NAME])).strftime("%Y%m%d")
-            postgres_table_name = {table_name: {START_DATE_METADATA_FIELD: start_date, END_DATE_METADATA_FIELD: end_date} for table_name in config.TABLE_QUERY_PATHS.keys()}
             TriggerDagRunOperator(
                 task_id=f'trigger_run_etl_pipeline_dag_{date}',
                 trigger_dag_id=ETL_EXECUTOR_DAG_NAME,
                 conf={ETL_METADATA_DAG_CONFIG_KEY:
-                          {TDA_FREE_INDEX_NAME:
-                               {START_DATE_METADATA_FIELD: free_index_start_date , END_DATE_METADATA_FIELD: free_index_start_date},
-                           TDA_STARTER_INDEX_NAME:
-                               {START_DATE_METADATA_FIELD: started_index_start_date, END_DATE_METADATA_FIELD: started_index_start_date},
-                           TDA_PREMIUM_INDEX_NAME:
-                               {START_DATE_METADATA_FIELD: premium_index_start_date, END_DATE_METADATA_FIELD: premium_index_start_date},
-                           }.update(postgres_table_name)
-
-                      }
+                            {**elastic_table_names, **postgres_table_names}
+            }
             ).execute(context=context)
 
     run_etl_executor_for_each_date_in_range()
