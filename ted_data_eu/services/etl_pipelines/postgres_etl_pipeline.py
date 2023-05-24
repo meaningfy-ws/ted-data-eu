@@ -154,7 +154,7 @@ class PostgresETLPipeline(ETLPipelineABC):
         ETL Class that gets data from TDA endpoint, transforms and inserts result to document storage
     """
 
-    def __init__(self, table_name: str, sparql_query_path: Path, pk_name: str, postgres_url: str = None):
+    def __init__(self, table_name: str, sparql_query_path: Path, primary_key_column_name: str, postgres_url: str = None):
         """
             Constructor
         """
@@ -163,7 +163,7 @@ class PostgresETLPipeline(ETLPipelineABC):
         self.sparql_query_path = sparql_query_path
         self.postgres_url = postgres_url if postgres_url else POSTGRES_URL
         self.sql_engine = sqlalchemy.create_engine(self.postgres_url, echo=False)
-        self.pk_name = pk_name
+        self.primary_key_column_name = primary_key_column_name
 
     def set_metadata(self, etl_metadata: dict):
         """
@@ -230,6 +230,6 @@ class PostgresETLPipeline(ETLPipelineABC):
 
         with self.sql_engine.connect() as sql_connection:
             data_table.to_sql(self.table_name, con=sql_connection, if_exists='append', chunksize=SEND_CHUNK_SIZE, index=False)
-            sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name, pk_name=self.pk_name))
+            sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name, pk_name=self.primary_key_column_name))
 
         return {"data": transformed_data["data"]}
