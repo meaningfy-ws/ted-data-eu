@@ -5,6 +5,7 @@ from pathlib import Path
 from string import Template
 from typing import Dict, Optional
 
+import pandas as pd
 import sqlalchemy
 from pandas import DataFrame
 
@@ -56,6 +57,7 @@ def transform_monetary_value_table(data_table: DataFrame) -> DataFrame:
     """
     Transforms monetary value table by converting all amounts to EUR and adding conversion date
     """
+    data_table[AMOUNT_VALUE_EUR_COLUMN] = pd.to_numeric(data_table[AMOUNT_VALUE_EUR_COLUMN])
     data_table[AMOUNT_VALUE_EUR_COLUMN] = data_table.apply(
         lambda x: convert_currency(amount=x[AMOUNT_VALUE_COLUMN], currency=x[CURRENCY_ID_COLUMN],
                                    new_currency=EURO_CURRENCY_ID),
@@ -216,7 +218,7 @@ class PostgresETLPipeline(ETLPipelineABC):
         data_table: DataFrame = extracted_data["data"]
         if data_table.empty:
             raise PostgresETLException("No data was been fetched from triple store!")
-
+        data_table = data_table.apply(pd.StringDtype)
         if self.table_name in TRANSFORMED_TABLES.keys():
             data_table = TRANSFORMED_TABLES[self.table_name](data_table)
 
