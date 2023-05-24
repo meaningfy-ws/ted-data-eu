@@ -1,8 +1,7 @@
 from abc import ABC
 from typing import Any
-import tempfile
-import pathlib
 import pickle
+import lzma
 from airflow.models import BaseOperator
 from dags.dags_utils import pull_dag_upstream, push_dag_downstream, get_dag_param
 from ted_data_eu.adapters.etl_pipeline_abc import ETLPipelineABC
@@ -11,35 +10,22 @@ ETL_STEP_DATA_KEY = "etl_step_data"
 ETL_METADATA_DAG_CONFIG_KEY = "etl_metadata"
 
 
-def store_dict_as_pickle_in_tmp_file(data: dict) -> pathlib.Path:
+def compress_dict_data_with_lzma(data: dict) -> bytes:
     """
-        Stores a dictionary as pickle in a temporary file
-    :param data: Dictionary to be stored
-    :return: Path to the temporary file
+        Compresses a dictionary with lzma
+    :param data: Dictionary to be compressed
+    :return: Compressed dictionary
     """
-    with tempfile.NamedTemporaryFile(suffix=".pickle", delete=False) as tmp_file:
-        pickle.dump(data, tmp_file)
-        return pathlib.Path(tmp_file.name)
+    return lzma.compress(pickle.dumps(data), preset=lzma.PRESET_EXTREME)
 
 
-def load_dict_from_pickle_file(pickle_file_path: pathlib.Path) -> dict:
+def uncompress_dict_data_with_lzma(data: bytes) -> dict:
     """
-        Loads a dictionary from a pickle file
-    :param pickle_file_path: Path to the pickle file
-    :return: Dictionary
+        Uncompresses a dictionary with lzma
+    :param data: Compressed dictionary
+    :return: Uncompressed dictionary
     """
-    with open(pickle_file_path, "rb") as pickle_file:
-        return pickle.load(pickle_file)
-
-
-def delete_pickle_tmp_file(pickle_file_path: pathlib.Path):
-    """
-        Deletes a pickle file
-    :param pickle_file_path: Path to the pickle file
-    :return:
-    """
-    if pickle_file_path.exists():
-        pickle_file_path.unlink()
+    return pickle.loads(lzma.decompress(data))
 
 
 class ETLStepOperatorABC(BaseOperator, ABC):
@@ -71,8 +57,8 @@ class ExtractStepOperator(ETLStepOperatorABC):
         if self.etl_pipeline.get_pipeline_name() in etl_dag_metadata.keys():
             self.etl_pipeline.set_metadata(etl_metadata=etl_dag_metadata[self.etl_pipeline.get_pipeline_name()])
         result_data = self.etl_pipeline.extract()
-        tmp_path = store_dict_as_pickle_in_tmp_file(data=result_data)
-        push_dag_downstream(key=ETL_STEP_DATA_KEY, value=tmp_path)
+        compressed_result_data = compress_dict_data_with_lzma(data=result_data)
+        push_dag_downstream(key=ETL_STEP_DATA_KEY, value=compressed_result_data)
 
 
 class TransformStepOperator(ETLStepOperatorABC):
@@ -86,12 +72,11 @@ class TransformStepOperator(ETLStepOperatorABC):
         :param context:
         :return:
         """
-        tmp_path = pull_dag_upstream(key=ETL_STEP_DATA_KEY)
-        input_data = load_dict_from_pickle_file(pickle_file_path=tmp_path)
+        compressed_input_data = pull_dag_upstream(key=ETL_STEP_DATA_KEY)
+        input_data = uncompress_dict_data_with_lzma(data=compressed_input_data)
         result_data = self.etl_pipeline.transform(extracted_data=input_data)
-        delete_pickle_tmp_file(pickle_file_path=tmp_path)
-        tmp_path = store_dict_as_pickle_in_tmp_file(data=result_data)
-        push_dag_downstream(key=ETL_STEP_DATA_KEY, value=tmp_path)
+        compressed_result_data = compress_dict_data_with_lzma(data=result_data)
+        push_dag_downstream(key=ETL_STEP_DATA_KEY, value=compressed_result_data)
 
 
 class LoadStepOperator(ETLStepOperatorABC):
@@ -105,7 +90,6 @@ class LoadStepOperator(ETLStepOperatorABC):
         :param context:
         :return:
         """
-        tmp_path = pull_dag_upstream(key=ETL_STEP_DATA_KEY)
-        input_data = load_dict_from_pickle_file(pickle_file_path=tmp_path)
+        compressed_input_data = pull_dag_upstream(key=ETL_STEP_DATA_KEY)
+        input_data = uncompress_dict_data_with_lzma(data=compressed_input_data)
         self.etl_pipeline.load(transformed_data=input_data)
-        delete_pickle_tmp_file(pickle_file_path=tmp_path)
