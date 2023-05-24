@@ -43,11 +43,11 @@ NUTS_ID_COLUMN = "NUTSId"
 
 DROP_DUPLICATES_QUERY = """
 DELETE FROM "{table_name}" a USING (
-    SELECT MIN(ctid) as ctid, "{pk_name}"
+    SELECT MIN(ctid) as ctid, "{primary_key_column_name}"
     FROM "{table_name}" 
-    GROUP BY "{pk_name}" HAVING COUNT(*) > 1
+    GROUP BY "{primary_key_column_name}" HAVING COUNT(*) > 1
 ) b
-WHERE a."{pk_name}" = b."{pk_name}" 
+WHERE a."{primary_key_column_name}" = b."{primary_key_column_name}" 
 AND a.ctid <> b.ctid
 """
 
@@ -230,6 +230,6 @@ class PostgresETLPipeline(ETLPipelineABC):
 
         with self.sql_engine.connect() as sql_connection:
             data_table.to_sql(self.table_name, con=sql_connection, if_exists='append', chunksize=SEND_CHUNK_SIZE, index=False)
-            sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name, pk_name=self.primary_key_column_name))
+            sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name, primary_key_column_name=self.primary_key_column_name))
 
         return {"data": transformed_data["data"]}
