@@ -17,6 +17,7 @@ TED_NOTICES_LINK = 'https://ted.europa.eu/udl?uri=TED:NOTICE:{notice_id}:TEXT:EN
 TRIPLE_STORE_ENDPOINT = "notices"
 POSTGRES_URL = f"postgresql://{config.POSTGRES_TDA_DB_USER}:{config.POSTGRES_TDA_DB_PASSWORD}@{config.SUBDOMAIN}{config.DOMAIN}:{config.POSTGRES_TDA_DB_PORT}/{config.POSTGRES_TDA_DB_NAME}"
 EURO_CURRENCY_ID = "EUR"
+SEND_CHUNK_SIZE = 1000
 
 AMOUNT_VALUE_EUR_COLUMN = "AmountValueEUR"
 AMOUNT_VALUE_COLUMN = "AmountValue"
@@ -194,6 +195,6 @@ class PostgresETLPipeline(ETLPipelineABC):
         data_table: DataFrame = transformed_data["data"]
 
         with self.sql_engine.connect() as sql_connection:
-            data_table.to_sql(self.table_name, con=sql_connection, if_exists='replace')
+            data_table.to_sql(self.table_name, con=sql_connection, if_exists='replace', chunksize=SEND_CHUNK_SIZE)
 
         return {"data": transformed_data["data"]}
