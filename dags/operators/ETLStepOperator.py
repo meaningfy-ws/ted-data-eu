@@ -16,7 +16,7 @@ def compress_dict_data_with_lzma(data: dict) -> bytes:
     :param data: Dictionary to be compressed
     :return: Compressed dictionary
     """
-    return lzma.compress(pickle.dumps(data), preset=lzma.PRESET_EXTREME)
+    return lzma.compress(pickle.dumps(data), preset=lzma.PRESET_DEFAULT)
 
 
 def uncompress_dict_data_with_lzma(data: bytes) -> dict:
