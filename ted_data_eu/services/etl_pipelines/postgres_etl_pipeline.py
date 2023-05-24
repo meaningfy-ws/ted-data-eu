@@ -217,7 +217,6 @@ class PostgresETLPipeline(ETLPipelineABC):
         if data_table.empty:
             raise PostgresETLException("No data was been fetched from triple store!")
         data_table = data_table.astype(object)
-        print(data_table.dtypes)
         if self.table_name in TRANSFORMED_TABLES.keys():
             data_table = TRANSFORMED_TABLES[self.table_name](data_table)
 
