@@ -14,6 +14,11 @@ where {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?PublicationDate;
               epo:refersToLot ?LotId.
+
+    values ?PublicationDate {
+        $date_range
+    }
+
     ?LotId a epo:Lot.
     ?ProcedureId epo:hasProcurementScopeDividedIntoLot ?LotId.
 

@@ -31,7 +31,7 @@ def init_etl_pipelines_register():
     for table_name, query_path in config.TABLE_QUERY_PATHS.items():
         etl_pipelines_register.register(etl_pipeline_name=table_name,
                                         etl_pipeline=PostgresETLPipeline(table_name=table_name,
-                                                                        sparql_query_path=query_path))
+                                                                        sparql_query_path=query_path, pk_name=f"{table_name}Id"))
 
 
 @dag(default_args=DEFAULT_DAG_ARGUMENTS,
