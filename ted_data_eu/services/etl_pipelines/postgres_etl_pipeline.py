@@ -206,7 +206,6 @@ class PostgresETLPipeline(ETLPipelineABC):
 
         sparql_query_template = Template(self.sparql_query_path.read_text(encoding="utf-8"))
         sparql_query = sparql_query_template.substitute(date_range=date_range)
-        print(sparql_query)
         triple_store_endpoint = GraphDBAdapter().get_sparql_triple_store_endpoint(repository_name=TRIPLE_STORE_ENDPOINT)
         result_table = triple_store_endpoint.with_query(sparql_query).fetch_tabular()
         return {"data": result_table}
@@ -218,7 +217,8 @@ class PostgresETLPipeline(ETLPipelineABC):
         data_table: DataFrame = extracted_data["data"]
         if data_table.empty:
             raise PostgresETLException("No data was been fetched from triple store!")
-        data_table = data_table.apply(pd.StringDtype)
+        data_table = data_table.astype(object)
+        print(data_table.dtypes)
         if self.table_name in TRANSFORMED_TABLES.keys():
             data_table = TRANSFORMED_TABLES[self.table_name](data_table)
 
@@ -237,10 +237,10 @@ class PostgresETLPipeline(ETLPipelineABC):
         return {"data": transformed_data["data"]}
 
 
-# if __name__ == "__main__":
-#     etl = PostgresETLPipeline(table_name="Lot_test", sparql_query_path=config.TABLE_QUERY_PATHS['Lot'])
-#     etl.set_metadata({"start_date": "20170712", "end_date": "20170712"})
-#     df = etl.extract()['data']
-#     df = etl.transform({"data": df})['data']
-#     etl.load({"data": df})
-#     print(df.to_string())
+if __name__ == "__main__":
+    etl = PostgresETLPipeline(table_name="Lot_test", sparql_query_path=config.TABLE_QUERY_PATHS['Lot'], pk_name="LotId")
+    etl.set_metadata({"start_date": "20170712", "end_date": "20170712"})
+    df = etl.extract()['data']
+    df = etl.transform({"data": df})['data']
+    #etl.load({"data": df})
+    print(df.to_string())
