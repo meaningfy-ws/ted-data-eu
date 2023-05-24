@@ -57,7 +57,6 @@ def transform_monetary_value_table(data_table: DataFrame) -> DataFrame:
     """
     Transforms monetary value table by converting all amounts to EUR and adding conversion date
     """
-    data_table[AMOUNT_VALUE_EUR_COLUMN] = pd.to_numeric(data_table[AMOUNT_VALUE_EUR_COLUMN])
     data_table[AMOUNT_VALUE_EUR_COLUMN] = data_table.apply(
         lambda x: convert_currency(amount=x[AMOUNT_VALUE_COLUMN], currency=x[CURRENCY_ID_COLUMN],
                                    new_currency=EURO_CURRENCY_ID),
@@ -235,12 +234,3 @@ class PostgresETLPipeline(ETLPipelineABC):
             sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name, pk_name=self.pk_name))
 
         return {"data": transformed_data["data"]}
-
-
-if __name__ == "__main__":
-    etl = PostgresETLPipeline(table_name="Lot_test", sparql_query_path=config.TABLE_QUERY_PATHS['Lot'], pk_name="LotId")
-    etl.set_metadata({"start_date": "20170712", "end_date": "20170712"})
-    df = etl.extract()['data']
-    df = etl.transform({"data": df})['data']
-    #etl.load({"data": df})
-    print(df.to_string())
