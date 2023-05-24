@@ -12,9 +12,15 @@ select distinct
 ?isCoveredByGPA
 where {
     ?NoticeId a epo:ResultNotice;
-              epo:hasPublicationDate ?PublicationDate;
+              epo:hasPublicationDate ?NoticePublicationDate;
               epo:refersToProcedure ?ProcedureId;
               epo:announcesRole ?BuyerId.
+
+    values ?NoticePublicationDate {
+        $date_range
+    }
+
+
     ?BuyerId a epo:Buyer.
     ?ProcedureId a epo:Procedure.
 

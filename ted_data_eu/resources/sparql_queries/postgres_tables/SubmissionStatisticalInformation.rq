@@ -11,8 +11,14 @@ select distinct
 ?hasElectronicTenders
 where {
     ?NoticeId a epo:ResultNotice;
-              epo:hasPublicationDate ?PublicationDate;
+              epo:hasPublicationDate ?NoticePublicationDate;
               epo:refersToLot ?LotId.
+
+    values ?NoticePublicationDate {
+        $date_range
+    }
+
+
     ?LotId a epo:Lot.
     ?LotAwardOutcomeId epo:describesLot ?LotId;
                        a epo:LotAwardOutcome.

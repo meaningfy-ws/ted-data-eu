@@ -12,10 +12,10 @@ select distinct
 ?LotAwardOutcomeId
 where {
     ?NoticeId a epo:ResultNotice;
-              epo:hasPublicationDate ?PublicationDate;
+              epo:hasPublicationDate ?NoticePublicationDate;
               epo:refersToLot ?LotId.
 
-    values ?PublicationDate {
+    values ?NoticePublicationDate {
         $date_range
     }
 
