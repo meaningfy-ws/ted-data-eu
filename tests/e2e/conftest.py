@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import pytest
 
 from ted_data_eu.adapters.storage import ElasticStorage

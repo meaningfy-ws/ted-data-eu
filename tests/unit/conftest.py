@@ -1,6 +1,7 @@
 import pytest
 
 from ted_data_eu.adapters.cpv_processor import CPVProcessor
+from ted_data_eu.adapters.nuts_processor import NUTSProcessor
 
 
 @pytest.fixture
@@ -31,3 +32,8 @@ def real_nuts():
 @pytest.fixture
 def fake_nuts():
     return None
+
+
+@pytest.fixture
+def nuts_processor():
+    return NUTSProcessor()

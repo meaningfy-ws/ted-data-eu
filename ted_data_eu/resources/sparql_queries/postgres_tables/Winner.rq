@@ -1,0 +1,12 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+
+select distinct
+?WinnerId
+?OrganizationId
+where {
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?NoticePublicationDate;
+              epo:announcesRole ?WinnerId.
+    ?WinnerId a epo:Winner;
+              epo:playedBy ?OrganizationId.
+}

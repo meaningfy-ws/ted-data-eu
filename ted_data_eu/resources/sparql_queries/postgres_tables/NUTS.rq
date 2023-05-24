@@ -1,0 +1,10 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX locn: <http://www.w3.org/ns/locn#>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
+
+select distinct
+(afn:localname(?hasNUTSId) as ?NUTSId)
+where {
+    ?AddressId a locn:Address;
+               epo:hasNutsCode ?hasNUTSId.
+}

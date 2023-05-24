@@ -1,0 +1,44 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+
+select distinct
+?SubmissionStatisticalInformationId
+?hasReceivedSMETenders
+?hasReceivedTenders
+?hasHighestReceivedTenderValue
+?hasLowestReceivedTenderValue
+?hasEUReceivedTenders
+?hasReceivedNonEUTenders
+?hasElectronicTenders
+where {
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?PublicationDate;
+              epo:refersToLot ?LotId.
+    ?LotId a epo:Lot.
+    ?LotAwardOutcomeId epo:describesLot ?LotId;
+                       a epo:LotAwardOutcome.
+    ?SubmissionStatisticalInformationId epo:summarisesInformationForLotAwardOutcome ?LotAwardOutcomeId;
+                                        a epo:SubmissionStatisticalInformation.
+
+    optional {
+        ?SubmissionStatisticalInformationId epo:hasReceivedSMETenders ?hasReceivedSMETenders .
+    }
+    optional {
+        ?SubmissionStatisticalInformationId epo:hasReceivedTenders ?hasReceivedTenders .
+    }
+    optional {
+        ?SubmissionStatisticalInformationId epo:hasHighestReceivedTenderValue ?hasHighestReceivedTenderValue .
+    }
+    optional {
+        ?SubmissionStatisticalInformationId epo:hasLowestReceivedTenderValue ?hasLowestReceivedTenderValue .
+    }
+    optional {
+        ?SubmissionStatisticalInformationId epo:hasEUReceivedTenders ?hasEUReceivedTenders .
+    }
+    optional {
+        ?SubmissionStatisticalInformationId epo:hasElectronicTenders ?hasElectronicTenders .
+    }
+    optional {
+        ?SubmissionStatisticalInformationId epo:hasReceivedNonEUTenders ?hasReceivedNonEUTenders .
+    }
+
+}

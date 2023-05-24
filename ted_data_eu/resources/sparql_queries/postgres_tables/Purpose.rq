@@ -1,0 +1,15 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
+
+select distinct
+?PurposeId
+(afn:localname(?hasOriginalCPV) as ?OriginalCPV)
+where {
+    ?PurposeId a epo:Purpose;
+    optional {
+        ?PurposeId epo:hasMainClassification ?hasOriginalCPV.
+    }
+    optional {
+        ?PurposeId epo:hasAdditionalClassification ?hasOriginalCPV.
+    }
+}

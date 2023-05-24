@@ -1,0 +1,44 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX cccev: <http://data.europa.eu/m8g/>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
+
+select distinct
+?OrganizationId
+?LegalName
+?AddressId
+(afn:localname(?hasBusinessSize) as ?BusinessSize)
+?PrimaryContactPointTelephone
+?PrimaryContactPointFax
+where {
+    ?OrganizationId a org:Organization.
+    optional {
+        ?OrganizationId cccev:registeredAddress ?AddressId.
+    }
+    optional {
+        ?OrganizationId epo:hasBusinessSize ?hasBusinessSize.
+    }
+    optional {
+        ?OrganizationId epo:hasPrimaryContactPoint ?PrimaryContactPoint.
+        ?PrimaryContactPoint a cccev:ContactPoint.
+        optional {
+            ?PrimaryContactPoint cccev:telephone ?PrimaryContactPointTelephone.
+        }
+        optional {
+            ?PrimaryContactPoint epo:hasFax ?PrimaryContactPointFax.
+        }
+    }
+    {
+        ?OrganizationId epo:hasLegalName ?LegalNameEn .
+        filter(lang(?LegalNameEn) = 'en')
+    }
+    {
+        SELECT ?OrganizationId (SAMPLE (?LegalNameInternal) as ?LegalNameOther)
+        {
+            ?OrganizationId epo:hasLegalName ?LegalNameInternal .
+        }
+        GROUP BY ?OrganizationId order by ?LegalNameInternal
+    }
+    BIND(COALESCE(?LegalNameEn, ?LegalNameOther) as ?LegalName)
+
+}
