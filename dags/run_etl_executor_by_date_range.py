@@ -15,6 +15,7 @@ from ted_sws.event_manager.model.event_message import TechnicalEventMessage, Eve
     EventMessageProcessType
 
 from dags.operators.ETLStepOperator import ETL_METADATA_DAG_CONFIG_KEY
+from ted_data_eu import config
 from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import START_DATE_METADATA_FIELD, END_DATE_METADATA_FIELD, \
     TDA_FREE_INDEX_NAME, generate_dates_by_date_range, TDA_STARTER_INDEX_NAME, TDA_PREMIUM_INDEX_NAME, \
     TDA_INDEX_DAYS_LIMIT
@@ -49,6 +50,7 @@ def run_etl_executor_by_date_range():
             free_index_start_date = (datetime.strptime(date, "%Y%m%d") - timedelta(days=TDA_INDEX_DAYS_LIMIT[TDA_FREE_INDEX_NAME])).strftime("%Y%m%d")
             started_index_start_date = (datetime.strptime(date, "%Y%m%d") - timedelta(days=TDA_INDEX_DAYS_LIMIT[TDA_STARTER_INDEX_NAME])).strftime("%Y%m%d")
             premium_index_start_date = (datetime.strptime(date, "%Y%m%d") - timedelta(days=TDA_INDEX_DAYS_LIMIT[TDA_PREMIUM_INDEX_NAME])).strftime("%Y%m%d")
+            postgres_table_name = {table_name: {START_DATE_METADATA_FIELD: start_date, END_DATE_METADATA_FIELD: end_date} for table_name in config.TABLE_QUERY_PATHS.keys()}
             TriggerDagRunOperator(
                 task_id=f'trigger_run_etl_pipeline_dag_{date}',
                 trigger_dag_id=ETL_EXECUTOR_DAG_NAME,
@@ -59,7 +61,7 @@ def run_etl_executor_by_date_range():
                                {START_DATE_METADATA_FIELD: started_index_start_date, END_DATE_METADATA_FIELD: started_index_start_date},
                            TDA_PREMIUM_INDEX_NAME:
                                {START_DATE_METADATA_FIELD: premium_index_start_date, END_DATE_METADATA_FIELD: premium_index_start_date},
-                           }
+                           }.update(postgres_table_name)
 
                       }
             ).execute(context=context)
