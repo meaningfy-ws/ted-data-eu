@@ -23,6 +23,22 @@ where {
     ?NoticeId epo:announcesRole / epo:playedBy ?OrganizationId.
 
     ?OrganizationId a org:Organization.
+
+    optional {
+        {
+            ?OrganizationId epo:hasLegalName ?LegalNameEn .
+            filter(lang(?LegalNameEn) = 'en')
+        }
+        {
+            SELECT ?OrganizationId (SAMPLE (?LegalNameInternal) as ?LegalNameOther)
+            {
+                ?OrganizationId epo:hasLegalName ?LegalNameInternal .
+            }
+            GROUP BY ?OrganizationId order by ?LegalNameInternal
+        }
+        BIND(COALESCE(?LegalNameEn, ?LegalNameOther) as ?LegalName)
+    }
+
     optional {
         ?OrganizationId cccev:registeredAddress ?AddressId.
     }
@@ -39,17 +55,6 @@ where {
             ?PrimaryContactPoint epo:hasFax ?PrimaryContactPointFax.
         }
     }
-    {
-        ?OrganizationId epo:hasLegalName ?LegalNameEn .
-        filter(lang(?LegalNameEn) = 'en')
-    }
-    {
-        SELECT ?OrganizationId (SAMPLE (?LegalNameInternal) as ?LegalNameOther)
-        {
-            ?OrganizationId epo:hasLegalName ?LegalNameInternal .
-        }
-        GROUP BY ?OrganizationId order by ?LegalNameInternal
-    }
-    BIND(COALESCE(?LegalNameEn, ?LegalNameOther) as ?LegalName)
+
 
 }
