@@ -5,11 +5,29 @@ select distinct
 ?PurposeId
 (afn:localname(?hasOriginalCPV) as ?OriginalCPV)
 where {
-    ?PurposeId a epo:Purpose;
-    optional {
-        ?PurposeId epo:hasMainClassification ?hasOriginalCPV.
-    }
-    optional {
-        ?PurposeId epo:hasAdditionalClassification ?hasOriginalCPV.
+    {
+        select ?PurposeId ?hasOriginalCPV where {
+            ?NoticeId a epo:ResultNotice;
+                      epo:hasPublicationDate ?NoticePublicationDate;
+                      epo:refersToProcedure ?ProcedureId.
+            values ?NoticePublicationDate {
+                $date_range
+            }
+            ?ProcedureId epo:hasPurpose ?PurposeId.
+            ?PurposeId a epo:Purpose;
+                       epo:hasMainClassification ?hasOriginalCPV.
+        }
+    } union {
+        select ?PurposeId ?hasOriginalCPV where {
+            ?NoticeId a epo:ResultNotice;
+                      epo:hasPublicationDate ?NoticePublicationDate;
+                      epo:refersToLot ?LotId.
+            values ?NoticePublicationDate {
+                $date_range
+            }
+            ?LotId epo:hasPurpose ?PurposeId.
+            ?PurposeId a epo:Purpose;
+                       epo:hasAdditionalClassification ?hasOriginalCPV.
+        }
     }
 }

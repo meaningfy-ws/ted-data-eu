@@ -1,7 +1,11 @@
+import logging
 import re
+from datetime import datetime, date, timedelta
 from pathlib import Path
+from string import Template
 from typing import Dict, Optional
 
+import pandas as pd
 import sqlalchemy
 from pandas import DataFrame
 
@@ -12,6 +16,8 @@ from ted_data_eu.adapters.nuts_processor import NUTSProcessor, NUTS_MIN_RANK, NU
 from ted_data_eu.adapters.triple_store import GraphDBAdapter
 from ted_data_eu.services.currency_convertor import convert_currency, \
     get_last_available_date_for_currency
+from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import START_DATE_METADATA_FIELD, \
+    generate_sparql_filter_by_date_range, END_DATE_METADATA_FIELD
 
 TED_NOTICES_LINK = 'https://ted.europa.eu/udl?uri=TED:NOTICE:{notice_id}:TEXT:EN:HTML'
 TRIPLE_STORE_ENDPOINT = "notices"
@@ -34,6 +40,17 @@ ORIGINAL_CPV_LEVEL_COLUMN = "OriginalCPVLevel"
 NUTS_LABEL_COLUMN = "NUTSLabel"
 NUTS_LEVEL_COLUMN = "NUTSLevel"
 NUTS_ID_COLUMN = "NUTSId"
+
+DROP_DUPLICATES_QUERY = """
+DELETE FROM "{table_name}" a USING (
+    SELECT MIN(ctid) as ctid, "{primary_key_column_name}"
+    FROM "{table_name}" 
+    GROUP BY "{primary_key_column_name}" HAVING COUNT(*) > 1
+) b
+WHERE a."{primary_key_column_name}" = b."{primary_key_column_name}" 
+AND a.ctid <> b.ctid
+"""
+
 
 
 def transform_monetary_value_table(data_table: DataFrame) -> DataFrame:
@@ -137,7 +154,7 @@ class PostgresETLPipeline(ETLPipelineABC):
         ETL Class that gets data from TDA endpoint, transforms and inserts result to document storage
     """
 
-    def __init__(self, table_name: str, sparql_query_path: Path, postgres_url: str = None):
+    def __init__(self, table_name: str, sparql_query_path: Path, primary_key_column_name: str, postgres_url: str = None):
         """
             Constructor
         """
@@ -146,6 +163,7 @@ class PostgresETLPipeline(ETLPipelineABC):
         self.sparql_query_path = sparql_query_path
         self.postgres_url = postgres_url if postgres_url else POSTGRES_URL
         self.sql_engine = sqlalchemy.create_engine(self.postgres_url, echo=False)
+        self.primary_key_column_name = primary_key_column_name
 
     def set_metadata(self, etl_metadata: dict):
         """
@@ -170,9 +188,25 @@ class PostgresETLPipeline(ETLPipelineABC):
         """
             Extracts data from triple store
         """
-        sparql_query_str = self.sparql_query_path.read_text(encoding="utf-8")
+        etl_metadata = self.get_metadata()
+        etl_metadata_fields = etl_metadata.keys()
+        if START_DATE_METADATA_FIELD in etl_metadata_fields and END_DATE_METADATA_FIELD in etl_metadata_fields:
+            if START_DATE_METADATA_FIELD == END_DATE_METADATA_FIELD:
+                date_range = datetime.strptime(START_DATE_METADATA_FIELD, "\"%Y%m%d\"")
+                logging.info("Querying data from one day")
+            else:
+                date_range = generate_sparql_filter_by_date_range(etl_metadata[START_DATE_METADATA_FIELD],
+                                                                  etl_metadata[END_DATE_METADATA_FIELD])
+                logging.info("Querying data from date range")
+        else:
+            logging.info("Querying data from yesterday")
+            date_range = (date.today() - timedelta(days=1)).strftime("\"%Y%m%d\"")
+
+
+        sparql_query_template = Template(self.sparql_query_path.read_text(encoding="utf-8"))
+        sparql_query = sparql_query_template.substitute(date_range=date_range)
         triple_store_endpoint = GraphDBAdapter().get_sparql_triple_store_endpoint(repository_name=TRIPLE_STORE_ENDPOINT)
-        result_table = triple_store_endpoint.with_query(sparql_query_str).fetch_tabular()
+        result_table = triple_store_endpoint.with_query(sparql_query).fetch_tabular()
         return {"data": result_table}
 
     def transform(self, extracted_data: Dict) -> Dict:
@@ -182,7 +216,7 @@ class PostgresETLPipeline(ETLPipelineABC):
         data_table: DataFrame = extracted_data["data"]
         if data_table.empty:
             raise PostgresETLException("No data was been fetched from triple store!")
-
+        data_table = data_table.astype(object)
         if self.table_name in TRANSFORMED_TABLES.keys():
             data_table = TRANSFORMED_TABLES[self.table_name](data_table)
 
@@ -195,6 +229,7 @@ class PostgresETLPipeline(ETLPipelineABC):
         data_table: DataFrame = transformed_data["data"]
 
         with self.sql_engine.connect() as sql_connection:
-            data_table.to_sql(self.table_name, con=sql_connection, if_exists='replace', chunksize=SEND_CHUNK_SIZE)
+            data_table.to_sql(self.table_name, con=sql_connection, if_exists='append', chunksize=SEND_CHUNK_SIZE, index=False)
+            sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name, primary_key_column_name=self.primary_key_column_name))
 
         return {"data": transformed_data["data"]}

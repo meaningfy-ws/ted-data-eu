@@ -9,6 +9,11 @@ where {
     ?NoticeId a epo:ResultNotice;
                    epo:hasPublicationDate ?NoticePublicationDate;
                    epo:refersToProcedure ?ProcedureId.
+
+    values ?NoticePublicationDate {
+        $date_range
+    }
+
     optional {
     	?NoticeId epo:announcesNoticeAwardInformation / epo:hasTotalAwardedValue ?TotalAwardedValue.
     }

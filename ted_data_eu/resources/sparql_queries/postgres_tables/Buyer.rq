@@ -7,6 +7,11 @@ where {
     ?NoticeId a epo:ResultNotice;
                    epo:hasPublicationDate ?NoticePublicationDate;
 				   epo:announcesRole ?BuyerId.
-        ?BuyerId a epo:Buyer;
-               epo:playedBy ?OrganizationId.
+
+    values ?NoticePublicationDate {
+        $date_range
+    }
+
+    ?BuyerId a epo:Buyer;
+           epo:playedBy ?OrganizationId.
 }

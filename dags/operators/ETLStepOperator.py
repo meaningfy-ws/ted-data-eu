@@ -10,22 +10,6 @@ ETL_STEP_DATA_KEY = "etl_step_data"
 ETL_METADATA_DAG_CONFIG_KEY = "etl_metadata"
 
 
-def compress_dict_data_with_lzma(data: dict) -> bytes:
-    """
-        Compresses a dictionary with lzma
-    :param data: Dictionary to be compressed
-    :return: Compressed dictionary
-    """
-    return lzma.compress(pickle.dumps(data), preset=lzma.PRESET_DEFAULT)
-
-
-def uncompress_dict_data_with_lzma(data: bytes) -> dict:
-    """
-        Uncompresses a dictionary with lzma
-    :param data: Compressed dictionary
-    :return: Uncompressed dictionary
-    """
-    return pickle.loads(lzma.decompress(data))
 
 
 class ETLStepOperatorABC(BaseOperator, ABC):
@@ -57,8 +41,7 @@ class ExtractStepOperator(ETLStepOperatorABC):
         if self.etl_pipeline.get_pipeline_name() in etl_dag_metadata.keys():
             self.etl_pipeline.set_metadata(etl_metadata=etl_dag_metadata[self.etl_pipeline.get_pipeline_name()])
         result_data = self.etl_pipeline.extract()
-        compressed_result_data = compress_dict_data_with_lzma(data=result_data)
-        push_dag_downstream(key=ETL_STEP_DATA_KEY, value=compressed_result_data)
+        push_dag_downstream(key=ETL_STEP_DATA_KEY, value=result_data)
 
 
 class TransformStepOperator(ETLStepOperatorABC):
@@ -72,11 +55,9 @@ class TransformStepOperator(ETLStepOperatorABC):
         :param context:
         :return:
         """
-        compressed_input_data = pull_dag_upstream(key=ETL_STEP_DATA_KEY)
-        input_data = uncompress_dict_data_with_lzma(data=compressed_input_data)
+        input_data = pull_dag_upstream(key=ETL_STEP_DATA_KEY)
         result_data = self.etl_pipeline.transform(extracted_data=input_data)
-        compressed_result_data = compress_dict_data_with_lzma(data=result_data)
-        push_dag_downstream(key=ETL_STEP_DATA_KEY, value=compressed_result_data)
+        push_dag_downstream(key=ETL_STEP_DATA_KEY, value=result_data)
 
 
 class LoadStepOperator(ETLStepOperatorABC):
@@ -90,6 +71,5 @@ class LoadStepOperator(ETLStepOperatorABC):
         :param context:
         :return:
         """
-        compressed_input_data = pull_dag_upstream(key=ETL_STEP_DATA_KEY)
-        input_data = uncompress_dict_data_with_lzma(data=compressed_input_data)
+        input_data = pull_dag_upstream(key=ETL_STEP_DATA_KEY)
         self.etl_pipeline.load(transformed_data=input_data)
