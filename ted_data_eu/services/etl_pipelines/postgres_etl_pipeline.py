@@ -234,3 +234,11 @@ class PostgresETLPipeline(ETLPipelineABC):
             sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name, primary_key_column_name=self.primary_key_column_name))
 
         return {"data": transformed_data["data"]}
+
+if __name__ == "__main__":
+    etl = PostgresETLPipeline(table_name="Purpose", sparql_query_path=config.TABLE_QUERY_PATHS["Purpose"], primary_key_column_name="PurposeId")
+    etl.set_metadata({"start_date": "20171004", "end_date": "20171004"})
+    df = etl.extract()['data']
+    print(df.info())
+    df = etl.transform({"data": df})['data']
+    print(df.to_string())
