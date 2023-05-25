@@ -21,7 +21,7 @@ from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import START_DATE_
 
 TED_NOTICES_LINK = 'https://ted.europa.eu/udl?uri=TED:NOTICE:{notice_id}:TEXT:EN:HTML'
 TRIPLE_STORE_ENDPOINT = "notices"
-POSTGRES_URL = f"postgresql://{config.POSTGRES_TDA_DB_USER}:{config.POSTGRES_TDA_DB_PASSWORD}@{config.POSTGRES_SUBDOMAIN}{config.DOMAIN}:{config.POSTGRES_TDA_DB_PORT}/{config.POSTGRES_TDA_DB_NAME}"
+POSTGRES_URL = f"postgresql://{config.POSTGRES_TDA_DB_USER}:{config.POSTGRES_TDA_DB_PASSWORD}@{config.POSTGRES_HOST}:{config.POSTGRES_TDA_DB_PORT}/{config.POSTGRES_TDA_DB_NAME}"
 EURO_CURRENCY_ID = "EUR"
 SEND_CHUNK_SIZE = 1000
 

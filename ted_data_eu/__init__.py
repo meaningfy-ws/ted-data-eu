@@ -49,7 +49,7 @@ class PostgresTablesConfig:
         return config_value
 
     @env_property()
-    def POSTGRES_SUBDOMAIN(self, config_value: str) -> str:
+    def POSTGRES_HOST(self, config_value: str) -> str:
         return config_value
 
 
