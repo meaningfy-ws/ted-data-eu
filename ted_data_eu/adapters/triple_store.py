@@ -23,7 +23,7 @@ class GraphDBException(Exception):
     """
 
 
-class TDATripleStoreEndpointABC(SPARQLTripleStoreEndpoint):
+class TDATripleStoreEndpoint(SPARQLTripleStoreEndpoint):
     """
         This class provides an abstraction for a TDA TripleStore based on SPARQLTripleStoreEndpoint.
     """
@@ -129,7 +129,7 @@ class GraphDBAdapter(TripleStoreABC):
         sparql_endpoint = SPARQLTripleStoreEndpoint(endpoint_url=endpoint_url, user=self.user, password=self.password)
         return sparql_endpoint
 
-    def get_sparql_tda_triple_store_endpoint(self, repository_name: str = None) -> TDATripleStoreEndpointABC:
+    def get_sparql_tda_triple_store_endpoint(self, repository_name: str = None) -> TDATripleStoreEndpoint:
         """
             Helper method to create the TDA triple store endpoint for querying.
         :param repository_name: The dataset identifier. This should be short alphanumeric string uniquely
@@ -137,5 +137,5 @@ class GraphDBAdapter(TripleStoreABC):
         :return: the query url
         """
         endpoint_url = self.get_sparql_triple_store_endpoint_url(repository_name=repository_name)
-        sparql_endpoint = TDATripleStoreEndpointABC(endpoint_url=endpoint_url, user=self.user, password=self.password)
+        sparql_endpoint = TDATripleStoreEndpoint(endpoint_url=endpoint_url, user=self.user, password=self.password)
         return sparql_endpoint

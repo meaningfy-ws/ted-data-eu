@@ -1,3 +1,5 @@
+import io
+
 import pandas as pd
 import sqlalchemy
 
@@ -19,8 +21,8 @@ def test_postgres_pipeline(graphdb_triple_store, example_notices,
         table_name += '_test'
         postgres_etl_pipeline.set_metadata(etl_pipeline_config)
         test_data = postgres_etl_pipeline.extract()['data']
-        assert isinstance(test_data, pd.DataFrame)
-        assert not test_data.empty
+        assert isinstance(test_data, io.StringIO)
+        assert len(test_data.getvalue()) > 0
 
         test_data = postgres_etl_pipeline.transform({"data": test_data})['data']
         assert isinstance(test_data, pd.DataFrame)
