@@ -82,6 +82,7 @@ def transform_purpose_table(data_table: DataFrame) -> DataFrame:
     Transforms purpose table by adding CPV codes and labels on all levels
     """
     cpv_processor = CPVProcessor()
+    data_table[ORIGINAL_CPV_COLUMN] = data_table[ORIGINAL_CPV_COLUMN].astype(str)
     data_table[ORIGINAL_CPV_LABEL_COLUMN] = data_table.apply(
         lambda x: cpv_processor.get_cpv_label_by_code(x[ORIGINAL_CPV_COLUMN]), axis=1)
     data_table[ORIGINAL_CPV_LEVEL_COLUMN] = data_table.apply(
