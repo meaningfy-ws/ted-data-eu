@@ -1,3 +1,4 @@
+import io
 import logging
 import re
 from datetime import datetime, date, timedelta
@@ -53,10 +54,12 @@ AND a.ctid <> b.ctid
 
 
 
-def transform_monetary_value_table(data_table: DataFrame) -> DataFrame:
+def transform_monetary_value_table(data_csv: io.StringIO) -> DataFrame:
     """
     Transforms monetary value table by converting all amounts to EUR and adding conversion date
     """
+    data_table = pd.read_csv(data_csv, dtype=object)
+
     data_table[AMOUNT_VALUE_EUR_COLUMN] = data_table.apply(
         lambda x: convert_currency(amount=x[AMOUNT_VALUE_COLUMN], currency=x[CURRENCY_ID_COLUMN],
                                    new_currency=EURO_CURRENCY_ID),
@@ -67,21 +70,23 @@ def transform_monetary_value_table(data_table: DataFrame) -> DataFrame:
     return data_table
 
 
-def transform_notice_table(data_table: DataFrame) -> DataFrame:
+def transform_notice_table(data_csv: io.StringIO) -> DataFrame:
     """
     Transforms notice table by adding link to notice
     """
+    data_table = pd.read_csv(data_csv, dtype=object)
     data_table[NOTICE_LINK_COLUMN] = data_table.apply(
         lambda x: generate_link_to_notice(x[NOTICE_ID_COLUMN]), axis=1)
 
     return data_table
 
 
-def transform_purpose_table(data_table: DataFrame) -> DataFrame:
+def transform_purpose_table(data_csv: io.StringIO) -> DataFrame:
     """
     Transforms purpose table by adding CPV codes and labels on all levels
     """
     cpv_processor = CPVProcessor()
+    data_table = pd.read_csv(data_csv, dtype={ORIGINAL_CPV_COLUMN: str})
     data_table[ORIGINAL_CPV_COLUMN] = data_table[ORIGINAL_CPV_COLUMN].astype(str)
     data_table[ORIGINAL_CPV_LABEL_COLUMN] = data_table.apply(
         lambda x: cpv_processor.get_cpv_label_by_code(x[ORIGINAL_CPV_COLUMN]), axis=1)
@@ -97,10 +102,11 @@ def transform_purpose_table(data_table: DataFrame) -> DataFrame:
     return data_table
 
 
-def transform_nuts_table(data_table: DataFrame) -> DataFrame:
+def transform_nuts_table(data_csv: io.StringIO) -> DataFrame:
     """
     Transforms nuts table by adding NUTS codes and labels on all levels
     """
+    data_table = pd.read_csv(data_csv)
     nuts_processor = NUTSProcessor()
     data_table[NUTS_LABEL_COLUMN] = data_table.apply(
         lambda x: nuts_processor.get_nuts_label_by_code(x[NUTS_ID_COLUMN]), axis=1)
@@ -206,20 +212,22 @@ class PostgresETLPipeline(ETLPipelineABC):
 
         sparql_query_template = Template(self.sparql_query_path.read_text(encoding="utf-8"))
         sparql_query = sparql_query_template.substitute(date_range=date_range)
-        triple_store_endpoint = GraphDBAdapter().get_sparql_triple_store_endpoint(repository_name=TRIPLE_STORE_ENDPOINT)
-        result_table = triple_store_endpoint.with_query(sparql_query).fetch_tabular()
+        triple_store_endpoint = GraphDBAdapter().get_sparql_tda_triple_store_endpoint(repository_name=TRIPLE_STORE_ENDPOINT)
+        result_table = triple_store_endpoint.with_query(sparql_query).fetch_csv()
         return {"data": result_table}
 
     def transform(self, extracted_data: Dict) -> Dict:
         """
             Transforms data from triple store
         """
-        data_table: DataFrame = extracted_data["data"]
-        if data_table.empty:
+        data_json: io.StringIO = extracted_data["data"]
+        if not data_json:
             raise PostgresETLException("No data was been fetched from triple store!")
-        data_table = data_table.astype(object)
+
         if self.table_name in TRANSFORMED_TABLES.keys():
-            data_table = TRANSFORMED_TABLES[self.table_name](data_table)
+            data_table: DataFrame = TRANSFORMED_TABLES[self.table_name](data_json)
+        else:
+            data_table: DataFrame = pd.read_csv(data_json)
 
         return {"data": data_table}
 
@@ -234,11 +242,3 @@ class PostgresETLPipeline(ETLPipelineABC):
             sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name, primary_key_column_name=self.primary_key_column_name))
 
         return {"data": transformed_data["data"]}
-
-if __name__ == "__main__":
-    etl = PostgresETLPipeline(table_name="Purpose", sparql_query_path=config.TABLE_QUERY_PATHS["Purpose"], primary_key_column_name="PurposeId")
-    etl.set_metadata({"start_date": "20171004", "end_date": "20171004"})
-    df = etl.extract()['data']
-    print(df.info())
-    df = etl.transform({"data": df})['data']
-    print(df.to_string())
