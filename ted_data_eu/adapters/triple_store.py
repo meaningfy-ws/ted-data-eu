@@ -1,3 +1,4 @@
+import io
 import json
 from pathlib import Path
 from typing import Union
@@ -5,7 +6,9 @@ from urllib.parse import urljoin
 
 import rdflib
 import requests
-from ted_sws.data_manager.adapters.sparql_endpoint import SPARQLTripleStoreEndpoint, TripleStoreEndpointABC
+from SPARQLWrapper import CSV
+from ted_sws.data_manager.adapters.sparql_endpoint import SPARQLTripleStoreEndpoint, TripleStoreEndpointABC, \
+    DEFAULT_ENCODING
 from ted_sws.data_manager.adapters.triple_store import TripleStoreABC, RDF_MIME_TYPES
 
 from ted_data_eu import config
@@ -18,6 +21,24 @@ class GraphDBException(Exception):
     """
         An exception when GraphDB server interaction has failed.
     """
+
+
+class TDATripleStoreEndpoint(SPARQLTripleStoreEndpoint):
+    """
+        This class provides an abstraction for a TDA TripleStore based on SPARQLTripleStoreEndpoint.
+    """
+
+    def fetch_csv(self) -> io.StringIO:
+        """
+        Get query results in a CSV format
+        :return:
+        """
+        if not self.endpoint.queryString or self.endpoint.queryString.isspace():
+            raise Exception("The query is empty.")
+
+        self.endpoint.setReturnFormat(CSV)
+        query_result = self.endpoint.queryAndConvert()
+        return io.StringIO(str(query_result, encoding=DEFAULT_ENCODING))
 
 
 class GraphDBAdapter(TripleStoreABC):
@@ -106,4 +127,15 @@ class GraphDBAdapter(TripleStoreABC):
         """
         endpoint_url = self.get_sparql_triple_store_endpoint_url(repository_name=repository_name)
         sparql_endpoint = SPARQLTripleStoreEndpoint(endpoint_url=endpoint_url, user=self.user, password=self.password)
+        return sparql_endpoint
+
+    def get_sparql_tda_triple_store_endpoint(self, repository_name: str = None) -> TDATripleStoreEndpoint:
+        """
+            Helper method to create the TDA triple store endpoint for querying.
+        :param repository_name: The dataset identifier. This should be short alphanumeric string uniquely
+        identifying the repository
+        :return: the query url
+        """
+        endpoint_url = self.get_sparql_triple_store_endpoint_url(repository_name=repository_name)
+        sparql_endpoint = TDATripleStoreEndpoint(endpoint_url=endpoint_url, user=self.user, password=self.password)
         return sparql_endpoint
