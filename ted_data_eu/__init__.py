@@ -1,8 +1,8 @@
 import pathlib
 from typing import Dict
 
-from ted_sws import TedConfigResolver, env_property, AirflowAndEnvConfigResolver
 import dotenv
+from ted_sws import TedConfigResolver, env_property, AirflowAndEnvConfigResolver
 
 dotenv.load_dotenv(verbose=True, override=True)
 
@@ -46,6 +46,10 @@ class PostgresTablesConfig:
 
     @env_property()
     def POSTGRES_TDA_DB_PORT(self, config_value: str) -> str:
+        return config_value
+
+    @env_property()
+    def POSTGRES_HOST(self, config_value: str) -> str:
         return config_value
 
 
