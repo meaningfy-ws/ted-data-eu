@@ -1,4 +1,3 @@
-import io
 import logging
 import re
 from datetime import datetime, date, timedelta
@@ -9,8 +8,6 @@ from typing import Dict, Optional
 import pandas as pd
 import sqlalchemy
 from pandas import DataFrame
-
-from ted_sws.data_manager.adapters.sparql_endpoint import SPARQLTripleStoreEndpoint
 
 from ted_data_eu import config
 from ted_data_eu.adapters.cpv_processor import CPVProcessor, CPV_MAX_RANK, CPV_MIN_RANK
@@ -53,6 +50,7 @@ DELETE FROM "{table_name}" a USING (
 WHERE a."{primary_key_column_name}" = b."{primary_key_column_name}" 
 AND a.ctid <> b.ctid
 """
+
 
 
 def transform_monetary_value_table(data_table: DataFrame) -> DataFrame:
@@ -157,8 +155,7 @@ class PostgresETLPipeline(ETLPipelineABC):
         ETL Class that gets data from TDA endpoint, transforms and inserts result to document storage
     """
 
-    def __init__(self, table_name: str, sparql_query_path: Path, primary_key_column_name: str,
-                 postgres_url: str = None):
+    def __init__(self, table_name: str, sparql_query_path: Path, primary_key_column_name: str, postgres_url: str = None):
         """
             Constructor
         """
@@ -206,13 +203,11 @@ class PostgresETLPipeline(ETLPipelineABC):
             logging.info("Querying data from yesterday")
             date_range = (date.today() - timedelta(days=1)).strftime("\"%Y%m%d\"")
 
+
         sparql_query_template = Template(self.sparql_query_path.read_text(encoding="utf-8"))
         sparql_query = sparql_query_template.substitute(date_range=date_range)
         triple_store_endpoint = GraphDBAdapter().get_sparql_triple_store_endpoint(repository_name=TRIPLE_STORE_ENDPOINT)
-        endpoint = triple_store_endpoint.with_query(sparql_query).endpoint
-        endpoint.setReturnFormat("csv")
-        query_result = endpoint.queryAndConvert()
-        result_table = pd.read_csv(io.StringIO(str(query_result, encoding="utf-8")), dtype='object')
+        result_table = triple_store_endpoint.with_query(sparql_query).fetch_tabular()
         return {"data": result_table}
 
     def transform(self, extracted_data: Dict) -> Dict:
@@ -235,23 +230,15 @@ class PostgresETLPipeline(ETLPipelineABC):
         data_table: DataFrame = transformed_data["data"]
 
         with self.sql_engine.connect() as sql_connection:
-            data_table.to_sql(self.table_name, con=sql_connection, if_exists='append', chunksize=SEND_CHUNK_SIZE,
-                              index=False)
-            sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name,
-                                                                primary_key_column_name=self.primary_key_column_name))
+            data_table.to_sql(self.table_name, con=sql_connection, if_exists='append', chunksize=SEND_CHUNK_SIZE, index=False)
+            sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name, primary_key_column_name=self.primary_key_column_name))
 
         return {"data": transformed_data["data"]}
 
-
-def main():
-    etl = PostgresETLPipeline(table_name="Purpose", sparql_query_path=config.TABLE_QUERY_PATHS["Purpose"],
-                              primary_key_column_name="PurposeId")
+if __name__ == "__main__":
+    etl = PostgresETLPipeline(table_name="Purpose", sparql_query_path=config.TABLE_QUERY_PATHS["Purpose"], primary_key_column_name="PurposeId")
     etl.set_metadata({"start_date": "20171004", "end_date": "20171004"})
     df = etl.extract()['data']
     print(df.info())
     df = etl.transform({"data": df})['data']
     print(df.to_string())
-
-
-if __name__ == "__main__":
-    main()
