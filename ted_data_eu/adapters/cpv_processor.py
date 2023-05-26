@@ -102,11 +102,12 @@ class CPVProcessor(object):
             return None
 
         cpv_code_rank = self.get_cpv_rank(cpv_code=cpv_code)
-        if (cpv_code_rank is None) or (cpv_code_rank < rank) or (cpv_code_rank == CPV_MIN_RANK):
-            return None
 
         if cpv_code_rank == rank:
             return cpv_code
+
+        if (cpv_code_rank is None) or (cpv_code_rank < rank) or (cpv_code_rank == CPV_MIN_RANK):
+            return None
 
         cpv_parent_rank = self._get_cpv_parent(cpv_code)
         while self.get_cpv_rank(cpv_parent_rank) > rank:
