@@ -43,4 +43,4 @@ where {
     optional {
        ?AddressId locn:fullAddress ?FullAddress.
     }
-} limit 100
+}
