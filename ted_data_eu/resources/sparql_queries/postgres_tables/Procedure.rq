@@ -6,7 +6,8 @@ select distinct
 ?ProcedureTitle
 ?ReferenceNumber
 ?ProcedureCPV
-?EstimatedValue
+?ProcedureEstimatedValue
+(afn:localname(?ProcedureEstimatedValueCurrencyURI) as ?ProcedureEstimatedValueCurrency)
 ?BuyerId
 (afn:localname(?hasProcedureType) as ?ProcedureType)
 ?isCoveredByGPA
@@ -19,7 +20,6 @@ where {
     values ?NoticePublicationDate {
         $date_range
     }
-
 
     ?BuyerId a epo:Buyer.
     ?ProcedureId a epo:Procedure.
@@ -34,7 +34,10 @@ where {
         ?ProcedureId epo:hasPurpose ?ProcedureCPV.
     }
     optional {
-        ?ProcedureId epo:hasEstimatedValue ?EstimatedValue.
+        ?ProcedureId epo:hasEstimatedValue ?MonetaryValue.
+        ?MonetaryValue a epo:MonetaryValue;
+        				epo:hasAmountValue ?ProcedureEstimatedValue;
+            			epo:hasCurrency ?ProcedureEstimatedValueCurrencyURI.
     }
     optional {
         ?ProcedureId epo:hasProcedureType ?hasProcedureType.

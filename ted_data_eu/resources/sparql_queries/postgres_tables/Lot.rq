@@ -1,4 +1,5 @@
 PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
 
 select distinct
 ?LotId
@@ -6,8 +7,10 @@ select distinct
 ?LotSpecificCPV
 ?LotTitle
 ?isUsingEUFunds
-?EstimatedValue
-?RestatedEstimatedValue
+?LotEstimatedValue
+(afn:localname(?LotEstimatedValueCurrencyURI) as ?LotEstimatedValueCurrency)
+?LotRestatedEstimatedValue
+(afn:localname(?LotRestatedEstimatedValueCurrencyURI) as ?LotRestatedEstimatedValueCurrency)
 ?PlaceOfPerformance
 ?LotAwardOutcomeId
 where {
@@ -32,10 +35,16 @@ where {
         ?LotId epo:isUsingEUFunds ?isUsingEUFunds.
     }
     optional{
-        ?LotId epo:hasRestatedEstimatedValue ?RestatedEstimatedValue.
+        ?LotId epo:hasRestatedEstimatedValue ?RestatedMonetaryValue.
+        ?RestatedMonetaryValue a epo:MonetaryValue;
+        				epo:hasAmountValue ?LotRestatedEstimatedValue;
+            			epo:hasCurrency ?LotRestatedEstimatedValueCurrencyURI.
     }
     optional{
-        ?LotId epo:hasEstimatedValue ?EstimatedValue.
+        ?LotId epo:hasEstimatedValue ?MonetaryValue.
+        ?MonetaryValue a epo:MonetaryValue;
+                               epo:hasAmountValue ?LotEstimatedValue;
+                               epo:hasCurrency ?LotEstimatedValueCurrencyURI.
     }
     optional {
         ?LotId epo:foreseesContractSpecificTerm / epo:definesSpecificPlaceOfPerformance ?PlaceOfPerformance.

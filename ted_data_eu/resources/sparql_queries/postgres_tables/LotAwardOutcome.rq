@@ -4,8 +4,10 @@ PREFIX afn: <http://jena.apache.org/ARQ/function#>
 select distinct
 ?LotAwardOutcomeId
 (afn:localname(?hasAwardStatus) as ?AwardStatus)
-?AwardedValue
-?BargainPrice
+?LotAwardedValue
+(afn:localname(?LotAwardedValueCurrencyURI) as ?LotAwardedValueCurrency)
+?LotBargainPrice
+(afn:localname(?LotBargainPriceCurrencyURI) as ?LotBargainPriceCurrency)
 ?AwardDecisionDate
 ?WinnerId
 ?SubmissionStatisticalInformationId
@@ -26,10 +28,16 @@ where {
         ?LotAwardOutcomeId epo:hasAwardStatus ?hasAwardStatus.
     }
     optional {
-        ?LotAwardOutcomeId epo:hasAwardedValue ?AwardedValue.
+        ?LotAwardOutcomeId epo:hasAwardedValue ?MonetaryValue.
+        ?MonetaryValue a epo:MonetaryValue;
+                       epo:hasAmountValue ?LotAwardedValue;
+                       epo:hasCurrency ?LotAwardedValueCurrencyURI.
     }
     optional {
-        ?LotAwardOutcomeId epo:hasBargainPrice ?BargainPrice.
+        ?LotAwardOutcomeId epo:hasBargainPrice ?BargainPriceMonetaryValue.
+        ?BargainPriceMonetaryValue a epo:MonetaryValue;
+                       epo:hasAmountValue ?LotBargainPrice;
+                       epo:hasCurrency ?LotBargainPriceCurrencyURI.
     }
     optional {
         ?LotAwardOutcomeId epo:hasAwardDecisionDate ?AwardDecisionDate.
