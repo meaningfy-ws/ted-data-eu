@@ -5,7 +5,7 @@ select distinct
 ?ProcedureId
 ?ProcedureTitle
 ?ReferenceNumber
-?ProcedureCPV
+(afn:localname(?ProcedureCPVURI) as ?ProcedureCPV)
 ?ProcedureEstimatedValue
 (afn:localname(?ProcedureEstimatedValueCurrencyURI) as ?ProcedureEstimatedValueCurrency)
 ?BuyerId
@@ -42,7 +42,7 @@ where {
         ?ProcedureId epo:hasID / epo:hasIdentifierValue ?ReferenceNumber.
     }
     optional {
-        ?ProcedureId epo:hasPurpose ?ProcedureCPV.
+        ?ProcedureId epo:hasPurpose / epo:hasMainClassification ?ProcedureCPVURI.
     }
     optional {
         ?ProcedureId epo:hasEstimatedValue ?MonetaryValue.

@@ -1,7 +1,11 @@
+import io
+import math
 from pathlib import Path
 from typing import Optional, List
 
+import numpy as np
 import pandas
+import pandas as pd
 from pandas import DataFrame
 
 from ted_data_eu import PROJECT_RESOURCES_PATH
@@ -191,3 +195,81 @@ class CPVProcessor(object):
         """
         return self.dataframe[CPV_LABEL_COLUMN_NAME].to_list()
 
+
+class CellarCPVProcessor(object):
+    """
+    Class to process CPV codes.
+    """
+    CPV_PARENT_COLUMN = "parent"
+    CPV_CODE_COLUMN = "code"
+    CPV_LABEL_COLUMN = "label"
+
+    def __init__(self, cpv_csv: io.StringIO):
+        """
+        Constructor.
+        :param cpv_csv: CPV dataframe path.
+        """
+        self.dataframe = pd.read_csv(cpv_csv, dtype={
+            self.CPV_PARENT_COLUMN: str,
+            self.CPV_CODE_COLUMN: str,
+            self.CPV_LABEL_COLUMN: str
+        })
+
+        self.dataframe[self.CPV_PARENT_COLUMN] = self.dataframe[self.CPV_PARENT_COLUMN].str.split("/").str[-1]
+
+    def cpv_exists(self, cpv_code: str) -> bool:
+        """
+        Check if a CPV code exists.
+        :param cpv_code: CPV code to check.
+        :return: True if the CPV code exists, False otherwise.
+        """
+        return cpv_code in self.dataframe[self.CPV_CODE_COLUMN].values
+
+    def get_cpv_rank(self, cpv_code: str) -> Optional[int]:
+        """
+        Get the level of a CPV code.
+        :param cpv_code: CPV code to check.
+        :return: The level of the CPV code if it exists, None otherwise.
+        """
+        if not self.cpv_exists(cpv_code=cpv_code):
+            return None
+        cpv_lvl: int = 0
+        cpv_parent = self.dataframe.loc[self.dataframe[self.CPV_CODE_COLUMN] == cpv_code, self.CPV_PARENT_COLUMN].iloc[0]
+        while not pd.isnull(cpv_parent):
+            cpv_lvl += 1
+            previous_cpv_parent = cpv_parent
+            cpv_parent = self.dataframe.loc[self.dataframe[self.CPV_CODE_COLUMN] == previous_cpv_parent, self.CPV_PARENT_COLUMN].iloc[0]
+
+        return cpv_lvl
+
+
+    def get_cpv_parent_code_by_rank(self, cpv_code: str, rank: int) -> Optional[str]:
+        """
+        Get the parent CPV code of a given CPV code at a given rank.
+        :param cpv_code: CPV code to check.
+        :param rank: Rank of the parent CPV code.
+        :return: The parent CPV code if it exists, None otherwise.
+        """
+        if not self.cpv_exists(cpv_code=cpv_code):
+            return None
+        cpv_parent_code = cpv_code
+        cpv_lvl = self.get_cpv_rank(cpv_code)
+        if cpv_lvl < rank:
+            return None
+        if cpv_lvl == rank:
+            return cpv_code
+
+        while cpv_lvl > rank:
+            cpv_lvl -= 1
+            cpv_parent_code = self.dataframe.loc[self.dataframe[self.CPV_CODE_COLUMN] == cpv_parent_code, self.CPV_PARENT_COLUMN].iloc[0]
+        return cpv_parent_code
+
+    def get_cpv_label_by_code(self, cpv_code: str) -> Optional[str]:
+        """
+        Get the label of a CPV code.
+        :param cpv_code: CPV code to check.
+        :return: The label of the CPV code if it exists, None otherwise.
+        """
+        if not self.cpv_exists(cpv_code=cpv_code):
+            return None
+        return self.dataframe.loc[self.dataframe[self.CPV_CODE_COLUMN] == cpv_code, self.CPV_LABEL_COLUMN].iloc[0]

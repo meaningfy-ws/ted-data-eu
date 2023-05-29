@@ -1,0 +1,18 @@
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX nuts: <http://data.europa.eu/nuts/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+select distinct
+?code
+?label
+?parent
+where
+{
+    graph <http://data.europa.eu/nuts>
+    {
+        ?conceptURI dc:identifier ?code ;
+        skos:prefLabel ?label.
+        optional {
+            ?conceptURI skos:broader ?parent .
+        }
+    }
+}

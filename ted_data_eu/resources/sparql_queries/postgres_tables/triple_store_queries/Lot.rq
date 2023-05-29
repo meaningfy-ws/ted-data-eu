@@ -4,7 +4,7 @@ PREFIX afn: <http://jena.apache.org/ARQ/function#>
 select distinct
 ?LotId
 ?ProcedureId
-?LotSpecificCPV
+(afn:localname(?LotSpecificCPVURI) as ?LotSpecificCPV)
 ?LotTitle
 ?isUsingEUFunds
 ?LotEstimatedValue
@@ -26,7 +26,7 @@ where {
     ?ProcedureId epo:hasProcurementScopeDividedIntoLot ?LotId.
 
     optional{
-        ?LotId epo:hasPurpose ?LotSpecificCPV.
+        ?LotId epo:hasPurpose / epo:hasAdditionalClassification ?LotSpecificCPVURI.
     }
     optional{
         ?LotId  epo:hasTitle ?LotTitle.

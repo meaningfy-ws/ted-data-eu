@@ -6,7 +6,7 @@ from dags import DEFAULT_DAG_ARGUMENTS
 from dags.operators.ETLStepOperator import ExtractStepOperator, TransformStepOperator, LoadStepOperator
 from ted_data_eu import config
 from ted_data_eu.adapters.etl_pipeline_register import ETLPipelineRegister
-from ted_data_eu.services.etl_pipelines.postgres_etl_pipeline import PostgresETLPipeline
+from ted_data_eu.services.etl_pipelines.postgres_etl_pipeline import PostgresETLPipeline, CellarETLPipeline
 from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import TDA_FREE_INDEX_NAME, TedDataETLPipeline, \
     TDA_STARTER_INDEX_NAME, TDA_PREMIUM_INDEX_NAME
 
@@ -16,6 +16,7 @@ ETL_EXECUTOR_DAG_NAME = 'etl_executor'
 
 MAX_ETL_ACTIVE_RUNS = 1
 MAX_ETL_ACTIVE_TASKS = 1
+
 
 def init_etl_pipelines_register():
     """
@@ -28,11 +29,26 @@ def init_etl_pipelines_register():
                                     etl_pipeline=TedDataETLPipeline(business_pack_name=TDA_STARTER_INDEX_NAME))
     etl_pipelines_register.register(etl_pipeline_name=TDA_PREMIUM_INDEX_NAME,
                                     etl_pipeline=TedDataETLPipeline(business_pack_name=TDA_PREMIUM_INDEX_NAME))
-    for table_name, query_path in config.TABLE_QUERY_PATHS.items():
+
+    tables_metadata = config.TABLES_METADATA
+
+    for table_name, query_path in config.TRIPLE_STORE_TABLE_QUERY_PATHS.items():
         etl_pipelines_register.register(etl_pipeline_name=table_name,
                                         etl_pipeline=PostgresETLPipeline(table_name=table_name,
                                                                          sparql_query_path=query_path,
-                                                                         primary_key_column_name=f"{table_name}Id"))
+                                                                         primary_key_column_name=
+                                                                         tables_metadata[table_name]['PK'],
+                                                                         foreign_key_column_names=
+                                                                         tables_metadata[table_name]['FK']))
+
+    for table_name, query_path in config.CELLAR_TABLE_QUERY_PATHS.items():
+        etl_pipelines_register.register(etl_pipeline_name=table_name,
+                                        etl_pipeline=CellarETLPipeline(table_name=table_name,
+                                                                       sparql_query_path=query_path,
+                                                                       primary_key_column_name=
+                                                                       tables_metadata[table_name]['PK'],
+                                                                       foreign_key_column_names=
+                                                                       tables_metadata[table_name]['FK']))
 
 
 @dag(default_args=DEFAULT_DAG_ARGUMENTS,

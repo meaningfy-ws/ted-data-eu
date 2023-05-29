@@ -1,3 +1,4 @@
+import json
 import pathlib
 from typing import Dict
 
@@ -8,6 +9,7 @@ dotenv.load_dotenv(verbose=True, override=True)
 
 PROJECT_RESOURCES_PATH = pathlib.Path(__file__).parent.resolve() / "resources"
 PROJECT_RESOURCES_BQ_FOLDER_PATH = PROJECT_RESOURCES_PATH / "sparql_queries"
+PROJECT_RESOURCES_POSTGRES_TABLES_PATH = PROJECT_RESOURCES_BQ_FOLDER_PATH / "postgres_tables"
 
 
 class CommonConfig:
@@ -24,13 +26,28 @@ class CommonConfig:
 class PostgresTablesConfig:
 
     @property
-    def TABLE_QUERY_PATHS(self) -> Dict:
-        query_paths = PROJECT_RESOURCES_BQ_FOLDER_PATH / "postgres_tables"
+    def TRIPLE_STORE_TABLE_QUERY_PATHS(self) -> Dict:
+        query_paths = PROJECT_RESOURCES_POSTGRES_TABLES_PATH / "triple_store_queries"
         query_paths_map = {}
         for query_path in query_paths.iterdir():
             if query_path.is_file():
                 query_paths_map[query_path.stem] = query_path
         return query_paths_map
+
+
+    @property
+    def CELLAR_TABLE_QUERY_PATHS(self) -> Dict:
+        query_paths = PROJECT_RESOURCES_POSTGRES_TABLES_PATH / "cellar_queries"
+        query_paths_map = {}
+        for query_path in query_paths.iterdir():
+            if query_path.is_file():
+                query_paths_map[query_path.stem] = query_path
+        return query_paths_map
+
+    @property
+    def TABLES_METADATA(self) -> Dict:
+        tables_metadata_path = PROJECT_RESOURCES_POSTGRES_TABLES_PATH / "tables_metadata.json"
+        return json.loads(tables_metadata_path.read_text(encoding='utf-8'))
 
     @env_property()
     def POSTGRES_TDA_DB_USER(self, config_value: str) -> str:

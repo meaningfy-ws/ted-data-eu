@@ -64,7 +64,7 @@ def run_etl_executor_by_date_range():
                                    }
             postgres_table_names = {
                 table_name: {START_DATE_METADATA_FIELD: date, END_DATE_METADATA_FIELD: date} for table_name in
-                config.TABLE_QUERY_PATHS.keys()}
+                config.TRIPLE_STORE_TABLE_QUERY_PATHS.keys()}
 
             TriggerDagRunOperator(
                 task_id=f'trigger_run_etl_pipeline_dag_{date}',
