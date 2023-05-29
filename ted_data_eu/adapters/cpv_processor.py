@@ -238,7 +238,10 @@ class CellarCPVProcessor(object):
         while not pd.isnull(cpv_parent):
             cpv_lvl += 1
             previous_cpv_parent = cpv_parent
-            cpv_parent = self.dataframe.loc[self.dataframe[self.CPV_CODE_COLUMN] == previous_cpv_parent, self.CPV_PARENT_COLUMN].iloc[0]
+            cpv_parent = self.dataframe.loc[self.dataframe[self.CPV_CODE_COLUMN] == previous_cpv_parent, self.CPV_PARENT_COLUMN]
+            if cpv_parent.empty:
+                return cpv_lvl
+            cpv_parent = cpv_parent.iloc[0]
 
         return cpv_lvl
 
