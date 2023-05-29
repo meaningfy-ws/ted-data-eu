@@ -15,8 +15,7 @@ from ted_data_eu.adapters.cpv_processor import CPVProcessor, CPV_MAX_RANK, CPV_M
 from ted_data_eu.adapters.etl_pipeline_abc import ETLPipelineABC
 from ted_data_eu.adapters.nuts_processor import NUTSProcessor, NUTS_MIN_RANK, NUTS_MAX_RANK
 from ted_data_eu.adapters.triple_store import GraphDBAdapter
-from ted_data_eu.services.currency_convertor import convert_currency, \
-    get_last_available_date_for_currency
+from ted_data_eu.services.currency_convertor import convert_currency
 from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import START_DATE_METADATA_FIELD, \
     generate_sparql_filter_by_date_range, END_DATE_METADATA_FIELD
 
@@ -42,6 +41,24 @@ NUTS_LABEL_COLUMN = "NUTSLabel"
 NUTS_LEVEL_COLUMN = "NUTSLevel"
 NUTS_ID_COLUMN = "NUTSId"
 
+HIGHEST_RECEIVED_TENDER_VALUE_COLUMN = 'HighestReceivedTenderValue'
+HIGHEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN = 'HighestReceivedTenderValueCurrency'
+LOWEST_RECEIVED_TENDER_VALUE_COLUMN = 'LowestReceivedTenderValue'
+LOWEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN = 'LowestReceivedTenderValueCurrency'
+
+LOT_ESTIMATED_VALUE_COLUMN = "LotEstimatedValue"
+LOT_ESTIMATED_VALUE_CURRENCY_COLUMN = "LotEstimatedValueCurrency"
+LOT_RESTATED_ESTIMATED_VALUE_COLUMN = "LotRestatedEstimatedValue"
+LOT_RESTATED_ESTIMATED_VALUE_CURRENCY_COLUMN = "LotRestatedEstimatedValueCurrency"
+TOTAL_AWARDED_VALUE_COLUMN = "TotalAwardedValue"
+TOTAL_AWARDED_VALUE_CURRENCY_COLUMN = "TotalAwardedValueCurrency"
+LOT_AWARDED_VALUE_COLUMN = "LotAwardedValue"
+LOT_AWARDED_VALUE_CURRENCY_COLUMN = "LotAwardedValueCurrency"
+LOT_BARGAIN_PRICE_COLUMN = "LotBargainPrice"
+LOT_BARGAIN_PRICE_CURRENCY_COLUMN = "LotBargainPriceCurrency"
+PROCEDURE_ESTIMATED_VALUE_COLUMN = "ProcedureEstimatedValue"
+PROCEDURE_ESTIMATED_VALUE_CURRENCY_COLUMN = "ProcedureEstimatedValueCurrency"
+
 DROP_DUPLICATES_QUERY = """
 DELETE FROM "{table_name}" a USING (
     SELECT MIN(ctid) as ctid, "{primary_key_column_name}"
@@ -53,31 +70,24 @@ AND a.ctid <> b.ctid
 """
 
 
-
-def transform_monetary_value_table(data_csv: io.StringIO) -> DataFrame:
-    """
-    Transforms monetary value table by converting all amounts to EUR and adding conversion date
-    """
-    data_table = pd.read_csv(data_csv, dtype=object)
-
-    data_table[AMOUNT_VALUE_EUR_COLUMN] = data_table.apply(
-        lambda x: convert_currency(amount=x[AMOUNT_VALUE_COLUMN], currency=x[CURRENCY_ID_COLUMN],
-                                   new_currency=EURO_CURRENCY_ID),
-        axis=1)
-    data_table[CONVERSION_TO_EUR_DATE_COLUMN] = data_table.apply(
-        lambda x: get_last_available_date_for_currency(currency=x[CURRENCY_ID_COLUMN]), axis=1)
-
-    return data_table
-
-
 def transform_notice_table(data_csv: io.StringIO) -> DataFrame:
     """
-    Transforms notice table by adding link to notice
+    Transforms notice table by adding link to notice and converting currency to EUR
     """
     data_table = pd.read_csv(data_csv, dtype=object)
     data_table[NOTICE_LINK_COLUMN] = data_table.apply(
         lambda x: generate_link_to_notice(x[NOTICE_ID_COLUMN]), axis=1)
 
+    # Convert currency to EUR
+    data_table[TOTAL_AWARDED_VALUE_COLUMN] = data_table.apply(
+        lambda x: convert_currency(amount=x[TOTAL_AWARDED_VALUE_COLUMN],
+                                   currency=x[TOTAL_AWARDED_VALUE_CURRENCY_COLUMN],
+                                   new_currency=EURO_CURRENCY_ID),
+        axis=1)
+    # Rename column to indicate that it is in EUR
+    data_table.rename(columns={TOTAL_AWARDED_VALUE_COLUMN: f"{TOTAL_AWARDED_VALUE_COLUMN}EUR"}, inplace=True)
+    # Remove currency column
+    data_table.drop(columns=[TOTAL_AWARDED_VALUE_CURRENCY_COLUMN], inplace=True)
     return data_table
 
 
@@ -122,11 +132,120 @@ def transform_nuts_table(data_csv: io.StringIO) -> DataFrame:
     return data_table
 
 
+def transform_statistical_information_table(data_csv: io.StringIO) -> DataFrame:
+    """
+    Transforms statistical information table by adding monetary values in EUR
+    """
+    data_table = pd.read_csv(data_csv)
+    # convert monetary value to EUR
+    data_table[HIGHEST_RECEIVED_TENDER_VALUE_COLUMN] = data_table.apply(
+        lambda x: convert_currency(amount=x[HIGHEST_RECEIVED_TENDER_VALUE_COLUMN],
+                                   currency=x[HIGHEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN],
+                                   new_currency=EURO_CURRENCY_ID),
+        axis=1)
+    data_table[LOWEST_RECEIVED_TENDER_VALUE_COLUMN] = data_table.apply(
+        lambda x: convert_currency(amount=x[LOWEST_RECEIVED_TENDER_VALUE_COLUMN],
+                                   currency=x[LOWEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN],
+                                   new_currency=EURO_CURRENCY_ID),
+        axis=1)
+    # rename columns to include currency name EUR
+    data_table.rename(columns={HIGHEST_RECEIVED_TENDER_VALUE_COLUMN: f"{HIGHEST_RECEIVED_TENDER_VALUE_COLUMN}EUR",
+                               LOWEST_RECEIVED_TENDER_VALUE_COLUMN: f"{LOWEST_RECEIVED_TENDER_VALUE_COLUMN}EUR"},
+                      inplace=True)
+    # drop currency columns
+    data_table.drop(
+        columns=[HIGHEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN, LOWEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN],
+        inplace=True)
+
+    return data_table
+
+
+def transform_lot_table(data_csv: io.StringIO) -> DataFrame:
+    """
+    Transforms lot table by adding monetary values in EUR
+    """
+    data_table = pd.read_csv(data_csv)
+    # convert monetary value to EUR
+    data_table[LOT_ESTIMATED_VALUE_COLUMN] = data_table.apply(
+        lambda x: convert_currency(amount=x[LOT_ESTIMATED_VALUE_COLUMN],
+                                   currency=x[LOT_ESTIMATED_VALUE_CURRENCY_COLUMN],
+                                   new_currency=EURO_CURRENCY_ID),
+        axis=1)
+    data_table[LOT_RESTATED_ESTIMATED_VALUE_COLUMN] = data_table.apply(
+        lambda x: convert_currency(amount=x[LOT_RESTATED_ESTIMATED_VALUE_COLUMN],
+                                   currency=x[LOT_RESTATED_ESTIMATED_VALUE_CURRENCY_COLUMN],
+                                   new_currency=EURO_CURRENCY_ID),
+        axis=1)
+    # rename columns to include currency name EUR
+    data_table.rename(columns={LOT_ESTIMATED_VALUE_COLUMN: f"{LOT_ESTIMATED_VALUE_COLUMN}EUR",
+                               LOT_RESTATED_ESTIMATED_VALUE_COLUMN: f"{LOT_RESTATED_ESTIMATED_VALUE_COLUMN}EUR"},
+                      inplace=True)
+    # drop currency columns
+    data_table.drop(
+        columns=[LOT_ESTIMATED_VALUE_CURRENCY_COLUMN, LOT_RESTATED_ESTIMATED_VALUE_CURRENCY_COLUMN],
+        inplace=True)
+
+    return data_table
+
+
+def transform_lot_award_outcome_table(data_csv: io.StringIO) -> DataFrame:
+    """
+    Transforms LotAwardOutcome table by adding monetary values in EUR
+    """
+    data_table = pd.read_csv(data_csv)
+    # convert monetary value to EUR
+    data_table[LOT_AWARDED_VALUE_COLUMN] = data_table.apply(
+        lambda x: convert_currency(amount=x[LOT_AWARDED_VALUE_COLUMN],
+                                   currency=x[LOT_AWARDED_VALUE_CURRENCY_COLUMN],
+                                   new_currency=EURO_CURRENCY_ID),
+        axis=1)
+    data_table[LOT_BARGAIN_PRICE_COLUMN] = data_table.apply(
+        lambda x: convert_currency(amount=x[LOT_BARGAIN_PRICE_COLUMN],
+                                   currency=x[LOT_BARGAIN_PRICE_CURRENCY_COLUMN],
+                                   new_currency=EURO_CURRENCY_ID),
+        axis=1)
+    # rename columns to include currency name EUR
+    data_table.rename(columns={LOT_AWARDED_VALUE_COLUMN: f"{LOT_AWARDED_VALUE_COLUMN}EUR",
+                               LOT_BARGAIN_PRICE_COLUMN: f"{LOT_BARGAIN_PRICE_COLUMN}EUR"},
+                      inplace=True)
+    # drop currency columns
+    data_table.drop(
+        columns=[LOT_AWARDED_VALUE_CURRENCY_COLUMN, LOT_BARGAIN_PRICE_CURRENCY_COLUMN],
+        inplace=True)
+
+    return data_table
+
+
+def transform_procedure_table(data_csv: io.StringIO) -> DataFrame:
+    """
+    Transforms Procedure table by adding monetary values in EUR
+    """
+    data_table = pd.read_csv(data_csv)
+    # convert monetary value to EUR
+    data_table[PROCEDURE_ESTIMATED_VALUE_COLUMN] = data_table.apply(
+        lambda x: convert_currency(amount=x[PROCEDURE_ESTIMATED_VALUE_COLUMN],
+                                   currency=x[PROCEDURE_ESTIMATED_VALUE_CURRENCY_COLUMN],
+                                   new_currency=EURO_CURRENCY_ID),
+        axis=1)
+    # rename columns to include currency name EUR
+    data_table.rename(columns={PROCEDURE_ESTIMATED_VALUE_COLUMN: f"{PROCEDURE_ESTIMATED_VALUE_COLUMN}EUR"},
+                      inplace=True)
+    # drop currency columns
+    data_table.drop(
+        columns=[PROCEDURE_ESTIMATED_VALUE_CURRENCY_COLUMN],
+        inplace=True)
+
+    return data_table
+
+
 TRANSFORMED_TABLES = {
-    "MonetaryValue": transform_monetary_value_table,
     "Notice": transform_notice_table,
     "Purpose": transform_purpose_table,
-    "NUTS": transform_nuts_table
+    "NUTS": transform_nuts_table,
+    "SubmissionStatisticalInformation": transform_statistical_information_table,
+    "Lot": transform_lot_table,
+    "LotAwardOutcome": transform_lot_award_outcome_table,
+    "Procedure": transform_procedure_table
 }
 
 
@@ -161,7 +280,8 @@ class PostgresETLPipeline(ETLPipelineABC):
         ETL Class that gets data from TDA endpoint, transforms and inserts result to document storage
     """
 
-    def __init__(self, table_name: str, sparql_query_path: Path, primary_key_column_name: str, postgres_url: str = None):
+    def __init__(self, table_name: str, sparql_query_path: Path, primary_key_column_name: str,
+                 postgres_url: str = None):
         """
             Constructor
         """
@@ -209,10 +329,16 @@ class PostgresETLPipeline(ETLPipelineABC):
             logging.info("Querying data from yesterday")
             date_range = (date.today() - timedelta(days=1)).strftime("\"%Y%m%d\"")
 
-
         sparql_query_template = Template(self.sparql_query_path.read_text(encoding="utf-8"))
         sparql_query = sparql_query_template.substitute(date_range=date_range)
-        triple_store_endpoint = GraphDBAdapter().get_sparql_tda_triple_store_endpoint(repository_name=TRIPLE_STORE_ENDPOINT)
+        triple_store_endpoint = GraphDBAdapter().get_sparql_tda_triple_store_endpoint(
+            repository_name=TRIPLE_STORE_ENDPOINT)
+
+        print("||||||||||||||||||||||||||||||||||||||||||")
+        # print(triple_store_endpoint.endpoint)
+        print(sparql_query)
+        print("||||||||||||||||||||||||||||||||||||||||||")
+
         result_table = triple_store_endpoint.with_query(sparql_query).fetch_csv()
         return {"data": result_table}
 
@@ -238,7 +364,45 @@ class PostgresETLPipeline(ETLPipelineABC):
         data_table: DataFrame = transformed_data["data"]
 
         with self.sql_engine.connect() as sql_connection:
-            data_table.to_sql(self.table_name, con=sql_connection, if_exists='append', chunksize=SEND_CHUNK_SIZE, index=False)
-            sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name, primary_key_column_name=self.primary_key_column_name))
+            data_table.to_sql(self.table_name, con=sql_connection, if_exists='append', chunksize=SEND_CHUNK_SIZE,
+                              index=False)
+            sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name,
+                                                                primary_key_column_name=self.primary_key_column_name))
 
         return {"data": transformed_data["data"]}
+
+
+ADD_PRIMARY_KEY_IF_NOT_EXISTS_QUERY = """DO $$ BEGIN IF NOT exists 
+(select constraint_name from information_schema.table_constraints where 
+table_name='{table_name}' and constraint_type = 'PRIMARY KEY') 
+then ALTER TABLE "{table_name}" ADD PRIMARY KEY ("{primary_key_column_name}"); end if; END $$;
+"""
+
+ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY = """DO $$ BEGIN IF NOT exists
+(select constraint_name from information_schema.table_constraints where
+table_name='{table_name}' and constraint_type = 'FOREIGN KEY')
+then ALTER TABLE "{table_name}" ADD FOREIGN KEY ("{foreign_key_column_name}") REFERENCES "{foreign_table_name}" ("{foreign_key_column_name}");
+end if; END $$;
+"""
+
+if __name__ == "__main__":
+    pd.options.display.float_format = "{:,.2f}".format
+
+    etl = PostgresETLPipeline(table_name="Notice",
+                              sparql_query_path=config.TABLE_QUERY_PATHS["Notice"],
+                              primary_key_column_name="NoticeId")
+    etl.set_metadata({"start_date": "20220907", "end_date": "20220907"})
+    df: dict = etl.extract()['data']
+
+    df: DataFrame = etl.transform({"data": df})['data']
+    print(df.info())
+    print(df.to_string())
+    # etl.load({"data": df})
+
+    # sql_engine = sqlalchemy.create_engine(POSTGRES_URL, echo=False, isolation_level="AUTOCOMMIT")
+    # with sql_engine.connect() as sql_connection:
+    #     q = ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name="Tender", foreign_key_column_name="PurposeId", foreign_table_name="Purpose")
+    #     print(q)
+    #     #sql_connection.execution_options(autocommit=True)
+    #     sql_connection.execute(q)
+    #     #sql_connection.connection.commit()

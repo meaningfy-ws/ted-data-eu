@@ -25,7 +25,18 @@ where {
     ?ProcedureId a epo:Procedure.
 
     optional {
-        ?ProcedureId epo:hasTitle ?ProcedureTitle.
+         {
+            ?ProcedureId epo:hasTitle ?ProcedureTitleEn.
+            filter(lang(?ProcedureTitleEn) = 'en')
+        }
+        {
+            SELECT ?ProcedureId (SAMPLE (?ProcedureTitleInternal) as ?ProcedureTitleOther)
+            {
+                ?ProcedureId epo:hasTitle ?ProcedureTitleInternal .
+            }
+            GROUP BY ?ProcedureId order by ?ProcedureTitleInternal
+        }
+        BIND(COALESCE(?ProcedureTitleEn, ?ProcedureTitleOther) as ?ProcedureTitle)
     }
     optional {
         ?ProcedureId epo:hasID / epo:hasIdentifierValue ?ReferenceNumber.

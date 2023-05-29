@@ -9,6 +9,11 @@ cur_converter = CurrencyConverter()
 
 
 def convert_currency(amount: float, currency: str, new_currency: str, date: date = None) -> float:
+    """
+        Converts the currency and returns the converted amount or 0.0 if the conversion was not possible
+    """
+    if currency == new_currency:
+        return amount
     try:
         return cur_converter.convert(amount=amount, currency=currency, new_currency=new_currency, date=date)
     except (RateNotFoundError, ValueError) as e:

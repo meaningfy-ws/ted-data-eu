@@ -20,7 +20,7 @@ where {
     values ?NoticePublicationDate {
         $date_range
     }
-    
+
     ?LotId a epo:Lot.
     ?LotAwardOutcomeId epo:describesLot ?LotId;
                        a epo:LotAwardOutcome.
