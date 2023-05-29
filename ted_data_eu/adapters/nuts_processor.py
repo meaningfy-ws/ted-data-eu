@@ -145,7 +145,8 @@ class CellarNUTSProcessor(object):
         nuts_parent = self.dataframe.loc[self.dataframe[self.NUTS_CODE_COLUMN_NAME] == nuts_code, self.NUTS_PARENT_COLUMN_NAME].iloc[0]
         while not pd.isnull(nuts_parent):
             nuts_lvl += 1
-            nuts_parent = self.dataframe.loc[self.dataframe[self.NUTS_CODE_COLUMN_NAME] == nuts_code, self.NUTS_PARENT_COLUMN_NAME].iloc[0]
+            previous_nuts_code = nuts_parent
+            nuts_parent = self.dataframe.loc[self.dataframe[self.NUTS_CODE_COLUMN_NAME] == previous_nuts_code, self.NUTS_PARENT_COLUMN_NAME].iloc[0]
         return nuts_lvl
 
     def get_nuts_parent_code_by_level(self, nuts_code: str, nuts_level: int) -> Optional[str]:

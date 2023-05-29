@@ -258,13 +258,12 @@ def transform_nuts_table(data_csv: io.StringIO) -> DataFrame:
     """
     nuts_processor = CellarNUTSProcessor(data_csv)
     data_table: DataFrame = nuts_processor.dataframe.copy(deep=True)
-    data_table.to_csv(PROJECT_RESOURCES_POSTGRES_TABLES_PATH / "NUTS.csv")
     data_table.rename(columns={nuts_processor.NUTS_CODE_COLUMN_NAME: NUTS_ID_COLUMN,
                                nuts_processor.NUTS_LABEL_COLUMN_NAME: NUTS_LABEL_COLUMN}, inplace=True)
     data_table.drop(columns=[nuts_processor.NUTS_PARENT_COLUMN_NAME], inplace=True)
     for nuts_lvl in range(MIN_NUTS_LVL, MAX_NUTS_LVL + 1):
         data_table[f"NUTS{nuts_lvl}"] = data_table.apply(
-            lambda row: nuts_processor.get_nuts_parent_code_by_level(row[NUTS_ID_COLUMN], nuts_lvl), axis=1)
+            lambda x: nuts_processor.get_nuts_parent_code_by_level(x[NUTS_ID_COLUMN], nuts_lvl), axis=1)
         data_table[f"NUTS{nuts_lvl}Label"] = data_table.apply(
             lambda x: nuts_processor.get_nuts_label_by_code(x[f"NUTS{nuts_lvl}"]), axis=1)
     data_table.drop_duplicates(inplace=True)

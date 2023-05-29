@@ -60,7 +60,7 @@
     "FK": []
   },
   "Purpose": {
-    "PK": "PurposeId",
+    "PK": "OriginalCPV",
     "FK": []
   }
 }

@@ -62,7 +62,7 @@ def test_cellar_etl_pipeline(graphdb_triple_store, example_notices, tmp_reposito
 
         cellar_etl_pipeline.load({DATA_FIELD: test_data})
 
-        test_data = cellar_etl_pipeline.extract()[DATA_FIELD]
+        test_data = cellar_etl_pipeline.extract()
         assert test_data.get(SKIP_NEXT_STEP_FIELD, False) is True
 
         assert sqlalchemy.inspect(cellar_etl_pipeline.sql_engine).has_table(cellar_etl_pipeline.table_name) is True
