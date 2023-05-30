@@ -428,16 +428,17 @@ class PostgresETLPipeline(ETLPipelineABC):
         with self.sql_engine.connect() as sql_connection:
             data_table.to_sql(self.table_name, con=sql_connection, if_exists='append', chunksize=SEND_CHUNK_SIZE,
                               index=False)
-            sql_connection.execute(ADD_PRIMARY_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
-                                                                              primary_key_column_name=self.primary_key_column_name))
-            for foreign_keys in self.foreign_key_column_names:
-                for foreign_key_column_name, foreign_key_table_name in foreign_keys.items():
-                    fk_table_exists = sql_connection.execute(
-                        TABLE_EXISTS_QUERY.format(table_name=foreign_key_table_name)).fetchone()[0]
-                    if fk_table_exists:
-                        sql_connection.execute(ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
-                                                                                          foreign_key_column_name=foreign_key_column_name,
-                                                                                          foreign_key_table_name=foreign_key_table_name))
+            # TODO: Temporary disabled
+            # sql_connection.execute(ADD_PRIMARY_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
+            #                                                                   primary_key_column_name=self.primary_key_column_name))
+            # for foreign_keys in self.foreign_key_column_names:
+            #     for foreign_key_column_name, foreign_key_table_name in foreign_keys.items():
+            #         fk_table_exists = sql_connection.execute(
+            #             TABLE_EXISTS_QUERY.format(table_name=foreign_key_table_name)).fetchone()[0]
+            #         if fk_table_exists:
+            #             sql_connection.execute(ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
+            #                                                                               foreign_key_column_name=foreign_key_column_name,
+            #                                                                               foreign_key_table_name=foreign_key_table_name))
 
             sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name,
                                                                 primary_key_column_name=self.primary_key_column_name))
