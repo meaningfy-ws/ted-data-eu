@@ -2,29 +2,29 @@
   "Lot": {
     "PK": "LotId",
     "FK": [
-      "ProcedureId",
-      "LotSpecificCPV",
-      "PlaceOfPerformance",
-      "LotAwardOutcomeId"
+      {"ProcedureId": "Procedure"},
+      {"LotSpecificCPV": "Purpose"},
+      {"PlaceOfPerformance": "Address"},
+      {"LotAwardOutcomeId": "LotAwardOutcome"}
     ]
   },
   "LotAwardOutcome": {
     "PK": "LotAwardOutcomeId",
     "FK": [
-      "WinnerId",
-      "SubmissionStatisticalInformationId"
+      {"WinnerId": "Winner"},
+      {"SubmissionStatisticalInformationId": "SubmissionStatisticalInformation"}
     ]
   },
   "Procedure": {
     "PK": "ProcedureId",
     "FK": [
-      "BuyerId"
+      {"BuyerId": "Buyer"}
     ]
   },
   "Notice": {
     "PK": "NoticeId",
     "FK": [
-      "ProcedureId"
+      {"ProcedureId": "Procedure"}
     ]
   },
   "SubmissionStatisticalInformation": {
@@ -34,25 +34,25 @@
   "Buyer": {
     "PK": "BuyerId",
     "FK": [
-      "OrganizationId"
+      {"OrganizationId": "Organization"}
     ]
   },
   "Winner": {
     "PK": "WinnerId",
     "FK": [
-      "OrganizationId"
+      {"OrganizationId": "Organization"}
     ]
   },
   "Organization": {
     "PK": "OrganizationId",
     "FK": [
-      "AddressId"
+      {"AddressId": "Address"}
     ]
   },
   "Address": {
     "PK": "AddressId",
     "FK": [
-      "NUSTId"
+      {"NUSTId": "NUTS"}
     ]
   },
   "NUTS": {

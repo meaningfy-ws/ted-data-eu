@@ -92,7 +92,7 @@ then ALTER TABLE "{table_name}" ADD PRIMARY KEY ("{primary_key_column_name}"); e
 ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY = """DO $$ BEGIN IF NOT exists
 (select constraint_name from information_schema.table_constraints where
 table_name='{table_name}' and constraint_type = 'FOREIGN KEY')
-then ALTER TABLE "{table_name}" ADD FOREIGN KEY ("{foreign_key_column_name}") REFERENCES "{foreign_table_name}" ("{foreign_key_column_name}");
+then ALTER TABLE "{table_name}" ADD FOREIGN KEY ("{foreign_key_column_name}") REFERENCES "{foreign_key_table_name}" ("{foreign_key_column_name}");
 end if; END $$;
 """
 
@@ -318,7 +318,7 @@ class PostgresETLPipeline(ETLPipelineABC):
     """
 
     def __init__(self, table_name: str, sparql_query_path: Path, primary_key_column_name: str,
-                 postgres_url: str = None, foreign_key_column_names: List[str] = None):
+                 postgres_url: str = None, foreign_key_column_names: List[dict] = None):
         """
             Constructor
         """
@@ -329,7 +329,7 @@ class PostgresETLPipeline(ETLPipelineABC):
         self.sql_engine = sqlalchemy.create_engine(self.postgres_url, echo=False,
                                                    isolation_level=SQLALCHEMY_ISOLATION_LEVEL)
         self.primary_key_column_name = primary_key_column_name
-        self.foreign_key_column_names = foreign_key_column_names if foreign_key_column_names else []
+        self.foreign_key_column_names = foreign_key_column_names if foreign_key_column_names else {}
 
     def set_metadata(self, etl_metadata: dict):
         """
@@ -408,9 +408,10 @@ class PostgresETLPipeline(ETLPipelineABC):
                               index=False)
             sql_connection.execute(ADD_PRIMARY_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
                                                                               primary_key_column_name=self.primary_key_column_name))
-            for foreign_key_column_name in self.foreign_key_column_names:
+            for foreign_key_column_name, foreign_key_table_name in self.foreign_key_column_names.items():
                 sql_connection.execute(ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
-                                                                                  foreign_key_column_name=foreign_key_column_name))
+                                                                                  foreign_key_column_name=foreign_key_column_name),
+                                                                                  foreign_key_table_name=foreign_key_table_name)
 
             sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name,
                                                                 primary_key_column_name=self.primary_key_column_name))
