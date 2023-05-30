@@ -3,14 +3,14 @@ PREFIX afn: <http://jena.apache.org/ARQ/function#>
 
 select distinct
 ?ProcedureId
-?ProcedureTitle
-?ReferenceNumber
-(afn:localname(?ProcedureCPVURI) as ?ProcedureCPV)
-?ProcedureEstimatedValue
-(afn:localname(?ProcedureEstimatedValueCurrencyURI) as ?ProcedureEstimatedValueCurrency)
-?BuyerId
-(afn:localname(?hasProcedureType) as ?ProcedureType)
-?isCoveredByGPA
+(sample(?ProcedureTitle) as ?ProcedureTitle)
+(sample(?ReferenceNumber) as ?ReferenceNumber)
+(group_concat(afn:localname(?ProcedureCPVURI); separator="|||") as ?ProcedureCPV)
+(sample(?ProcedureEstimatedValue) as ?ProcedureEstimatedValue)
+(sample(afn:localname(?ProcedureEstimatedValueCurrencyURI)) as ?ProcedureEstimatedValueCurrency)
+(group_concat(?BuyerId; separator="|||") as ?BuyerId)
+(sample(afn:localname(?hasProcedureType)) as ?ProcedureType)
+(sample(?isCoveredByGPA) as ?isCoveredByGPA)
 where {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
@@ -57,4 +57,4 @@ where {
         ?ProcedureId epo:isCoveredByGPA ?isCoveredByGPA.
     }
 
-}
+} group by ?ProcedureId

@@ -3,16 +3,16 @@ PREFIX afn: <http://jena.apache.org/ARQ/function#>
 
 select distinct
 ?LotId
-?ProcedureId
-(afn:localname(?LotSpecificCPVURI) as ?LotSpecificCPV)
-?LotTitle
-?isUsingEUFunds
-?LotEstimatedValue
-(afn:localname(?LotEstimatedValueCurrencyURI) as ?LotEstimatedValueCurrency)
-?LotRestatedEstimatedValue
-(afn:localname(?LotRestatedEstimatedValueCurrencyURI) as ?LotRestatedEstimatedValueCurrency)
-?PlaceOfPerformance
-?LotAwardOutcomeId
+(sample(?ProcedureId) as ?ProcedureId)
+(group_concat(afn:localname(?LotSpecificCPVURI); separator="|||") as ?LotSpecificCPV)
+(sample(?LotTitle) as ?LotTitle)
+(sample(?isUsingEUFunds) as ?isUsingEUFunds)
+(sample(?LotEstimatedValue) as ?LotEstimatedValue)
+(sample(afn:localname(?LotEstimatedValueCurrencyURI)) as ?LotEstimatedValueCurrency)
+(sample(?LotRestatedEstimatedValue) as ?LotRestatedEstimatedValue)
+(sample(afn:localname(?LotRestatedEstimatedValueCurrencyURI)) as ?LotRestatedEstimatedValueCurrency)
+(sample(?PlaceOfPerformance) as ?PlaceOfPerformance)
+(sample(?LotAwardOutcomeId) as ?LotAwardOutcomeId)
 where {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
@@ -29,7 +29,18 @@ where {
         ?LotId epo:hasPurpose / epo:hasAdditionalClassification ?LotSpecificCPVURI.
     }
     optional{
-        ?LotId  epo:hasTitle ?LotTitle.
+        {
+            ?LotId epo:hasTitle ?LotTitleEn.
+            filter(lang(?LotTitleEn) = 'en')
+        }
+        {
+            SELECT ?LotId (SAMPLE (?LotTitleInternal) as ?LotTitleOther)
+            {
+                ?LotId epo:hasTitle ?LotTitleInternal .
+            }
+            GROUP BY ?LotId order by ?LotTitleInternal
+        }
+        BIND(COALESCE(?LotTitleEn, ?LotTitleOther) as ?LotTitle)
     }
     optional{
         ?LotId epo:isUsingEUFunds ?isUsingEUFunds.
@@ -53,4 +64,4 @@ where {
         ?LotAwardOutcomeId epo:describesLot ?LotId;
                            a epo:LotAwardOutcome.
     }
-}
+} group by ?LotId

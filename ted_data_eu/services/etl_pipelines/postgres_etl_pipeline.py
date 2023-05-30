@@ -33,6 +33,7 @@ MIN_CPV_LVL = 0
 MAX_CPV_LVL = MIN_CPV_LVL + 5
 MIN_NUTS_LVL = 0
 MAX_NUTS_LVL = MIN_NUTS_LVL + 3
+LIST_SEPARATOR = "|||"
 
 AMOUNT_VALUE_EUR_COLUMN = "AmountValueEUR"
 AMOUNT_VALUE_COLUMN = "AmountValue"
@@ -67,6 +68,10 @@ LOT_BARGAIN_PRICE_COLUMN = "LotBargainPrice"
 LOT_BARGAIN_PRICE_CURRENCY_COLUMN = "LotBargainPriceCurrency"
 PROCEDURE_ESTIMATED_VALUE_COLUMN = "ProcedureEstimatedValue"
 PROCEDURE_ESTIMATED_VALUE_CURRENCY_COLUMN = "ProcedureEstimatedValueCurrency"
+LOT_SPECIFIC_CPV_COLUMN_NAME = "LotSpecificCPV"
+WINNER_ID_COLUMN_NAME = "WinnerId"
+PROCEDURE_CPV_COLUMN_NAME = "ProcedureCPV"
+BUYER_ID_COLUMN_NAME = "BuyerId"
 
 NUTS_LEVEL_TEMPLATE = "NUTS{nuts_lvl}"
 NUTS_LABEL_TEMPLATE = "NUTS{nuts_lvl}Label"
@@ -160,7 +165,9 @@ def transform_lot_table(data_csv: io.StringIO) -> DataFrame:
     """
     Transforms lot table by adding monetary values in EUR
     """
-    data_table = pd.read_csv(data_csv)
+    data_table = pd.read_csv(data_csv, converters={
+        LOT_SPECIFIC_CPV_COLUMN_NAME: str
+    })
     # convert monetary value to EUR
     data_table[LOT_ESTIMATED_VALUE_COLUMN] = data_table.apply(
         lambda x: convert_currency(amount=x[LOT_ESTIMATED_VALUE_COLUMN],
@@ -180,7 +187,11 @@ def transform_lot_table(data_csv: io.StringIO) -> DataFrame:
     data_table.drop(
         columns=[LOT_ESTIMATED_VALUE_CURRENCY_COLUMN, LOT_RESTATED_ESTIMATED_VALUE_CURRENCY_COLUMN],
         inplace=True)
+
     data_table.drop_duplicates(inplace=True)
+    data_table[LOT_SPECIFIC_CPV_COLUMN_NAME] = data_table[LOT_SPECIFIC_CPV_COLUMN_NAME].apply(
+        lambda x: x.split(LIST_SEPARATOR) if x else [])
+
     return data_table
 
 
@@ -188,7 +199,9 @@ def transform_lot_award_outcome_table(data_csv: io.StringIO) -> DataFrame:
     """
     Transforms LotAwardOutcome table by adding monetary values in EUR
     """
-    data_table = pd.read_csv(data_csv)
+    data_table = pd.read_csv(data_csv, converters={
+        WINNER_ID_COLUMN_NAME: str
+    })
     # convert monetary value to EUR
     data_table[LOT_AWARDED_VALUE_COLUMN] = data_table.apply(
         lambda x: convert_currency(amount=x[LOT_AWARDED_VALUE_COLUMN],
@@ -209,6 +222,9 @@ def transform_lot_award_outcome_table(data_csv: io.StringIO) -> DataFrame:
         columns=[LOT_AWARDED_VALUE_CURRENCY_COLUMN, LOT_BARGAIN_PRICE_CURRENCY_COLUMN],
         inplace=True)
     data_table.drop_duplicates(inplace=True)
+
+    data_table[WINNER_ID_COLUMN_NAME] = data_table[WINNER_ID_COLUMN_NAME].apply(
+        lambda x: x.split(LIST_SEPARATOR) if x else [])
     return data_table
 
 
@@ -231,6 +247,12 @@ def transform_procedure_table(data_csv: io.StringIO) -> DataFrame:
         columns=[PROCEDURE_ESTIMATED_VALUE_CURRENCY_COLUMN],
         inplace=True)
     data_table.drop_duplicates(inplace=True)
+
+    data_table[PROCEDURE_CPV_COLUMN_NAME] = data_table[PROCEDURE_CPV_COLUMN_NAME].apply(
+        lambda x: x.split(LIST_SEPARATOR) if x else [])
+
+    data_table[BUYER_ID_COLUMN_NAME] = data_table[BUYER_ID_COLUMN_NAME].apply(
+        lambda x: x.split(LIST_SEPARATOR) if x else [])
     return data_table
 
 
