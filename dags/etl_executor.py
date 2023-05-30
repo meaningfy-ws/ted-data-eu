@@ -17,6 +17,9 @@ ETL_EXECUTOR_DAG_NAME = 'etl_executor'
 MAX_ETL_ACTIVE_RUNS = 1
 MAX_ETL_ACTIVE_TASKS = 1
 
+PRIMARY_KEY_COLUMN_NAME = 'PK'
+FOREIGN_KEY_COLUMN_NAMES = 'FK'
+
 
 def init_etl_pipelines_register():
     """
@@ -37,18 +40,22 @@ def init_etl_pipelines_register():
                                         etl_pipeline=PostgresETLPipeline(table_name=table_name,
                                                                          sparql_query_path=query_path,
                                                                          primary_key_column_name=
-                                                                         tables_metadata[table_name]['PK'],
+                                                                         tables_metadata[table_name][
+                                                                             PRIMARY_KEY_COLUMN_NAME],
                                                                          foreign_key_column_names=
-                                                                         tables_metadata[table_name]['FK']))
+                                                                         tables_metadata[table_name][
+                                                                             FOREIGN_KEY_COLUMN_NAMES]))
 
     for table_name, query_path in config.CELLAR_TABLE_QUERY_PATHS.items():
         etl_pipelines_register.register(etl_pipeline_name=table_name,
                                         etl_pipeline=CellarETLPipeline(table_name=table_name,
                                                                        sparql_query_path=query_path,
                                                                        primary_key_column_name=
-                                                                       tables_metadata[table_name]['PK'],
+                                                                       tables_metadata[table_name][
+                                                                           PRIMARY_KEY_COLUMN_NAME],
                                                                        foreign_key_column_names=
-                                                                       tables_metadata[table_name]['FK']))
+                                                                       tables_metadata[table_name][
+                                                                           FOREIGN_KEY_COLUMN_NAMES]))
 
 
 @dag(default_args=DEFAULT_DAG_ARGUMENTS,

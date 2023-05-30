@@ -10,7 +10,7 @@ import pandas as pd
 import sqlalchemy
 from pandas import DataFrame
 
-from ted_data_eu import config, PROJECT_RESOURCES_POSTGRES_TABLES_PATH
+from ted_data_eu import config
 from ted_data_eu.adapters.cpv_processor import CellarCPVProcessor
 from ted_data_eu.adapters.etl_pipeline_abc import ETLPipelineABC
 from ted_data_eu.adapters.nuts_processor import CellarNUTSProcessor
@@ -67,6 +67,11 @@ LOT_BARGAIN_PRICE_COLUMN = "LotBargainPrice"
 LOT_BARGAIN_PRICE_CURRENCY_COLUMN = "LotBargainPriceCurrency"
 PROCEDURE_ESTIMATED_VALUE_COLUMN = "ProcedureEstimatedValue"
 PROCEDURE_ESTIMATED_VALUE_CURRENCY_COLUMN = "ProcedureEstimatedValueCurrency"
+
+NUTS_LEVEL_TEMPLATE = "NUTS{nuts_lvl}"
+NUTS_LABEL_TEMPLATE = "NUTS{nuts_lvl}Label"
+CPV_LEVEL_TEMPLATE = "CPV{cpv_lvl}"
+CPV_LABEL_TEMPLATE = "CPV{cpv_lvl}Label"
 
 DROP_DUPLICATES_QUERY = """
 DELETE FROM "{table_name}" a USING (
@@ -244,10 +249,10 @@ def transform_cpv_table(data_csv: io.StringIO) -> DataFrame:
     data_table[ORIGINAL_CPV_LEVEL_COLUMN] = data_table.apply(
         lambda row: cpv_processor.get_cpv_rank(row[ORIGINAL_CPV_COLUMN]), axis=1)
     for cpv_lvl in range(MIN_CPV_LVL, MAX_CPV_LVL + 1):
-        data_table[f"CPV{cpv_lvl}"] = data_table.apply(
+        data_table[CPV_LEVEL_TEMPLATE.format(cpv_lvl=cpv_lvl)] = data_table.apply(
             lambda row: cpv_processor.get_cpv_parent_code_by_rank(row[ORIGINAL_CPV_COLUMN], cpv_lvl), axis=1)
-        data_table[f"CPV{cpv_lvl}Label"] = data_table.apply(
-            lambda x: cpv_processor.get_cpv_label_by_code(x[f"CPV{cpv_lvl}"]), axis=1)
+        data_table[CPV_LABEL_TEMPLATE.format(cpv_lvl=cpv_lvl)] = data_table.apply(
+            lambda x: cpv_processor.get_cpv_label_by_code(x[CPV_LEVEL_TEMPLATE.format(cpv_lvl=cpv_lvl)]), axis=1)
     data_table.drop_duplicates(inplace=True)
     return data_table
 
@@ -262,10 +267,10 @@ def transform_nuts_table(data_csv: io.StringIO) -> DataFrame:
                                nuts_processor.NUTS_LABEL_COLUMN_NAME: NUTS_LABEL_COLUMN}, inplace=True)
     data_table.drop(columns=[nuts_processor.NUTS_PARENT_COLUMN_NAME], inplace=True)
     for nuts_lvl in range(MIN_NUTS_LVL, MAX_NUTS_LVL + 1):
-        data_table[f"NUTS{nuts_lvl}"] = data_table.apply(
+        data_table[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)] = data_table.apply(
             lambda x: nuts_processor.get_nuts_parent_code_by_level(x[NUTS_ID_COLUMN], nuts_lvl), axis=1)
-        data_table[f"NUTS{nuts_lvl}Label"] = data_table.apply(
-            lambda x: nuts_processor.get_nuts_label_by_code(x[f"NUTS{nuts_lvl}"]), axis=1)
+        data_table[NUTS_LABEL_TEMPLATE.format(nuts_lvl=nuts_lvl)] = data_table.apply(
+            lambda x: nuts_processor.get_nuts_label_by_code(x[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]), axis=1)
     data_table.drop_duplicates(inplace=True)
     return data_table
 
@@ -408,7 +413,7 @@ class PostgresETLPipeline(ETLPipelineABC):
                                                                                   foreign_key_column_name=foreign_key_column_name))
 
             sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name,
-                                                                    primary_key_column_name=self.primary_key_column_name))
+                                                                primary_key_column_name=self.primary_key_column_name))
 
         return {DATA_FIELD: transformed_data[DATA_FIELD]}
 
@@ -428,38 +433,3 @@ class CellarETLPipeline(PostgresETLPipeline):
             self.sparql_query_path.read_text(encoding='utf-8')).fetch_csv()
 
         return {DATA_FIELD: data_table, SKIP_NEXT_STEP_FIELD: False}
-
-
-if __name__ == "__main__":
-    pd.options.display.float_format = "{:,.2f}".format
-
-    etl = PostgresETLPipeline(table_name="Lot",
-                              sparql_query_path=config.TRIPLE_STORE_TABLE_QUERY_PATHS["Lot"],
-                              primary_key_column_name="LotId")
-    etl.set_metadata({"start_date": "20190131", "end_date": "20190131"})
-    df: dict = etl.extract()[DATA_FIELD]
-
-    df: DataFrame = etl.transform({DATA_FIELD: df})[DATA_FIELD]
-    etl.load({DATA_FIELD: df})
-    print(df.info())
-    print(df.to_string())
-
-    # pd.options.display.float_format = "{:,.2f}".format
-    #
-    # etl = CellarETLPipeline(table_name="Purpose",
-    #                         sparql_query_path=config.CELLAR_TABLE_QUERY_PATHS["Purpose"],
-    #                         primary_key_column_name="OriginalCPV")
-    # etl.set_metadata({"start_date": "20220907", "end_date": "20220907"})
-    # info: dict = etl.extract()
-    #
-    # df: DataFrame = etl.transform(info)[DATA_FIELD]
-    # print(df.info())
-    # print(df.to_string())
-
-    # sql_engine = sqlalchemy.create_engine(POSTGRES_URL, echo=False, isolation_level="AUTOCOMMIT")
-    # with sql_engine.connect() as sql_connection:
-    #     q = ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name="Tender", foreign_key_column_name="PurposeId", foreign_table_name="Purpose")
-    #     print(q)
-    #     #sql_connection.execution_options(autocommit=True)
-    #     sql_connection.execute(q)
-    #     #sql_connection.connection.commit()
