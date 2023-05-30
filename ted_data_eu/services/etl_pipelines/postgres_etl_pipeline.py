@@ -329,7 +329,7 @@ class PostgresETLPipeline(ETLPipelineABC):
         self.sql_engine = sqlalchemy.create_engine(self.postgres_url, echo=False,
                                                    isolation_level=SQLALCHEMY_ISOLATION_LEVEL)
         self.primary_key_column_name = primary_key_column_name
-        self.foreign_key_column_names = foreign_key_column_names if foreign_key_column_names else {}
+        self.foreign_key_column_names = foreign_key_column_names if foreign_key_column_names else []
 
     def set_metadata(self, etl_metadata: dict):
         """
@@ -408,10 +408,11 @@ class PostgresETLPipeline(ETLPipelineABC):
                               index=False)
             sql_connection.execute(ADD_PRIMARY_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
                                                                               primary_key_column_name=self.primary_key_column_name))
-            for foreign_key_column_name, foreign_key_table_name in self.foreign_key_column_names.items():
-                sql_connection.execute(ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
-                                                                                  foreign_key_column_name=foreign_key_column_name),
-                                                                                  foreign_key_table_name=foreign_key_table_name)
+            for foreign_keys in self.foreign_key_column_names:
+                for foreign_key_column_name, foreign_key_table_name in foreign_keys.items():
+                    sql_connection.execute(ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
+                                                                                      foreign_key_column_name=foreign_key_column_name),
+                                                                                      foreign_key_table_name=foreign_key_table_name)
 
             sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name,
                                                                 primary_key_column_name=self.primary_key_column_name))
