@@ -63,8 +63,8 @@ def run_etl_executor_by_date_range():
                                         END_DATE_METADATA_FIELD: premium_index_start_date},
                                    }
             postgres_table_names = {
-                table_name: {START_DATE_METADATA_FIELD: start_date, END_DATE_METADATA_FIELD: end_date} for table_name in
-                config.TABLE_QUERY_PATHS.keys()}
+                table_name: {START_DATE_METADATA_FIELD: date, END_DATE_METADATA_FIELD: date} for table_name in
+                config.TRIPLE_STORE_TABLE_QUERY_PATHS.keys()}
 
             TriggerDagRunOperator(
                 task_id=f'trigger_run_etl_pipeline_dag_{date}',

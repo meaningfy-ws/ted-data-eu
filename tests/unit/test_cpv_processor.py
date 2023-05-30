@@ -48,3 +48,45 @@ def test_cpv_algorithms(cpv_processor, fake_cpv, real_cpv, problematic_cpv):
 
     assert cpv_processor.get_cpv_label_by_code(cpv_code=real_cpv) == 'Tunnel toll services'
     assert cpv_processor.get_cpv_label_by_code(cpv_code=fake_cpv) is None
+
+
+def test_cellar_cpv_processor(cellar_cpv_processor, fake_cpv, real_cpv, problematic_cpv):
+    assert cellar_cpv_processor.cpv_exists(cpv_code=fake_cpv) is False
+    assert cellar_cpv_processor.cpv_exists(cpv_code=real_cpv)
+    assert cellar_cpv_processor.cpv_exists(cpv_code=problematic_cpv)
+
+    assert cellar_cpv_processor.get_cpv_rank(cpv_code=real_cpv) == 5
+    assert cellar_cpv_processor.get_cpv_rank(cpv_code=problematic_cpv) == 0
+    assert cellar_cpv_processor.get_cpv_rank(cpv_code=fake_cpv) is None
+
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=real_cpv, rank=0) == '63000000'
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=problematic_cpv, rank=0) == '60112000'
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=fake_cpv, rank=0) is None
+
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=real_cpv, rank=1) == '63700000'
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=problematic_cpv, rank=1) is None
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=fake_cpv, rank=1) is None
+
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=real_cpv, rank=2) == '63710000'
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=problematic_cpv, rank=2) is None
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=fake_cpv, rank=2) is None
+
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=real_cpv, rank=3) == '63712000'
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=problematic_cpv, rank=3) is None
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=fake_cpv, rank=3) is None
+
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=real_cpv, rank=4) == '63712300'
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=problematic_cpv, rank=4) is None
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=fake_cpv, rank=4) is None
+
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=real_cpv, rank=5) == real_cpv
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=problematic_cpv, rank=5) is None
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=fake_cpv, rank=5) is None
+
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=real_cpv, rank=6) is None
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=problematic_cpv, rank=6) is None
+    assert cellar_cpv_processor.get_cpv_parent_code_by_rank(cpv_code=fake_cpv, rank=6) is None
+
+    assert cellar_cpv_processor.get_cpv_label_by_code(cpv_code=real_cpv) == 'Tunnel toll services'
+    assert cellar_cpv_processor.get_cpv_label_by_code(cpv_code=problematic_cpv) == 'Public road transport services'
+    assert cellar_cpv_processor.get_cpv_label_by_code(cpv_code=fake_cpv) is None

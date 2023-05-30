@@ -1,11 +1,14 @@
 PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
 
 select distinct
 ?SubmissionStatisticalInformationId
 ?hasReceivedSMETenders
 ?hasReceivedTenders
-?hasHighestReceivedTenderValue
-?hasLowestReceivedTenderValue
+?HighestReceivedTenderValue
+(afn:localname(?HighestReceivedTenderValueCurrencyURI) as ?HighestReceivedTenderValueCurrency)
+?LowestReceivedTenderValue
+(afn:localname(?LowestReceivedTenderValueCurrencyURI) as ?LowestReceivedTenderValueCurrency)
 ?hasEUReceivedTenders
 ?hasReceivedNonEUTenders
 ?hasElectronicTenders
@@ -17,7 +20,6 @@ where {
     values ?NoticePublicationDate {
         $date_range
     }
-
 
     ?LotId a epo:Lot.
     ?LotAwardOutcomeId epo:describesLot ?LotId;
@@ -32,10 +34,17 @@ where {
         ?SubmissionStatisticalInformationId epo:hasReceivedTenders ?hasReceivedTenders .
     }
     optional {
-        ?SubmissionStatisticalInformationId epo:hasHighestReceivedTenderValue ?hasHighestReceivedTenderValue .
+        ?SubmissionStatisticalInformationId epo:hasHighestReceivedTenderValue ?HighestReceivedTenderMonetaryValue .
+        ?HighestReceivedTenderMonetaryValue a epo:MonetaryValue;
+                                            epo:hasAmountValue ?HighestReceivedTenderValue;
+                                            epo:hasCurrency ?HighestReceivedTenderValueCurrencyURI.
+
     }
     optional {
-        ?SubmissionStatisticalInformationId epo:hasLowestReceivedTenderValue ?hasLowestReceivedTenderValue .
+        ?SubmissionStatisticalInformationId epo:hasLowestReceivedTenderValue ?LowestReceivedTenderMonetaryValue .
+        ?LowestReceivedTenderMonetaryValue a epo:MonetaryValue;
+                                            epo:hasAmountValue ?LowestReceivedTenderValue;
+                                            epo:hasCurrency ?LowestReceivedTenderValueCurrencyURI.
     }
     optional {
         ?SubmissionStatisticalInformationId epo:hasEUReceivedTenders ?hasEUReceivedTenders .

@@ -1,0 +1,56 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
+
+select distinct
+?LotId
+?ProcedureId
+(afn:localname(?LotSpecificCPVURI) as ?LotSpecificCPV)
+?LotTitle
+?isUsingEUFunds
+?LotEstimatedValue
+(afn:localname(?LotEstimatedValueCurrencyURI) as ?LotEstimatedValueCurrency)
+?LotRestatedEstimatedValue
+(afn:localname(?LotRestatedEstimatedValueCurrencyURI) as ?LotRestatedEstimatedValueCurrency)
+?PlaceOfPerformance
+?LotAwardOutcomeId
+where {
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?NoticePublicationDate;
+              epo:refersToLot ?LotId.
+
+    values ?NoticePublicationDate {
+        $date_range
+    }
+
+    ?LotId a epo:Lot.
+    ?ProcedureId epo:hasProcurementScopeDividedIntoLot ?LotId.
+
+    optional{
+        ?LotId epo:hasPurpose / epo:hasAdditionalClassification ?LotSpecificCPVURI.
+    }
+    optional{
+        ?LotId  epo:hasTitle ?LotTitle.
+    }
+    optional{
+        ?LotId epo:isUsingEUFunds ?isUsingEUFunds.
+    }
+    optional{
+        ?LotId epo:hasRestatedEstimatedValue ?RestatedMonetaryValue.
+        ?RestatedMonetaryValue a epo:MonetaryValue;
+        				epo:hasAmountValue ?LotRestatedEstimatedValue;
+            			epo:hasCurrency ?LotRestatedEstimatedValueCurrencyURI.
+    }
+    optional{
+        ?LotId epo:hasEstimatedValue ?MonetaryValue.
+        ?MonetaryValue a epo:MonetaryValue;
+                               epo:hasAmountValue ?LotEstimatedValue;
+                               epo:hasCurrency ?LotEstimatedValueCurrencyURI.
+    }
+    optional {
+        ?LotId epo:foreseesContractSpecificTerm / epo:definesSpecificPlaceOfPerformance ?PlaceOfPerformance.
+    }
+    optional{
+        ?LotAwardOutcomeId epo:describesLot ?LotId;
+                           a epo:LotAwardOutcome.
+    }
+}

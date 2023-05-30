@@ -4,19 +4,18 @@ import re
 from datetime import datetime, date, timedelta
 from pathlib import Path
 from string import Template
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 import pandas as pd
 import sqlalchemy
 from pandas import DataFrame
 
 from ted_data_eu import config
-from ted_data_eu.adapters.cpv_processor import CPVProcessor, CPV_MAX_RANK, CPV_MIN_RANK
+from ted_data_eu.adapters.cpv_processor import CellarCPVProcessor
 from ted_data_eu.adapters.etl_pipeline_abc import ETLPipelineABC
-from ted_data_eu.adapters.nuts_processor import NUTSProcessor, NUTS_MIN_RANK, NUTS_MAX_RANK
-from ted_data_eu.adapters.triple_store import GraphDBAdapter
-from ted_data_eu.services.currency_convertor import convert_currency, \
-    get_last_available_date_for_currency
+from ted_data_eu.adapters.nuts_processor import CellarNUTSProcessor
+from ted_data_eu.adapters.triple_store import GraphDBAdapter, TDATripleStoreEndpoint
+from ted_data_eu.services.currency_convertor import convert_currency
 from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import START_DATE_METADATA_FIELD, \
     generate_sparql_filter_by_date_range, END_DATE_METADATA_FIELD
 
@@ -25,6 +24,15 @@ TRIPLE_STORE_ENDPOINT = "notices"
 POSTGRES_URL = f"postgresql://{config.POSTGRES_TDA_DB_USER}:{config.POSTGRES_TDA_DB_PASSWORD}@{config.POSTGRES_HOST}:{config.POSTGRES_TDA_DB_PORT}/{config.POSTGRES_TDA_DB_NAME}"
 EURO_CURRENCY_ID = "EUR"
 SEND_CHUNK_SIZE = 1000
+DATA_FIELD = "data"
+SQLALCHEMY_ISOLATION_LEVEL = "AUTOCOMMIT"
+CELLAR_ENDPOINT_URL = "https://publications.europa.eu/webapi/rdf/sparql"
+SKIP_NEXT_STEP_FIELD = "skip_step"
+EURO_ENDING = "EUR"
+MIN_CPV_LVL = 0
+MAX_CPV_LVL = MIN_CPV_LVL + 5
+MIN_NUTS_LVL = 0
+MAX_NUTS_LVL = MIN_NUTS_LVL + 3
 
 AMOUNT_VALUE_EUR_COLUMN = "AmountValueEUR"
 AMOUNT_VALUE_COLUMN = "AmountValue"
@@ -42,6 +50,29 @@ NUTS_LABEL_COLUMN = "NUTSLabel"
 NUTS_LEVEL_COLUMN = "NUTSLevel"
 NUTS_ID_COLUMN = "NUTSId"
 
+HIGHEST_RECEIVED_TENDER_VALUE_COLUMN = 'HighestReceivedTenderValue'
+HIGHEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN = 'HighestReceivedTenderValueCurrency'
+LOWEST_RECEIVED_TENDER_VALUE_COLUMN = 'LowestReceivedTenderValue'
+LOWEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN = 'LowestReceivedTenderValueCurrency'
+
+LOT_ESTIMATED_VALUE_COLUMN = "LotEstimatedValue"
+LOT_ESTIMATED_VALUE_CURRENCY_COLUMN = "LotEstimatedValueCurrency"
+LOT_RESTATED_ESTIMATED_VALUE_COLUMN = "LotRestatedEstimatedValue"
+LOT_RESTATED_ESTIMATED_VALUE_CURRENCY_COLUMN = "LotRestatedEstimatedValueCurrency"
+TOTAL_AWARDED_VALUE_COLUMN = "TotalAwardedValue"
+TOTAL_AWARDED_VALUE_CURRENCY_COLUMN = "TotalAwardedValueCurrency"
+LOT_AWARDED_VALUE_COLUMN = "LotAwardedValue"
+LOT_AWARDED_VALUE_CURRENCY_COLUMN = "LotAwardedValueCurrency"
+LOT_BARGAIN_PRICE_COLUMN = "LotBargainPrice"
+LOT_BARGAIN_PRICE_CURRENCY_COLUMN = "LotBargainPriceCurrency"
+PROCEDURE_ESTIMATED_VALUE_COLUMN = "ProcedureEstimatedValue"
+PROCEDURE_ESTIMATED_VALUE_CURRENCY_COLUMN = "ProcedureEstimatedValueCurrency"
+
+NUTS_LEVEL_TEMPLATE = "NUTS{nuts_lvl}"
+NUTS_LABEL_TEMPLATE = "NUTS{nuts_lvl}Label"
+CPV_LEVEL_TEMPLATE = "CPV{cpv_lvl}"
+CPV_LABEL_TEMPLATE = "CPV{cpv_lvl}Label"
+
 DROP_DUPLICATES_QUERY = """
 DELETE FROM "{table_name}" a USING (
     SELECT MIN(ctid) as ctid, "{primary_key_column_name}"
@@ -52,80 +83,205 @@ WHERE a."{primary_key_column_name}" = b."{primary_key_column_name}"
 AND a.ctid <> b.ctid
 """
 
+ADD_PRIMARY_KEY_IF_NOT_EXISTS_QUERY = """DO $$ BEGIN IF NOT exists 
+(select constraint_name from information_schema.table_constraints where 
+table_name='{table_name}' and constraint_type = 'PRIMARY KEY') 
+then ALTER TABLE "{table_name}" ADD PRIMARY KEY ("{primary_key_column_name}"); end if; END $$;
+"""
 
+ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY = """DO $$ BEGIN IF NOT exists
+(select constraint_name from information_schema.table_constraints where
+table_name='{table_name}' and constraint_type = 'FOREIGN KEY')
+then ALTER TABLE "{table_name}" ADD FOREIGN KEY ("{foreign_key_column_name}") REFERENCES "{foreign_table_name}" ("{foreign_key_column_name}");
+end if; END $$;
+"""
 
-def transform_monetary_value_table(data_csv: io.StringIO) -> DataFrame:
-    """
-    Transforms monetary value table by converting all amounts to EUR and adding conversion date
-    """
-    data_table = pd.read_csv(data_csv, dtype=object)
-
-    data_table[AMOUNT_VALUE_EUR_COLUMN] = data_table.apply(
-        lambda x: convert_currency(amount=x[AMOUNT_VALUE_COLUMN], currency=x[CURRENCY_ID_COLUMN],
-                                   new_currency=EURO_CURRENCY_ID),
-        axis=1)
-    data_table[CONVERSION_TO_EUR_DATE_COLUMN] = data_table.apply(
-        lambda x: get_last_available_date_for_currency(currency=x[CURRENCY_ID_COLUMN]), axis=1)
-
-    return data_table
+TABLE_EXISTS_QUERY = """
+    SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE  table_schema = 'public'
+        AND    table_name   = '{table_name}'
+    );
+"""
 
 
 def transform_notice_table(data_csv: io.StringIO) -> DataFrame:
     """
-    Transforms notice table by adding link to notice
+    Transforms notice table by adding link to notice and converting currency to EUR
     """
     data_table = pd.read_csv(data_csv, dtype=object)
     data_table[NOTICE_LINK_COLUMN] = data_table.apply(
         lambda x: generate_link_to_notice(x[NOTICE_ID_COLUMN]), axis=1)
 
+    # Convert currency to EUR
+    data_table[TOTAL_AWARDED_VALUE_COLUMN] = data_table.apply(
+        lambda x: convert_currency(amount=x[TOTAL_AWARDED_VALUE_COLUMN],
+                                   currency=x[TOTAL_AWARDED_VALUE_CURRENCY_COLUMN],
+                                   new_currency=EURO_CURRENCY_ID),
+        axis=1)
+    # Rename column to indicate that it is in EUR
+    data_table.rename(columns={TOTAL_AWARDED_VALUE_COLUMN: f"{TOTAL_AWARDED_VALUE_COLUMN}{EURO_ENDING}"}, inplace=True)
+    # Remove currency column
+    data_table.drop(columns=[TOTAL_AWARDED_VALUE_CURRENCY_COLUMN], inplace=True)
+    data_table.drop_duplicates(inplace=True)
     return data_table
 
 
-def transform_purpose_table(data_csv: io.StringIO) -> DataFrame:
+def transform_statistical_information_table(data_csv: io.StringIO) -> DataFrame:
     """
-    Transforms purpose table by adding CPV codes and labels on all levels
+    Transforms statistical information table by adding monetary values in EUR
     """
-    cpv_processor = CPVProcessor()
-    data_table = pd.read_csv(data_csv, dtype={ORIGINAL_CPV_COLUMN: str})
-    data_table[ORIGINAL_CPV_COLUMN] = data_table[ORIGINAL_CPV_COLUMN].astype(str)
-    data_table[ORIGINAL_CPV_LABEL_COLUMN] = data_table.apply(
-        lambda x: cpv_processor.get_cpv_label_by_code(x[ORIGINAL_CPV_COLUMN]), axis=1)
+    data_table = pd.read_csv(data_csv)
+    # convert monetary value to EUR
+    data_table[HIGHEST_RECEIVED_TENDER_VALUE_COLUMN] = data_table.apply(
+        lambda x: convert_currency(amount=x[HIGHEST_RECEIVED_TENDER_VALUE_COLUMN],
+                                   currency=x[HIGHEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN],
+                                   new_currency=EURO_CURRENCY_ID),
+        axis=1)
+    data_table[LOWEST_RECEIVED_TENDER_VALUE_COLUMN] = data_table.apply(
+        lambda x: convert_currency(amount=x[LOWEST_RECEIVED_TENDER_VALUE_COLUMN],
+                                   currency=x[LOWEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN],
+                                   new_currency=EURO_CURRENCY_ID),
+        axis=1)
+    # rename columns to include currency name EUR
+    data_table.rename(
+        columns={HIGHEST_RECEIVED_TENDER_VALUE_COLUMN: f"{HIGHEST_RECEIVED_TENDER_VALUE_COLUMN}{EURO_ENDING}",
+                 LOWEST_RECEIVED_TENDER_VALUE_COLUMN: f"{LOWEST_RECEIVED_TENDER_VALUE_COLUMN}{EURO_ENDING}"},
+        inplace=True)
+    # drop currency columns
+    data_table.drop(
+        columns=[HIGHEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN, LOWEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN],
+        inplace=True)
+    data_table.drop_duplicates(inplace=True)
+    return data_table
+
+
+def transform_lot_table(data_csv: io.StringIO) -> DataFrame:
+    """
+    Transforms lot table by adding monetary values in EUR
+    """
+    data_table = pd.read_csv(data_csv)
+    # convert monetary value to EUR
+    data_table[LOT_ESTIMATED_VALUE_COLUMN] = data_table.apply(
+        lambda x: convert_currency(amount=x[LOT_ESTIMATED_VALUE_COLUMN],
+                                   currency=x[LOT_ESTIMATED_VALUE_CURRENCY_COLUMN],
+                                   new_currency=EURO_CURRENCY_ID),
+        axis=1)
+    data_table[LOT_RESTATED_ESTIMATED_VALUE_COLUMN] = data_table.apply(
+        lambda x: convert_currency(amount=x[LOT_RESTATED_ESTIMATED_VALUE_COLUMN],
+                                   currency=x[LOT_RESTATED_ESTIMATED_VALUE_CURRENCY_COLUMN],
+                                   new_currency=EURO_CURRENCY_ID),
+        axis=1)
+    # rename columns to include currency name EUR
+    data_table.rename(columns={LOT_ESTIMATED_VALUE_COLUMN: f"{LOT_ESTIMATED_VALUE_COLUMN}{EURO_ENDING}",
+                               LOT_RESTATED_ESTIMATED_VALUE_COLUMN: f"{LOT_RESTATED_ESTIMATED_VALUE_COLUMN}{EURO_ENDING}"},
+                      inplace=True)
+    # drop currency columns
+    data_table.drop(
+        columns=[LOT_ESTIMATED_VALUE_CURRENCY_COLUMN, LOT_RESTATED_ESTIMATED_VALUE_CURRENCY_COLUMN],
+        inplace=True)
+    data_table.drop_duplicates(inplace=True)
+    return data_table
+
+
+def transform_lot_award_outcome_table(data_csv: io.StringIO) -> DataFrame:
+    """
+    Transforms LotAwardOutcome table by adding monetary values in EUR
+    """
+    data_table = pd.read_csv(data_csv)
+    # convert monetary value to EUR
+    data_table[LOT_AWARDED_VALUE_COLUMN] = data_table.apply(
+        lambda x: convert_currency(amount=x[LOT_AWARDED_VALUE_COLUMN],
+                                   currency=x[LOT_AWARDED_VALUE_CURRENCY_COLUMN],
+                                   new_currency=EURO_CURRENCY_ID),
+        axis=1)
+    data_table[LOT_BARGAIN_PRICE_COLUMN] = data_table.apply(
+        lambda x: convert_currency(amount=x[LOT_BARGAIN_PRICE_COLUMN],
+                                   currency=x[LOT_BARGAIN_PRICE_CURRENCY_COLUMN],
+                                   new_currency=EURO_CURRENCY_ID),
+        axis=1)
+    # rename columns to include currency name EUR
+    data_table.rename(columns={LOT_AWARDED_VALUE_COLUMN: f"{LOT_AWARDED_VALUE_COLUMN}{EURO_ENDING}",
+                               LOT_BARGAIN_PRICE_COLUMN: f"{LOT_BARGAIN_PRICE_COLUMN}{EURO_ENDING}"},
+                      inplace=True)
+    # drop currency columns
+    data_table.drop(
+        columns=[LOT_AWARDED_VALUE_CURRENCY_COLUMN, LOT_BARGAIN_PRICE_CURRENCY_COLUMN],
+        inplace=True)
+    data_table.drop_duplicates(inplace=True)
+    return data_table
+
+
+def transform_procedure_table(data_csv: io.StringIO) -> DataFrame:
+    """
+    Transforms Procedure table by adding monetary values in EUR
+    """
+    data_table = pd.read_csv(data_csv)
+    # convert monetary value to EUR
+    data_table[PROCEDURE_ESTIMATED_VALUE_COLUMN] = data_table.apply(
+        lambda x: convert_currency(amount=x[PROCEDURE_ESTIMATED_VALUE_COLUMN],
+                                   currency=x[PROCEDURE_ESTIMATED_VALUE_CURRENCY_COLUMN],
+                                   new_currency=EURO_CURRENCY_ID),
+        axis=1)
+    # rename columns to include currency name EUR
+    data_table.rename(columns={PROCEDURE_ESTIMATED_VALUE_COLUMN: f"{PROCEDURE_ESTIMATED_VALUE_COLUMN}{EURO_ENDING}"},
+                      inplace=True)
+    # drop currency columns
+    data_table.drop(
+        columns=[PROCEDURE_ESTIMATED_VALUE_CURRENCY_COLUMN],
+        inplace=True)
+    data_table.drop_duplicates(inplace=True)
+    return data_table
+
+
+def transform_cpv_table(data_csv: io.StringIO) -> DataFrame:
+    """
+    Transforms CPV table by adding all nuts levels with their labels
+    """
+
+    cpv_processor = CellarCPVProcessor(data_csv)
+
+    data_table: DataFrame = cpv_processor.dataframe.copy(deep=True)
+    data_table.rename(columns={cpv_processor.CPV_CODE_COLUMN: ORIGINAL_CPV_COLUMN,
+                               cpv_processor.CPV_LABEL_COLUMN: ORIGINAL_CPV_LABEL_COLUMN}, inplace=True)
+    data_table.drop(columns=[cpv_processor.CPV_PARENT_COLUMN], inplace=True)
+
     data_table[ORIGINAL_CPV_LEVEL_COLUMN] = data_table.apply(
-        lambda x: cpv_processor.get_cpv_rank(x[ORIGINAL_CPV_COLUMN]), axis=1)
-
-    for cpv_lvl in range(CPV_MIN_RANK, CPV_MAX_RANK + 1):
-        data_table[f"CPV{cpv_lvl}"] = data_table.apply(
-            lambda x: cpv_processor.get_cpv_parent_code_by_rank(x[ORIGINAL_CPV_COLUMN], cpv_lvl), axis=1)
-        data_table[f"CPV{cpv_lvl}Label"] = data_table.apply(
-            lambda x: cpv_processor.get_cpv_label_by_code(x[f"CPV{cpv_lvl}"]), axis=1)
-
+        lambda row: cpv_processor.get_cpv_rank(row[ORIGINAL_CPV_COLUMN]), axis=1)
+    for cpv_lvl in range(MIN_CPV_LVL, MAX_CPV_LVL + 1):
+        data_table[CPV_LEVEL_TEMPLATE.format(cpv_lvl=cpv_lvl)] = data_table.apply(
+            lambda row: cpv_processor.get_cpv_parent_code_by_rank(row[ORIGINAL_CPV_COLUMN], cpv_lvl), axis=1)
+        data_table[CPV_LABEL_TEMPLATE.format(cpv_lvl=cpv_lvl)] = data_table.apply(
+            lambda x: cpv_processor.get_cpv_label_by_code(x[CPV_LEVEL_TEMPLATE.format(cpv_lvl=cpv_lvl)]), axis=1)
+    data_table.drop_duplicates(inplace=True)
     return data_table
 
 
 def transform_nuts_table(data_csv: io.StringIO) -> DataFrame:
     """
-    Transforms nuts table by adding NUTS codes and labels on all levels
+    Transforms NUTS table by adding all nuts levels with their labels
     """
-    data_table = pd.read_csv(data_csv)
-    nuts_processor = NUTSProcessor()
-    data_table[NUTS_LABEL_COLUMN] = data_table.apply(
-        lambda x: nuts_processor.get_nuts_label_by_code(x[NUTS_ID_COLUMN]), axis=1)
-    data_table[NUTS_LEVEL_COLUMN] = data_table.apply(
-        lambda x: nuts_processor.get_nuts_level_by_code(x[NUTS_ID_COLUMN]), axis=1)
-
-    for cpv_lvl in range(NUTS_MIN_RANK, NUTS_MAX_RANK + 1):
-        data_table[f"NUTS{cpv_lvl}"] = data_table.apply(
-            lambda x: nuts_processor.get_nuts_code_by_level(x[NUTS_ID_COLUMN], cpv_lvl), axis=1)
-        data_table[f"NUTS{cpv_lvl}Label"] = data_table.apply(
-            lambda x: nuts_processor.get_nuts_label_by_code(x[f"NUTS{cpv_lvl}"]), axis=1)
-
+    nuts_processor = CellarNUTSProcessor(data_csv)
+    data_table: DataFrame = nuts_processor.dataframe.copy(deep=True)
+    data_table.rename(columns={nuts_processor.NUTS_CODE_COLUMN_NAME: NUTS_ID_COLUMN,
+                               nuts_processor.NUTS_LABEL_COLUMN_NAME: NUTS_LABEL_COLUMN}, inplace=True)
+    data_table.drop(columns=[nuts_processor.NUTS_PARENT_COLUMN_NAME], inplace=True)
+    for nuts_lvl in range(MIN_NUTS_LVL, MAX_NUTS_LVL + 1):
+        data_table[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)] = data_table.apply(
+            lambda x: nuts_processor.get_nuts_parent_code_by_level(x[NUTS_ID_COLUMN], nuts_lvl), axis=1)
+        data_table[NUTS_LABEL_TEMPLATE.format(nuts_lvl=nuts_lvl)] = data_table.apply(
+            lambda x: nuts_processor.get_nuts_label_by_code(x[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]), axis=1)
+    data_table.drop_duplicates(inplace=True)
     return data_table
 
 
 TRANSFORMED_TABLES = {
-    "MonetaryValue": transform_monetary_value_table,
     "Notice": transform_notice_table,
-    "Purpose": transform_purpose_table,
+    "SubmissionStatisticalInformation": transform_statistical_information_table,
+    "Lot": transform_lot_table,
+    "LotAwardOutcome": transform_lot_award_outcome_table,
+    "Procedure": transform_procedure_table,
+    "Purpose": transform_cpv_table,
     "NUTS": transform_nuts_table
 }
 
@@ -161,7 +317,8 @@ class PostgresETLPipeline(ETLPipelineABC):
         ETL Class that gets data from TDA endpoint, transforms and inserts result to document storage
     """
 
-    def __init__(self, table_name: str, sparql_query_path: Path, primary_key_column_name: str, postgres_url: str = None):
+    def __init__(self, table_name: str, sparql_query_path: Path, primary_key_column_name: str,
+                 postgres_url: str = None, foreign_key_column_names: List[str] = None):
         """
             Constructor
         """
@@ -169,8 +326,10 @@ class PostgresETLPipeline(ETLPipelineABC):
         self.table_name = table_name
         self.sparql_query_path = sparql_query_path
         self.postgres_url = postgres_url if postgres_url else POSTGRES_URL
-        self.sql_engine = sqlalchemy.create_engine(self.postgres_url, echo=False)
+        self.sql_engine = sqlalchemy.create_engine(self.postgres_url, echo=False,
+                                                   isolation_level=SQLALCHEMY_ISOLATION_LEVEL)
         self.primary_key_column_name = primary_key_column_name
+        self.foreign_key_column_names = foreign_key_column_names if foreign_key_column_names else []
 
     def set_metadata(self, etl_metadata: dict):
         """
@@ -209,18 +368,22 @@ class PostgresETLPipeline(ETLPipelineABC):
             logging.info("Querying data from yesterday")
             date_range = (date.today() - timedelta(days=1)).strftime("\"%Y%m%d\"")
 
-
         sparql_query_template = Template(self.sparql_query_path.read_text(encoding="utf-8"))
         sparql_query = sparql_query_template.substitute(date_range=date_range)
-        triple_store_endpoint = GraphDBAdapter().get_sparql_tda_triple_store_endpoint(repository_name=TRIPLE_STORE_ENDPOINT)
+        triple_store_endpoint = GraphDBAdapter().get_sparql_tda_triple_store_endpoint(
+            repository_name=TRIPLE_STORE_ENDPOINT)
+
         result_table = triple_store_endpoint.with_query(sparql_query).fetch_csv()
-        return {"data": result_table}
+        return {DATA_FIELD: result_table}
 
     def transform(self, extracted_data: Dict) -> Dict:
         """
             Transforms data from triple store
         """
-        data_json: io.StringIO = extracted_data["data"]
+        skip_transform = extracted_data.get(SKIP_NEXT_STEP_FIELD, False)
+        if skip_transform:
+            return extracted_data
+        data_json: io.StringIO = extracted_data.get(DATA_FIELD, None)
         if not data_json:
             raise PostgresETLException("No data was been fetched from triple store!")
 
@@ -228,17 +391,45 @@ class PostgresETLPipeline(ETLPipelineABC):
             data_table: DataFrame = TRANSFORMED_TABLES[self.table_name](data_json)
         else:
             data_table: DataFrame = pd.read_csv(data_json)
-
-        return {"data": data_table}
+        extracted_data[DATA_FIELD] = data_table
+        return extracted_data
 
     def load(self, transformed_data: Dict):
         """
             Loads data to postgres
         """
-        data_table: DataFrame = transformed_data["data"]
+        skip_load = transformed_data.get(SKIP_NEXT_STEP_FIELD, False)
+        if skip_load:
+            return transformed_data
+        data_table: DataFrame = transformed_data[DATA_FIELD]
 
         with self.sql_engine.connect() as sql_connection:
-            data_table.to_sql(self.table_name, con=sql_connection, if_exists='append', chunksize=SEND_CHUNK_SIZE, index=False)
-            sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name, primary_key_column_name=self.primary_key_column_name))
+            data_table.to_sql(self.table_name, con=sql_connection, if_exists='append', chunksize=SEND_CHUNK_SIZE,
+                              index=False)
+            sql_connection.execute(ADD_PRIMARY_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
+                                                                              primary_key_column_name=self.primary_key_column_name))
+            for foreign_key_column_name in self.foreign_key_column_names:
+                sql_connection.execute(ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
+                                                                                  foreign_key_column_name=foreign_key_column_name))
 
-        return {"data": transformed_data["data"]}
+            sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name,
+                                                                primary_key_column_name=self.primary_key_column_name))
+
+        return {DATA_FIELD: transformed_data[DATA_FIELD]}
+
+
+class CellarETLPipeline(PostgresETLPipeline):
+    def extract(self) -> Dict:
+        """
+            Extracts data from cellar
+        """
+        with self.sql_engine.connect() as sql_connection:
+            table_exists = sql_connection.execute(TABLE_EXISTS_QUERY.format(table_name=self.table_name)).fetchone()[0]
+            if table_exists:
+                return {DATA_FIELD: None, SKIP_NEXT_STEP_FIELD: True}
+
+        cellar_endpoint = TDATripleStoreEndpoint(CELLAR_ENDPOINT_URL)
+        data_table = cellar_endpoint.with_query(
+            self.sparql_query_path.read_text(encoding='utf-8')).fetch_csv()
+
+        return {DATA_FIELD: data_table, SKIP_NEXT_STEP_FIELD: False}

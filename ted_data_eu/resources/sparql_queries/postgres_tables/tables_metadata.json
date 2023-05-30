@@ -1,0 +1,66 @@
+{
+  "Lot": {
+    "PK": "LotId",
+    "FK": [
+      "ProcedureId",
+      "LotSpecificCPV",
+      "PlaceOfPerformance",
+      "LotAwardOutcomeId"
+    ]
+  },
+  "LotAwardOutcome": {
+    "PK": "LotAwardOutcomeId",
+    "FK": [
+      "WinnerId",
+      "SubmissionStatisticalInformationId"
+    ]
+  },
+  "Procedure": {
+    "PK": "ProcedureId",
+    "FK": [
+      "BuyerId"
+    ]
+  },
+  "Notice": {
+    "PK": "NoticeId",
+    "FK": [
+      "ProcedureId"
+    ]
+  },
+  "SubmissionStatisticalInformation": {
+    "PK": "SubmissionStatisticalInformationId",
+    "FK": []
+  },
+  "Buyer": {
+    "PK": "BuyerId",
+    "FK": [
+      "OrganizationId"
+    ]
+  },
+  "Winner": {
+    "PK": "WinnerId",
+    "FK": [
+      "OrganizationId"
+    ]
+  },
+  "Organization": {
+    "PK": "OrganizationId",
+    "FK": [
+      "AddressId"
+    ]
+  },
+  "Address": {
+    "PK": "AddressId",
+    "FK": [
+      "NUSTId"
+    ]
+  },
+  "NUTS": {
+    "PK": "NUTSId",
+    "FK": []
+  },
+  "Purpose": {
+    "PK": "OriginalCPV",
+    "FK": []
+  }
+}

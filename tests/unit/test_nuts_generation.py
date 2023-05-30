@@ -31,3 +31,26 @@ def test_notice_link_generation():
     assert generate_link_to_notice("epdd_2015-S-25405_Notice") is None
     assert generate_link_to_notice(
         "epd:id_2022-S-250-453405_Notice") == "https://ted.europa.eu/udl?uri=TED:NOTICE:453405-2022:TEXT:EN:HTML"
+
+
+def test_cellar_nuts_processor(real_nuts, fake_nuts, cellar_nuts_processor):
+    assert cellar_nuts_processor.nuts_exists(nuts_code='FRK26') is True
+    assert cellar_nuts_processor.nuts_exists(nuts_code='FRK2') is True
+    assert cellar_nuts_processor.nuts_exists(nuts_code='FRK') is True
+    assert cellar_nuts_processor.nuts_exists(nuts_code='FR') is True
+    assert cellar_nuts_processor.nuts_exists(nuts_code='F') is False
+    assert cellar_nuts_processor.nuts_exists(nuts_code=None) is False
+
+    assert cellar_nuts_processor.get_nuts_label_by_code(nuts_code='FRK26') == 'Rhône'
+    assert cellar_nuts_processor.get_nuts_label_by_code(nuts_code='FRK2') == 'Rhône-Alpes'
+    assert cellar_nuts_processor.get_nuts_label_by_code(nuts_code='FRK') == 'Auvergne-Rhône-Alpes'
+    assert cellar_nuts_processor.get_nuts_label_by_code(nuts_code='FR') == 'France'
+    assert cellar_nuts_processor.get_nuts_label_by_code(nuts_code='F') is None
+    assert cellar_nuts_processor.get_nuts_label_by_code(nuts_code=None) is None
+
+    assert cellar_nuts_processor.get_nuts_level_by_code(nuts_code='FRK26') == 3
+    assert cellar_nuts_processor.get_nuts_level_by_code(nuts_code='FRK2') == 2
+    assert cellar_nuts_processor.get_nuts_level_by_code(nuts_code='FRK') == 1
+    assert cellar_nuts_processor.get_nuts_level_by_code(nuts_code='FR') == 0
+    assert cellar_nuts_processor.get_nuts_level_by_code(nuts_code='F') is None
+    assert cellar_nuts_processor.get_nuts_level_by_code(nuts_code=None) is None
