@@ -52,7 +52,7 @@
   "Address": {
     "PK": "AddressId",
     "FK": [
-      {"NUSTId": "NUTS"}
+      {"NUTSId": "NUTS"}
     ]
   },
   "NUTS": {

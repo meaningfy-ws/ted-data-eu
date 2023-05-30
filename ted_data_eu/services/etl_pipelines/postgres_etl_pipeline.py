@@ -410,9 +410,12 @@ class PostgresETLPipeline(ETLPipelineABC):
                                                                               primary_key_column_name=self.primary_key_column_name))
             for foreign_keys in self.foreign_key_column_names:
                 for foreign_key_column_name, foreign_key_table_name in foreign_keys.items():
-                    sql_connection.execute(ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
-                                                                                      foreign_key_column_name=foreign_key_column_name,
-                                                                                      foreign_key_table_name=foreign_key_table_name))
+                    fk_table_exists = sql_connection.execute(
+                        TABLE_EXISTS_QUERY.format(table_name=foreign_key_table_name)).fetchone()[0]
+                    if fk_table_exists:
+                        sql_connection.execute(ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
+                                                                                          foreign_key_column_name=foreign_key_column_name,
+                                                                                          foreign_key_table_name=foreign_key_table_name))
 
             sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name,
                                                                 primary_key_column_name=self.primary_key_column_name))
