@@ -47,4 +47,4 @@ def cellar_nuts_processor():
 
 @pytest.fixture
 def cellar_cpv_processor():
-    return CellarCPVProcessor(TDATripleStoreEndpoint(CELLAR_ENDPOINT_URL).with_query(config.CELLAR_TABLE_QUERY_PATHS['Purpose'].read_text(encoding='utf-8')).fetch_csv())
+    return CellarCPVProcessor(TDATripleStoreEndpoint(CELLAR_ENDPOINT_URL).with_query(config.CELLAR_TABLE_QUERY_PATHS['CPV'].read_text(encoding='utf-8')).fetch_csv())

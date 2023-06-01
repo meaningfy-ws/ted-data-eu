@@ -459,37 +459,3 @@ class CellarETLPipeline(PostgresETLPipeline):
 
         return {DATA_FIELD: data_table, SKIP_NEXT_STEP_FIELD: False}
 
-
-if __name__ == "__main__":
-    pd.options.display.float_format = "{:,.2f}".format
-
-    etl = PostgresETLPipeline(table_name="Organization",
-                              sparql_query_path=config.TRIPLE_STORE_TABLE_QUERY_PATHS["Organization"],
-                              primary_key_column_name="OrganizationId")
-    etl.set_metadata({"start_date": "20220907", "end_date": "20220907"})
-    df: dict = etl.extract()[DATA_FIELD]
-
-    df: DataFrame = etl.transform({DATA_FIELD: df})[DATA_FIELD]
-    # etl.load({DATA_FIELD: df})
-    print(df.info())
-    print(df.to_string())
-
-    # pd.options.display.float_format = "{:,.2f}".format
-    #
-    # etl = CellarETLPipeline(table_name="Purpose",
-    #                         sparql_query_path=config.CELLAR_TABLE_QUERY_PATHS["Purpose"],
-    #                         primary_key_column_name="OriginalCPV")
-    # etl.set_metadata({"start_date": "20220907", "end_date": "20220907"})
-    # info: dict = etl.extract()
-    #
-    # df: DataFrame = etl.transform(info)[DATA_FIELD]
-    # print(df.info())
-    # print(df.to_string())
-
-    # sql_engine = sqlalchemy.create_engine(POSTGRES_URL, echo=False, isolation_level="AUTOCOMMIT")
-    # with sql_engine.connect() as sql_connection:
-    #     q = ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name="Tender", foreign_key_column_name="PurposeId", foreign_table_name="Purpose")
-    #     print(q)
-    #     #sql_connection.execution_options(autocommit=True)
-    #     sql_connection.execute(q)
-    #     #sql_connection.connection.commit()
