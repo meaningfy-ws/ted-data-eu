@@ -3,16 +3,15 @@ PREFIX afn: <http://jena.apache.org/ARQ/function#>
 
 select distinct
 ?LotId
-(sample(?ProcedureId) as ?ProcedureId)
-(group_concat(afn:localname(?LotSpecificCPVURI); separator="|||") as ?LotSpecificCPV)
-(sample(?LotTitle) as ?LotTitle)
-(sample(?isUsingEUFunds) as ?isUsingEUFunds)
-(sample(?LotEstimatedValue) as ?LotEstimatedValue)
-(sample(afn:localname(?LotEstimatedValueCurrencyURI)) as ?LotEstimatedValueCurrency)
-(sample(?LotRestatedEstimatedValue) as ?LotRestatedEstimatedValue)
-(sample(afn:localname(?LotRestatedEstimatedValueCurrencyURI)) as ?LotRestatedEstimatedValueCurrency)
-(sample(?PlaceOfPerformance) as ?PlaceOfPerformance)
-(sample(?LotAwardOutcomeId) as ?LotAwardOutcomeId)
+?ProcedureId
+?LotTitle
+?isUsingEUFunds
+?LotEstimatedValue
+(afn:localname(?LotEstimatedValueCurrencyURI) as ?LotEstimatedValueCurrency)
+?LotRestatedEstimatedValue
+(afn:localname(?LotRestatedEstimatedValueCurrencyURI) as ?LotRestatedEstimatedValueCurrency)
+?PlaceOfPerformance
+?LotAwardOutcomeId
 where {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
@@ -25,9 +24,6 @@ where {
     ?LotId a epo:Lot.
     ?ProcedureId epo:hasProcurementScopeDividedIntoLot ?LotId.
 
-    optional{
-        ?LotId epo:hasPurpose / epo:hasAdditionalClassification ?LotSpecificCPVURI.
-    }
     optional{
         {
             ?LotId epo:hasTitle ?LotTitleEn.
@@ -64,4 +60,4 @@ where {
         ?LotAwardOutcomeId epo:describesLot ?LotId;
                            a epo:LotAwardOutcome.
     }
-} group by ?LotId
+}

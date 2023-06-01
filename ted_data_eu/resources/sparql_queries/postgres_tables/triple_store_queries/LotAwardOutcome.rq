@@ -3,14 +3,13 @@ PREFIX afn: <http://jena.apache.org/ARQ/function#>
 
 select distinct
 ?LotAwardOutcomeId
-(sample(afn:localname(?hasAwardStatus)) as ?AwardStatus)
-(sample(?LotAwardedValue) as ?LotAwardedValue)
-(sample(afn:localname(?LotAwardedValueCurrencyURI)) as ?LotAwardedValueCurrency)
-(sample(?LotBargainPrice) as ?LotBargainPrice)
-(sample(afn:localname(?LotBargainPriceCurrencyURI)) as ?LotBargainPriceCurrency)
-(sample(?AwardDecisionDate) as ?AwardDecisionDate)
-(group_concat(?WinnerId; separator="|||") as ?WinnerId)
-(sample(?SubmissionStatisticalInformationId) as ?SubmissionStatisticalInformationId)
+(afn:localname(?hasAwardStatus) as ?AwardStatus)
+?LotAwardedValue
+(afn:localname(?LotAwardedValueCurrencyURI) as ?LotAwardedValueCurrency)
+?LotBargainPrice
+(afn:localname(?LotBargainPriceCurrencyURI) as ?LotBargainPriceCurrency)
+?AwardDecisionDate
+?SubmissionStatisticalInformationId
 where {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
@@ -43,10 +42,7 @@ where {
         ?LotAwardOutcomeId epo:hasAwardDecisionDate ?AwardDecisionDate.
     }
     optional {
-        ?LotAwardOutcomeId epo:comprisesTenderAwardOutcome / epo:indicatesAwardOfLotToWinner ?WinnerId.
-    }
-    optional {
         ?SubmissionStatisticalInformationId epo:summarisesInformationForLotAwardOutcome ?LotAwardOutcomeId;
                                             a epo:SubmissionStatisticalInformation.
     }
-} group by ?LotAwardOutcomeId
+}
