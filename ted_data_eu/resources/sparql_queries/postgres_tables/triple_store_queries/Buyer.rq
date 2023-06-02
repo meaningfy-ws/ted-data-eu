@@ -1,11 +1,14 @@
 PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
 
 select distinct
-?BuyerId
+(concat(str(?ProcedureId), str(?OrganizationId)) as ?ProcedureOrganizationId)
+?ProcedureId
 ?OrganizationId
 where {
     ?NoticeId a epo:ResultNotice;
                    epo:hasPublicationDate ?NoticePublicationDate;
+                   epo:refersToProcedure ?ProcedureId;
 				   epo:announcesRole ?BuyerId.
 
     values ?NoticePublicationDate {

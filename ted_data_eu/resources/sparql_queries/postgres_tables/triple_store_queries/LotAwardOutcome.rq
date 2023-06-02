@@ -9,7 +9,6 @@ select distinct
 ?LotBargainPrice
 (afn:localname(?LotBargainPriceCurrencyURI) as ?LotBargainPriceCurrency)
 ?AwardDecisionDate
-?WinnerId
 ?SubmissionStatisticalInformationId
 where {
     ?NoticeId a epo:ResultNotice;
@@ -41,9 +40,6 @@ where {
     }
     optional {
         ?LotAwardOutcomeId epo:hasAwardDecisionDate ?AwardDecisionDate.
-    }
-    optional {
-        ?LotAwardOutcomeId epo:comprisesTenderAwardOutcome / epo:indicatesAwardOfLotToWinner ?WinnerId.
     }
     optional {
         ?SubmissionStatisticalInformationId epo:summarisesInformationForLotAwardOutcome ?LotAwardOutcomeId;

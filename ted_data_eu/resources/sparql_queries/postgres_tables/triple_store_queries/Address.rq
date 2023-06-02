@@ -3,6 +3,7 @@ PREFIX locn: <http://www.w3.org/ns/locn#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX afn: <http://jena.apache.org/ARQ/function#>
 PREFIX cccev: <http://data.europa.eu/m8g/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
 
 select distinct
 ?AddressId
@@ -13,6 +14,7 @@ select distinct
 ?Thoroughfare
 ?FullAddress
 where {
+
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
               epo:refersToProcedure ?ProcedureId.
@@ -21,26 +23,35 @@ where {
         $date_range
     }
 
-    ?NoticeId epo:announcesRole / epo:playedBy ?Organization.
-    ?Organization cccev:registeredAddress ?AddressId.
-    ?AddressId a locn:Address.
+    {
+        ?NoticeId epo:announcesRole / epo:playedBy ?Organization.
+        ?Organization cccev:registeredAddress ?AddressId.
+    	?AddressId a locn:Address.
+    } union
+    {
+        ?NoticeId epo:refersToLot ?LotId.
+        ?LotId a epo:Lot;
+               epo:foreseesContractSpecificTerm / epo:definesSpecificPlaceOfPerformance ?AddressId .
+        ?AddressId a dcterms:Location .
+    }
+
 
     optional {
-       ?AddressId epo:hasCountryCode ?hasCountryCode .
+        ?AddressId epo:hasCountryCode ?hasCountryCode .
     }
     optional {
-       ?AddressId epo:hasNutsCode ?hasNUTSId.
+        ?AddressId epo:hasNutsCode ?hasNUTSId.
     }
     optional {
-       ?AddressId locn:postCode ?PostCode.
+        ?AddressId locn:postCode ?PostCode.
     }
     optional {
-       ?AddressId locn:postName ?PostName.
+        ?AddressId locn:postName ?PostName.
     }
     optional {
-       ?AddressId locn:thoroughfare ?Thoroughfare.
+        ?AddressId locn:thoroughfare ?Thoroughfare.
     }
     optional {
-       ?AddressId locn:fullAddress ?FullAddress.
+        ?AddressId locn:fullAddress ?FullAddress.
     }
 }

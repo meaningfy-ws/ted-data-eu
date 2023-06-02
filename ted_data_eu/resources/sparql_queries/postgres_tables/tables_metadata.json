@@ -2,29 +2,35 @@
   "Lot": {
     "PK": "LotId",
     "FK": [
-      "ProcedureId",
-      "LotSpecificCPV",
-      "PlaceOfPerformance",
-      "LotAwardOutcomeId"
+      {
+        "ProcedureId": "Procedure"
+      },
+      {
+        "PlaceOfPerformance": "Address"
+      },
+      {
+        "LotAwardOutcomeId": "LotAwardOutcome"
+      }
     ]
   },
   "LotAwardOutcome": {
     "PK": "LotAwardOutcomeId",
     "FK": [
-      "WinnerId",
-      "SubmissionStatisticalInformationId"
+      {
+        "SubmissionStatisticalInformationId": "SubmissionStatisticalInformation"
+      }
     ]
   },
   "Procedure": {
     "PK": "ProcedureId",
-    "FK": [
-      "BuyerId"
-    ]
+    "FK": []
   },
   "Notice": {
     "PK": "NoticeId",
     "FK": [
-      "ProcedureId"
+      {
+        "ProcedureId": "Procedure"
+      }
     ]
   },
   "SubmissionStatisticalInformation": {
@@ -32,35 +38,71 @@
     "FK": []
   },
   "Buyer": {
-    "PK": "BuyerId",
+    "PK": "ProcedureOrganizationId",
     "FK": [
-      "OrganizationId"
+      {
+        "ProcedureId": "Procedure"
+      },
+      {
+        "OrganizationId": "Organization"
+      }
     ]
   },
   "Winner": {
-    "PK": "WinnerId",
+    "PK": "LotAwardOutcomeOrganizationId",
     "FK": [
-      "OrganizationId"
+      {
+        "LotAwardOutcomeId": "LotAwardOutcome"
+      },
+      {
+        "OrganizationId": "Organization"
+      }
     ]
   },
   "Organization": {
     "PK": "OrganizationId",
     "FK": [
-      "AddressId"
+      {
+        "AddressId": "Address"
+      }
     ]
   },
   "Address": {
     "PK": "AddressId",
     "FK": [
-      "NUSTId"
+      {
+        "NUTSId": "NUTS"
+      }
     ]
   },
   "NUTS": {
     "PK": "NUTSId",
     "FK": []
   },
-  "Purpose": {
+  "CPV": {
     "PK": "OriginalCPV",
     "FK": []
+  },
+  "ProcedureCPV": {
+    "PK": "ProcedureCPVId",
+    "FK": [
+      {
+        "ProcedureId": "Procedure"
+      },
+      {
+        "OriginalCPV": "CPV"
+      }
+    ]
+  },
+  "LotCPV": {
+    "PK": "LotCPVId",
+    "FK": [
+      {
+        "LotId": "Lot"
+      },
+      {
+        "OriginalCPV": "CPV"
+      }
+    ]
   }
 }

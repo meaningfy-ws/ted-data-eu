@@ -1,0 +1,21 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
+
+select distinct
+(concat(str(?ProcedureId), ?ProcedureCPV) as ?ProcedureCPVId)
+?ProcedureId
+?ProcedureCPV
+where {
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?NoticePublicationDate;
+              epo:refersToProcedure ?ProcedureId.
+
+    values ?NoticePublicationDate {
+        $date_range
+    }
+
+    ?ProcedureId a epo:Procedure;
+                 epo:hasPurpose / epo:hasMainClassification ?ProcedureCPVURI.
+
+    bind(afn:localname(?ProcedureCPVURI) as ?ProcedureCPV)
+}

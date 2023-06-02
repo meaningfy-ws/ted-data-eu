@@ -33,6 +33,7 @@ MIN_CPV_LVL = 0
 MAX_CPV_LVL = MIN_CPV_LVL + 5
 MIN_NUTS_LVL = 0
 MAX_NUTS_LVL = MIN_NUTS_LVL + 3
+LIST_SEPARATOR = "|||"
 
 AMOUNT_VALUE_EUR_COLUMN = "AmountValueEUR"
 AMOUNT_VALUE_COLUMN = "AmountValue"
@@ -67,6 +68,10 @@ LOT_BARGAIN_PRICE_COLUMN = "LotBargainPrice"
 LOT_BARGAIN_PRICE_CURRENCY_COLUMN = "LotBargainPriceCurrency"
 PROCEDURE_ESTIMATED_VALUE_COLUMN = "ProcedureEstimatedValue"
 PROCEDURE_ESTIMATED_VALUE_CURRENCY_COLUMN = "ProcedureEstimatedValueCurrency"
+LOT_SPECIFIC_CPV_COLUMN_NAME = "LotSpecificCPV"
+WINNER_ID_COLUMN_NAME = "WinnerId"
+PROCEDURE_CPV_COLUMN_NAME = "ProcedureCPV"
+BUYER_ID_COLUMN_NAME = "BuyerId"
 
 NUTS_LEVEL_TEMPLATE = "NUTS{nuts_lvl}"
 NUTS_LABEL_TEMPLATE = "NUTS{nuts_lvl}Label"
@@ -92,7 +97,7 @@ then ALTER TABLE "{table_name}" ADD PRIMARY KEY ("{primary_key_column_name}"); e
 ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY = """DO $$ BEGIN IF NOT exists
 (select constraint_name from information_schema.table_constraints where
 table_name='{table_name}' and constraint_type = 'FOREIGN KEY')
-then ALTER TABLE "{table_name}" ADD FOREIGN KEY ("{foreign_key_column_name}") REFERENCES "{foreign_table_name}" ("{foreign_key_column_name}");
+then ALTER TABLE "{table_name}" ADD FOREIGN KEY ("{foreign_key_column_name}") REFERENCES "{foreign_key_table_name}" ("{foreign_key_column_name}");
 end if; END $$;
 """
 
@@ -102,6 +107,14 @@ TABLE_EXISTS_QUERY = """
         WHERE  table_schema = 'public'
         AND    table_name   = '{table_name}'
     );
+"""
+
+INSERT_QUERY = """
+INSERT INTO "{table_name}" ({columns}) VALUES {values} ON CONFLICT DO NOTHING;
+"""
+
+DROP_TABLE_IF_EXISTS_QUERY = """
+DROP TABLE IF EXISTS "{table_name}";
 """
 
 
@@ -178,9 +191,12 @@ def transform_lot_table(data_csv: io.StringIO) -> DataFrame:
                       inplace=True)
     # drop currency columns
     data_table.drop(
-        columns=[LOT_ESTIMATED_VALUE_CURRENCY_COLUMN, LOT_RESTATED_ESTIMATED_VALUE_CURRENCY_COLUMN],
+        columns=[LOT_ESTIMATED_VALUE_CURRENCY_COLUMN,
+                 LOT_RESTATED_ESTIMATED_VALUE_CURRENCY_COLUMN],
         inplace=True)
+
     data_table.drop_duplicates(inplace=True)
+
     return data_table
 
 
@@ -209,6 +225,7 @@ def transform_lot_award_outcome_table(data_csv: io.StringIO) -> DataFrame:
         columns=[LOT_AWARDED_VALUE_CURRENCY_COLUMN, LOT_BARGAIN_PRICE_CURRENCY_COLUMN],
         inplace=True)
     data_table.drop_duplicates(inplace=True)
+
     return data_table
 
 
@@ -231,6 +248,7 @@ def transform_procedure_table(data_csv: io.StringIO) -> DataFrame:
         columns=[PROCEDURE_ESTIMATED_VALUE_CURRENCY_COLUMN],
         inplace=True)
     data_table.drop_duplicates(inplace=True)
+
     return data_table
 
 
@@ -281,7 +299,7 @@ TRANSFORMED_TABLES = {
     "Lot": transform_lot_table,
     "LotAwardOutcome": transform_lot_award_outcome_table,
     "Procedure": transform_procedure_table,
-    "Purpose": transform_cpv_table,
+    "CPV": transform_cpv_table,
     "NUTS": transform_nuts_table
 }
 
@@ -318,7 +336,7 @@ class PostgresETLPipeline(ETLPipelineABC):
     """
 
     def __init__(self, table_name: str, sparql_query_path: Path, primary_key_column_name: str,
-                 postgres_url: str = None, foreign_key_column_names: List[str] = None):
+                 postgres_url: str = None, foreign_key_column_names: List[dict] = None):
         """
             Constructor
         """
@@ -404,16 +422,23 @@ class PostgresETLPipeline(ETLPipelineABC):
         data_table: DataFrame = transformed_data[DATA_FIELD]
 
         with self.sql_engine.connect() as sql_connection:
-            data_table.to_sql(self.table_name, con=sql_connection, if_exists='append', chunksize=SEND_CHUNK_SIZE,
+            data_table.to_sql(self.table_name, con=sql_connection, if_exists='append',
+                              chunksize=SEND_CHUNK_SIZE,
                               index=False)
-            sql_connection.execute(ADD_PRIMARY_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
-                                                                              primary_key_column_name=self.primary_key_column_name))
-            for foreign_key_column_name in self.foreign_key_column_names:
-                sql_connection.execute(ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
-                                                                                  foreign_key_column_name=foreign_key_column_name))
-
             sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name,
                                                                 primary_key_column_name=self.primary_key_column_name))
+        # TODO: temporary disable because of issue with dataframes with duplicate columns
+        # see issue: https://github.com/pandas-dev/pandas/issues/15988
+        # sql_connection.execute(ADD_PRIMARY_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
+        #                                                                   primary_key_column_name=self.primary_key_column_name))
+        # for foreign_keys in self.foreign_key_column_names:
+        #     for foreign_key_column_name, foreign_key_table_name in foreign_keys.items():
+        #         fk_table_exists = sql_connection.execute(
+        #             TABLE_EXISTS_QUERY.format(table_name=foreign_key_table_name)).fetchone()[0]
+        #         if fk_table_exists:
+        #             sql_connection.execute(ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
+        #                                                                               foreign_key_column_name=foreign_key_column_name,
+        #                                                                               foreign_key_table_name=foreign_key_table_name))
 
         return {DATA_FIELD: transformed_data[DATA_FIELD]}
 
@@ -433,3 +458,4 @@ class CellarETLPipeline(PostgresETLPipeline):
             self.sparql_query_path.read_text(encoding='utf-8')).fetch_csv()
 
         return {DATA_FIELD: data_table, SKIP_NEXT_STEP_FIELD: False}
+

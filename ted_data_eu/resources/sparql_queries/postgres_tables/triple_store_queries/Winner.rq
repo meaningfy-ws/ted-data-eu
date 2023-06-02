@@ -1,17 +1,23 @@
 PREFIX epo: <http://data.europa.eu/a4g/ontology#>
 
 select distinct
-?WinnerId
+(concat(str(?LotAwardOutcomeId), str(?OrganizationId)) as ?LotAwardOutcomeOrganizationId)
+?LotAwardOutcomeId
 ?OrganizationId
 where {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
+              epo:refersToLot ?LotId;
               epo:announcesRole ?WinnerId.
 
     values ?NoticePublicationDate {
         $date_range
     }
 
+    ?LotId a epo:Lot.
+    ?LotAwardOutcomeId epo:describesLot ?LotId;
+                       a epo:LotAwardOutcome;
+                       epo:comprisesTenderAwardOutcome / epo:indicatesAwardOfLotToWinner ?WinnerId.
     ?WinnerId a epo:Winner;
               epo:playedBy ?OrganizationId.
 }
