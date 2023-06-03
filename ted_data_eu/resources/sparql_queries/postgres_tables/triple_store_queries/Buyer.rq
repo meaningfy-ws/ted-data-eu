@@ -1,10 +1,13 @@
 PREFIX epo: <http://data.europa.eu/a4g/ontology#>
 PREFIX afn: <http://jena.apache.org/ARQ/function#>
+PREFIX cpov: <http://data.europa.eu/m8g/>
+PREFIX org: <http://www.w3.org/ns/org#>
 
 select distinct
 (concat(str(?ProcedureId), str(?OrganizationId)) as ?ProcedureOrganizationId)
 ?ProcedureId
 ?OrganizationId
+?ContactPointId
 where {
     ?NoticeId a epo:ResultNotice;
                    epo:hasPublicationDate ?NoticePublicationDate;
@@ -12,9 +15,11 @@ where {
 				   epo:announcesRole ?BuyerId.
 
     values ?NoticePublicationDate {
-        $date_range
+       $date_range
     }
 
     ?BuyerId a epo:Buyer;
-           epo:playedBy ?OrganizationId.
+             epo:hasContactPointInRole ?ContactPointId;
+             epo:playedBy ?OrganizationId.
+	?ContactPointId a cpov:ContactPoint.
 }

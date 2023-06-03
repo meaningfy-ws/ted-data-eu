@@ -13,7 +13,7 @@ from pandas import DataFrame
 from ted_data_eu import config
 from ted_data_eu.adapters.cpv_processor import CellarCPVProcessor
 from ted_data_eu.adapters.etl_pipeline_abc import ETLPipelineABC
-from ted_data_eu.adapters.nuts_processor import CellarNUTSProcessor
+from ted_data_eu.adapters.nuts_processor import CellarNUTSProcessor, NUTSProcessor
 from ted_data_eu.adapters.triple_store import GraphDBAdapter, TDATripleStoreEndpoint
 from ted_data_eu.services.currency_convertor import convert_currency
 from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import START_DATE_METADATA_FIELD, \
@@ -34,6 +34,7 @@ MAX_CPV_LVL = MIN_CPV_LVL + 5
 MIN_NUTS_LVL = 0
 MAX_NUTS_LVL = MIN_NUTS_LVL + 3
 LIST_SEPARATOR = "|||"
+ERROR_NO_DATA_FETCHED = "No data was been fetched from triple store!"
 
 AMOUNT_VALUE_EUR_COLUMN = "AmountValueEUR"
 AMOUNT_VALUE_COLUMN = "AmountValue"
@@ -50,6 +51,7 @@ ORIGINAL_CPV_LEVEL_COLUMN = "OriginalCPVLevel"
 NUTS_LABEL_COLUMN = "NUTSLabel"
 NUTS_LEVEL_COLUMN = "NUTSLevel"
 NUTS_ID_COLUMN = "NUTSId"
+NUTS_LABEL_ENG_COLUMN = "NUTSLabelEng"
 
 HIGHEST_RECEIVED_TENDER_VALUE_COLUMN = 'HighestReceivedTenderValue'
 HIGHEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN = 'HighestReceivedTenderValueCurrency'
@@ -75,6 +77,7 @@ BUYER_ID_COLUMN_NAME = "BuyerId"
 
 NUTS_LEVEL_TEMPLATE = "NUTS{nuts_lvl}"
 NUTS_LABEL_TEMPLATE = "NUTS{nuts_lvl}Label"
+NUTS_LABEL_ENG_TEMPLATE = "NUTS{nuts_lvl}LabelEng"
 CPV_LEVEL_TEMPLATE = "CPV{cpv_lvl}"
 CPV_LABEL_TEMPLATE = "CPV{cpv_lvl}Label"
 
@@ -279,16 +282,23 @@ def transform_nuts_table(data_csv: io.StringIO) -> DataFrame:
     """
     Transforms NUTS table by adding all nuts levels with their labels
     """
-    nuts_processor = CellarNUTSProcessor(data_csv)
-    data_table: DataFrame = nuts_processor.dataframe.copy(deep=True)
-    data_table.rename(columns={nuts_processor.NUTS_CODE_COLUMN_NAME: NUTS_ID_COLUMN,
-                               nuts_processor.NUTS_LABEL_COLUMN_NAME: NUTS_LABEL_COLUMN}, inplace=True)
-    data_table.drop(columns=[nuts_processor.NUTS_PARENT_COLUMN_NAME], inplace=True)
+    cellar_nuts_processor = CellarNUTSProcessor(data_csv)
+    static_nuts_processor = NUTSProcessor()
+    data_table: DataFrame = cellar_nuts_processor.dataframe.copy(deep=True)
+    data_table.rename(columns={cellar_nuts_processor.NUTS_CODE_COLUMN_NAME: NUTS_ID_COLUMN,
+                               cellar_nuts_processor.NUTS_LABEL_COLUMN_NAME: NUTS_LABEL_COLUMN}, inplace=True)
+    data_table.drop(columns=[cellar_nuts_processor.NUTS_PARENT_COLUMN_NAME], inplace=True)
+
+    data_table[NUTS_LABEL_ENG_COLUMN] = data_table.apply(
+        lambda x: static_nuts_processor.get_nuts_label_by_code(x[NUTS_ID_COLUMN]),
+        axis=1)
     for nuts_lvl in range(MIN_NUTS_LVL, MAX_NUTS_LVL + 1):
         data_table[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)] = data_table.apply(
-            lambda x: nuts_processor.get_nuts_parent_code_by_level(x[NUTS_ID_COLUMN], nuts_lvl), axis=1)
+            lambda x: cellar_nuts_processor.get_nuts_parent_code_by_level(x[NUTS_ID_COLUMN], nuts_lvl), axis=1)
         data_table[NUTS_LABEL_TEMPLATE.format(nuts_lvl=nuts_lvl)] = data_table.apply(
-            lambda x: nuts_processor.get_nuts_label_by_code(x[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]), axis=1)
+            lambda x: cellar_nuts_processor.get_nuts_label_by_code(x[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]), axis=1)
+        data_table[NUTS_LABEL_ENG_TEMPLATE.format(nuts_lvl=nuts_lvl)] = data_table.apply(
+            lambda x: static_nuts_processor.get_nuts_label_by_code(x[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]), axis=1)
     data_table.drop_duplicates(inplace=True)
     return data_table
 
@@ -403,8 +413,11 @@ class PostgresETLPipeline(ETLPipelineABC):
             return extracted_data
         data_json: io.StringIO = extracted_data.get(DATA_FIELD, None)
         if not data_json:
-            raise PostgresETLException("No data was been fetched from triple store!")
-
+            raise PostgresETLException(ERROR_NO_DATA_FETCHED)
+        extracted_table: DataFrame = pd.read_csv(data_json)
+        if extracted_table.empty:
+            raise PostgresETLException(ERROR_NO_DATA_FETCHED)
+        data_json.seek(0)
         if self.table_name in TRANSFORMED_TABLES.keys():
             data_table: DataFrame = TRANSFORMED_TABLES[self.table_name](data_json)
         else:
