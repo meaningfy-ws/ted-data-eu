@@ -12,6 +12,7 @@ select distinct
 (afn:localname(?LotRestatedEstimatedValueCurrencyURI) as ?LotRestatedEstimatedValueCurrency)
 ?PlaceOfPerformance
 ?LotAwardOutcomeId
+?LotDescription
 where {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
@@ -59,5 +60,19 @@ where {
     optional{
         ?LotAwardOutcomeId epo:describesLot ?LotId;
                            a epo:LotAwardOutcome.
+    }
+    optional {
+        {
+            ?LotId epo:hasDescription ?LotDescriptionEn.
+            filter(lang(?LotDescriptionEn) = 'en')
+        }
+        {
+            SELECT ?LotId (SAMPLE (?LotDescriptionInternal) as ?LotDescriptionOther)
+            {
+                ?LotId epo:hasDescription ?LotDescriptionInternal .
+            }
+            GROUP BY ?LotId order by ?LotDescriptionInternal
+        }
+        BIND(COALESCE(?LotDescriptionEn, ?LotDescriptionOther) as ?LotDescription)
     }
 }

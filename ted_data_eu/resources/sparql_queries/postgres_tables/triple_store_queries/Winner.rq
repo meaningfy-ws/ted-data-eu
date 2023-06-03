@@ -1,9 +1,11 @@
 PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX cpov: <http://data.europa.eu/m8g/>
 
 select distinct
 (concat(str(?LotAwardOutcomeId), str(?OrganizationId)) as ?LotAwardOutcomeOrganizationId)
 ?LotAwardOutcomeId
 ?OrganizationId
+?ContactPointId
 where {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
@@ -17,7 +19,10 @@ where {
     ?LotId a epo:Lot.
     ?LotAwardOutcomeId epo:describesLot ?LotId;
                        a epo:LotAwardOutcome;
-                       epo:comprisesTenderAwardOutcome / epo:indicatesAwardOfLotToWinner ?WinnerId.
+                       epo:comprisesTenderAwardOutcome ?tender.
+    ?tender epo:indicatesAwardOfLotToWinner ?WinnerId.
     ?WinnerId a epo:Winner;
               epo:playedBy ?OrganizationId.
+    ?OrganizationId epo:hasPrimaryContactPoint ?ContactPointId .
+    ?ContactPointId a cpov:ContactPoint.
 }

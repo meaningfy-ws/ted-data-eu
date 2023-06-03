@@ -9,6 +9,8 @@ select distinct
 (afn:localname(?ProcedureEstimatedValueCurrencyURI) as ?ProcedureEstimatedValueCurrency)
 (afn:localname(?hasProcedureType) as ?ProcedureType)
 ?isCoveredByGPA
+?ProcedureDescription
+?ProcedureAdditionalInformation
 where {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
@@ -21,7 +23,7 @@ where {
     ?ProcedureId a epo:Procedure.
 
     optional {
-         {
+        {
             ?ProcedureId epo:hasTitle ?ProcedureTitleEn.
             filter(lang(?ProcedureTitleEn) = 'en')
         }
@@ -40,8 +42,8 @@ where {
     optional {
         ?ProcedureId epo:hasEstimatedValue ?MonetaryValue.
         ?MonetaryValue a epo:MonetaryValue;
-        				epo:hasAmountValue ?ProcedureEstimatedValue;
-            			epo:hasCurrency ?ProcedureEstimatedValueCurrencyURI.
+                       epo:hasAmountValue ?ProcedureEstimatedValue;
+                       epo:hasCurrency ?ProcedureEstimatedValueCurrencyURI.
     }
     optional {
         ?ProcedureId epo:hasProcedureType ?hasProcedureType.
@@ -49,5 +51,35 @@ where {
     optional {
         ?ProcedureId epo:isCoveredByGPA ?isCoveredByGPA.
     }
+
+    optional {
+         {
+            ?ProcedureId epo:hasDescription ?DescriptionEn.
+            filter(lang(?DescriptionEn) = 'en')
+        }
+        {
+            SELECT ?ProcedureId (SAMPLE (?DescriptionInternal) as ?DescriptionOther)
+            {
+                ?ProcedureId epo:hasDescription ?DescriptionInternal .
+            }
+            GROUP BY ?ProcedureId order by ?DescriptionInternal
+        }
+        BIND(COALESCE(?DescriptionEn, ?DescriptionOther) as ?ProcedureDescription)
+    }
+    optional {
+        {
+        ?ProcedureId epo:hasAdditionalInformation ?AdditionalInformationEn.
+            filter(lang(?AdditionalInformationEn) = 'en')
+        }
+        {
+            SELECT ?ProcedureId (SAMPLE (?AdditionalInformationInternal) as ?AdditionalInformationOther)
+            {
+                ?ProcedureId epo:hasAdditionalInformation ?AdditionalInformationInternal .
+            }
+            GROUP BY ?ProcedureId order by ?AdditionalInformationInternal
+        }
+        BIND(COALESCE(?AdditionalInformationEn, ?AdditionalInformationOther) as ?ProcedureAdditionalInformation)
+    }
+
 
 }

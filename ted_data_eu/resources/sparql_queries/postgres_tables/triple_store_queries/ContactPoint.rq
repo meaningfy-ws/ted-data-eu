@@ -1,0 +1,43 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX cccev: <http://data.europa.eu/m8g/>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
+PREFIX locn: <http://www.w3.org/ns/locn#>
+PREFIX cpov: <http://data.europa.eu/m8g/>
+
+select distinct
+?ContactPointId
+?ContactPointFax
+?ContactPointTelephone
+?ContactPointInternetAddress
+?ContactPointEmail
+where {
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?NoticePublicationDate;
+              epo:refersToProcedure ?ProcedureId.
+
+    values ?NoticePublicationDate {
+        $date_range
+    }
+
+    ?NoticeId epo:announcesRole / epo:playedBy ?OrganizationId.
+
+    ?OrganizationId a org:Organization;
+                    epo:hasPrimaryContactPoint ?ContactPointId.
+
+	?ContactPointId a cpov:ContactPoint.
+    optional {
+        ?ContactPointId epo:hasFax ?ContactPointFax.
+    }
+        optional {
+        ?ContactPointId cccev:telephone ?ContactPointTelephone.
+    }
+        optional {
+        ?ContactPointId epo:hasInternetAddress ?ContactPointInternetAddress.
+    }
+        optional {
+        ?ContactPointId cccev:email ?ContactPointEmail.
+    }
+
+
+}
