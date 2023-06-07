@@ -17,7 +17,7 @@ where {
               epo:refersToProcedure ?ProcedureId.
 
     values ?NoticePublicationDate {
-        "20220907"
+        $date_range
     }
 
     ?NoticeId epo:announcesRole ?Role.
