@@ -135,6 +135,8 @@ def transform_notice_table(data_csv: io.StringIO) -> DataFrame:
                                    currency=x[TOTAL_AWARDED_VALUE_CURRENCY_COLUMN],
                                    new_currency=EURO_CURRENCY_ID),
         axis=1)
+    # change monetary value column type to int
+    data_table[TOTAL_AWARDED_VALUE_COLUMN] = data_table[TOTAL_AWARDED_VALUE_COLUMN].astype(int)
     # Rename column to indicate that it is in EUR
     data_table.rename(columns={TOTAL_AWARDED_VALUE_COLUMN: f"{TOTAL_AWARDED_VALUE_COLUMN}{EURO_ENDING}"}, inplace=True)
     # Remove currency column
@@ -159,6 +161,9 @@ def transform_statistical_information_table(data_csv: io.StringIO) -> DataFrame:
                                    currency=x[LOWEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN],
                                    new_currency=EURO_CURRENCY_ID),
         axis=1)
+    # change monetary value column type to int
+    data_table[HIGHEST_RECEIVED_TENDER_VALUE_COLUMN] = data_table[HIGHEST_RECEIVED_TENDER_VALUE_COLUMN].astype(int)
+    data_table[LOWEST_RECEIVED_TENDER_VALUE_COLUMN] = data_table[LOWEST_RECEIVED_TENDER_VALUE_COLUMN].astype(int)
     # rename columns to include currency name EUR
     data_table.rename(
         columns={HIGHEST_RECEIVED_TENDER_VALUE_COLUMN: f"{HIGHEST_RECEIVED_TENDER_VALUE_COLUMN}{EURO_ENDING}",
@@ -188,6 +193,9 @@ def transform_lot_table(data_csv: io.StringIO) -> DataFrame:
                                    currency=x[LOT_RESTATED_ESTIMATED_VALUE_CURRENCY_COLUMN],
                                    new_currency=EURO_CURRENCY_ID),
         axis=1)
+    # change monetary value column type to int
+    data_table[LOT_ESTIMATED_VALUE_COLUMN] = data_table[LOT_ESTIMATED_VALUE_COLUMN].astype(int)
+    data_table[LOT_RESTATED_ESTIMATED_VALUE_COLUMN] = data_table[LOT_RESTATED_ESTIMATED_VALUE_COLUMN].astype(int)
     # rename columns to include currency name EUR
     data_table.rename(columns={LOT_ESTIMATED_VALUE_COLUMN: f"{LOT_ESTIMATED_VALUE_COLUMN}{EURO_ENDING}",
                                LOT_RESTATED_ESTIMATED_VALUE_COLUMN: f"{LOT_RESTATED_ESTIMATED_VALUE_COLUMN}{EURO_ENDING}"},
@@ -219,6 +227,9 @@ def transform_lot_award_outcome_table(data_csv: io.StringIO) -> DataFrame:
                                    currency=x[LOT_BARGAIN_PRICE_CURRENCY_COLUMN],
                                    new_currency=EURO_CURRENCY_ID),
         axis=1)
+    # change monetary value column type to int
+    data_table[LOT_AWARDED_VALUE_COLUMN] = data_table[LOT_AWARDED_VALUE_COLUMN].astype(int)
+    data_table[LOT_BARGAIN_PRICE_COLUMN] = data_table[LOT_BARGAIN_PRICE_COLUMN].astype(int)
     # rename columns to include currency name EUR
     data_table.rename(columns={LOT_AWARDED_VALUE_COLUMN: f"{LOT_AWARDED_VALUE_COLUMN}{EURO_ENDING}",
                                LOT_BARGAIN_PRICE_COLUMN: f"{LOT_BARGAIN_PRICE_COLUMN}{EURO_ENDING}"},
@@ -243,6 +254,8 @@ def transform_procedure_table(data_csv: io.StringIO) -> DataFrame:
                                    currency=x[PROCEDURE_ESTIMATED_VALUE_CURRENCY_COLUMN],
                                    new_currency=EURO_CURRENCY_ID),
         axis=1)
+    # change monetary value column type to int
+    data_table[PROCEDURE_ESTIMATED_VALUE_COLUMN] = data_table[PROCEDURE_ESTIMATED_VALUE_COLUMN].astype(int)
     # rename columns to include currency name EUR
     data_table.rename(columns={PROCEDURE_ESTIMATED_VALUE_COLUMN: f"{PROCEDURE_ESTIMATED_VALUE_COLUMN}{EURO_ENDING}"},
                       inplace=True)

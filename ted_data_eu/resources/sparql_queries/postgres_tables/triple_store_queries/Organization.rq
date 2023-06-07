@@ -45,16 +45,16 @@ where {
     optional {
         ?OrganizationId epo:hasBusinessSize ?hasBusinessSize.
     }
-    optional {
-        ?OrganizationId epo:hasPrimaryContactPoint ?PrimaryContactPoint.
-        ?PrimaryContactPoint a cccev:ContactPoint.
-        optional {
-            ?PrimaryContactPoint cccev:telephone ?PrimaryContactPointTelephone.
-        }
-        optional {
-            ?PrimaryContactPoint epo:hasFax ?PrimaryContactPointFax.
-        }
-    }
+#    optional {
+#        ?OrganizationId epo:hasPrimaryContactPoint ?PrimaryContactPoint.
+#        ?PrimaryContactPoint a cccev:ContactPoint.
+#        optional {
+#            ?PrimaryContactPoint cccev:telephone ?PrimaryContactPointTelephone.
+#        }
+#        optional {
+#            ?PrimaryContactPoint epo:hasFax ?PrimaryContactPointFax.
+#        }
+#    }
 
 
 }
