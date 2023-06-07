@@ -1,60 +1,51 @@
 PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 PREFIX org: <http://www.w3.org/ns/org#>
 PREFIX cccev: <http://data.europa.eu/m8g/>
 PREFIX afn: <http://jena.apache.org/ARQ/function#>
-PREFIX locn: <http://www.w3.org/ns/locn#>
 
 select distinct
 ?OrganizationId
 ?LegalName
 ?AddressId
 (afn:localname(?hasBusinessSize) as ?BusinessSize)
-?PrimaryContactPointTelephone
-?PrimaryContactPointFax
 where {
-    ?NoticeId a epo:ResultNotice;
-              epo:hasPublicationDate ?NoticePublicationDate;
-              epo:refersToProcedure ?ProcedureId.
-
+    ?ResultNotice a epo:ResultNotice;
+                   epo:hasPublicationDate ?NoticePublicationDate;
+                   epo:refersToProcedure ?ProcedureId.
     values ?NoticePublicationDate {
         $date_range
     }
-
-    ?NoticeId epo:announcesRole / epo:playedBy ?OrganizationId.
-
-    ?OrganizationId a org:Organization.
-
     optional {
+        ?ResultNotice epo:announcesRole ?Role.
         {
-            ?OrganizationId epo:hasLegalName ?LegalNameEn .
-            filter(lang(?LegalNameEn) = 'en')
+            ?Role a epo:Buyer.
+        } union {
+            ?Role a epo:Winner.
         }
-        {
-            SELECT ?OrganizationId (SAMPLE (?LegalNameInternal) as ?LegalNameOther)
+        ?Role epo:playedBy ?OrganizationId.
+        optional {
+            ?OrganizationId a org:Organization.
             {
-                ?OrganizationId epo:hasLegalName ?LegalNameInternal .
+                optional {
+                    ?OrganizationId epo:hasLegalName ?LegalNameEn .
+                    filter(lang(?LegalNameEn) = 'en')
+                }
+                optional {
+                    SELECT ?OrganizationId (SAMPLE (?LegalNameInternal) as ?LegalNameOther)
+                    {
+                        ?OrganizationId epo:hasLegalName ?LegalNameInternal .
+                    }
+                    GROUP BY ?OrganizationId order by ?LegalNameInternal
+                }
+                BIND(COALESCE(?LegalNameEn, ?LegalNameOther) as ?LegalName)
             }
-            GROUP BY ?OrganizationId order by ?LegalNameInternal
-        }
-        BIND(COALESCE(?LegalNameEn, ?LegalNameOther) as ?LegalName)
-    }
-
-    optional {
-        ?OrganizationId cccev:registeredAddress ?AddressId.
-    }
-    optional {
-        ?OrganizationId epo:hasBusinessSize ?hasBusinessSize.
-    }
-    optional {
-        ?OrganizationId epo:hasPrimaryContactPoint ?PrimaryContactPoint.
-        ?PrimaryContactPoint a cccev:ContactPoint.
-        optional {
-            ?PrimaryContactPoint cccev:telephone ?PrimaryContactPointTelephone.
-        }
-        optional {
-            ?PrimaryContactPoint epo:hasFax ?PrimaryContactPointFax.
+            optional {
+                ?OrganizationId cccev:registeredAddress ?AddressId.
+            }
+            optional {
+                ?OrganizationId epo:hasBusinessSize ?hasBusinessSize.
+            }
         }
     }
-
-
-}
+} 

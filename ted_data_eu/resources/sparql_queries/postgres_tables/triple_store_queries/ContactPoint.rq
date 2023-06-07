@@ -20,10 +20,17 @@ where {
         $date_range
     }
 
-    ?NoticeId epo:announcesRole / epo:playedBy ?OrganizationId.
+    ?NoticeId epo:announcesRole ?Role.
+    ?Role epo:playedBy ?OrganizationId.
+    ?OrganizationId a org:Organization.
 
-    ?OrganizationId a org:Organization;
-                    epo:hasPrimaryContactPoint ?ContactPointId.
+    {
+    	?OrganizationId epo:hasPrimaryContactPoint ?ContactPointId.
+    }
+    union
+    {
+        ?Role epo:hasContactPointInRole ?ContactPointId .
+    }
 
 	?ContactPointId a cpov:ContactPoint.
     optional {
@@ -38,6 +45,5 @@ where {
         optional {
         ?ContactPointId cccev:email ?ContactPointEmail.
     }
-
 
 }

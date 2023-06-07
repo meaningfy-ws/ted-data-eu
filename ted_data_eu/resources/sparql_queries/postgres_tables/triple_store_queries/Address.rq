@@ -52,6 +52,6 @@ where {
         ?AddressId locn:thoroughfare ?Thoroughfare.
     }
     optional {
-        ?AddressId locn:fullAddress ?FullAddress.
+        ?AddressId locn:address ?FullAddress.
     }
 }
