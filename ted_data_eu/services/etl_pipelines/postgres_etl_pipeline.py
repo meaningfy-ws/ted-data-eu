@@ -9,6 +9,7 @@ from typing import Dict, Optional, List
 import pandas as pd
 import sqlalchemy
 from pandas import DataFrame
+from ted_sws.data_manager.adapters.triple_store import TripleStoreABC
 
 from ted_data_eu import config
 from ted_data_eu.adapters.cpv_processor import CellarCPVProcessor
@@ -311,9 +312,11 @@ def transform_nuts_table(data_csv: io.StringIO) -> DataFrame:
         data_table[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)] = data_table.apply(
             lambda x: cellar_nuts_processor.get_nuts_parent_code_by_level(x[NUTS_ID_COLUMN], nuts_lvl), axis=1)
         data_table[NUTS_LABEL_TEMPLATE.format(nuts_lvl=nuts_lvl)] = data_table.apply(
-            lambda x: cellar_nuts_processor.get_nuts_label_by_code(x[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]), axis=1)
+            lambda x: cellar_nuts_processor.get_nuts_label_by_code(x[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]),
+            axis=1)
         data_table[NUTS_LABEL_ENG_TEMPLATE.format(nuts_lvl=nuts_lvl)] = data_table.apply(
-            lambda x: static_nuts_processor.get_nuts_label_by_code(x[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]), axis=1)
+            lambda x: static_nuts_processor.get_nuts_label_by_code(x[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]),
+            axis=1)
     data_table.drop_duplicates(inplace=True)
     return data_table
 
@@ -361,7 +364,8 @@ class PostgresETLPipeline(ETLPipelineABC):
     """
 
     def __init__(self, table_name: str, sparql_query_path: Path, primary_key_column_name: str,
-                 postgres_url: str = None, foreign_key_column_names: List[dict] = None):
+                 postgres_url: str = None, foreign_key_column_names: List[dict] = None,
+                 triple_store: TripleStoreABC = None, triple_store_endpoint: str = None):
         """
             Constructor
         """
@@ -373,6 +377,8 @@ class PostgresETLPipeline(ETLPipelineABC):
                                                    isolation_level=SQLALCHEMY_ISOLATION_LEVEL)
         self.primary_key_column_name = primary_key_column_name
         self.foreign_key_column_names = foreign_key_column_names if foreign_key_column_names else []
+        self.triple_store = triple_store or GraphDBAdapter()
+        self.triple_store_endpoint = triple_store_endpoint or TRIPLE_STORE_ENDPOINT
 
     def set_metadata(self, etl_metadata: dict):
         """
@@ -413,9 +419,8 @@ class PostgresETLPipeline(ETLPipelineABC):
 
         sparql_query_template = Template(self.sparql_query_path.read_text(encoding="utf-8"))
         sparql_query = sparql_query_template.substitute(date_range=date_range)
-        triple_store_endpoint = GraphDBAdapter().get_sparql_tda_triple_store_endpoint(
-            repository_name=TRIPLE_STORE_ENDPOINT)
-
+        triple_store_endpoint = self.triple_store.get_sparql_tda_triple_store_endpoint(
+            repository_name=self.triple_store_endpoint)
         result_table = triple_store_endpoint.with_query(sparql_query).fetch_csv()
         return {DATA_FIELD: result_table}
 
@@ -486,4 +491,3 @@ class CellarETLPipeline(PostgresETLPipeline):
             self.sparql_query_path.read_text(encoding='utf-8')).fetch_csv()
 
         return {DATA_FIELD: data_table, SKIP_NEXT_STEP_FIELD: False}
-
