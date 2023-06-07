@@ -17,20 +17,13 @@ where {
               epo:refersToProcedure ?ProcedureId.
 
     values ?NoticePublicationDate {
-        "20220907"
+        $date_range
     }
 
-    ?NoticeId epo:announcesRole ?Role.
-    ?Role epo:playedBy ?OrganizationId.
-    ?OrganizationId a org:Organization.
+    ?NoticeId epo:announcesRole / epo:playedBy ?OrganizationId.
 
-    {
-    	?OrganizationId epo:hasPrimaryContactPoint ?ContactPointId.
-    }
-    union
-    {
-        ?Role epo:hasContactPointInRole ?ContactPointId .
-    }
+    ?OrganizationId a org:Organization;
+                    epo:hasPrimaryContactPoint ?ContactPointId.
 
 	?ContactPointId a cpov:ContactPoint.
     optional {
@@ -45,5 +38,6 @@ where {
         optional {
         ?ContactPointId cccev:email ?ContactPointEmail.
     }
+
 
 }
