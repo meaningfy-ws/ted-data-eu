@@ -125,7 +125,9 @@ def transform_notice_table(data_csv: io.StringIO) -> DataFrame:
     """
     Transforms notice table by adding link to notice and converting currency to EUR
     """
-    data_table = pd.read_csv(data_csv, dtype=object)
+    data_table = pd.read_csv(data_csv, dtype={
+        TOTAL_AWARDED_VALUE_COLUMN: float
+    })
     data_table[NOTICE_LINK_COLUMN] = data_table.apply(
         lambda x: generate_link_to_notice(x[NOTICE_ID_COLUMN]), axis=1)
 
