@@ -222,6 +222,23 @@ def transform_lot_table(data_csv: io.StringIO) -> DataFrame:
     return data_table
 
 
+def transform_lot_cpv_table(data_csv: io.StringIO) -> DataFrame:
+    """
+
+    """
+    data_table = pd.read_csv(data_csv, dtype=str)
+    data_table.drop_duplicates(inplace=True)
+    return data_table
+
+def transform_proecure_cpv_table(data_csv: io.StringIO) -> DataFrame:
+    """
+
+    """
+    data_table = pd.read_csv(data_csv, dtype=str)
+    data_table.drop_duplicates(inplace=True)
+    return data_table
+
+
 def transform_lot_award_outcome_table(data_csv: io.StringIO) -> DataFrame:
     """
     Transforms LotAwardOutcome table by adding monetary values in EUR
@@ -336,7 +353,9 @@ TRANSFORMED_TABLES = {
     "LotAwardOutcome": transform_lot_award_outcome_table,
     "Procedure": transform_procedure_table,
     "CPV": transform_cpv_table,
-    "NUTS": transform_nuts_table
+    "NUTS": transform_nuts_table,
+    "LotCPV": transform_lot_cpv_table,
+    "ProcedureCPV": transform_procedure_cpv_table,
 }
 
 
