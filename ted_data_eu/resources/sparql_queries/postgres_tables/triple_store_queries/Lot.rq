@@ -26,18 +26,21 @@ where {
     ?ProcedureId epo:hasProcurementScopeDividedIntoLot ?LotId.
 
     optional{
+        ?LotId a epo:Lot.
         {
-            ?LotId epo:hasTitle ?LotTitleEn.
-            filter(lang(?LotTitleEn) = 'en')
-        }
-        {
-            SELECT ?LotId (SAMPLE (?LotTitleInternal) as ?LotTitleOther)
-            {
-                ?LotId epo:hasTitle ?LotTitleInternal .
+            optional {
+                ?LotId epo:hasTitle ?LotTitleEn.
+                filter(lang(?LotTitleEn) = 'en')
             }
-            GROUP BY ?LotId order by ?LotTitleInternal
+            optional {
+                SELECT ?LotId (SAMPLE (?LotTitleInternal) as ?LotTitleOther)
+                {
+                    ?LotId epo:hasTitle ?LotTitleInternal .
+                }
+                GROUP BY ?LotId order by ?LotTitleInternal
+            }
+            BIND(COALESCE(?LotTitleEn, ?LotTitleOther) as ?LotTitle)
         }
-        BIND(COALESCE(?LotTitleEn, ?LotTitleOther) as ?LotTitle)
     }
     optional{
         ?LotId epo:isUsingEUFunds ?isUsingEUFunds.
@@ -45,14 +48,14 @@ where {
     optional{
         ?LotId epo:hasRestatedEstimatedValue ?RestatedMonetaryValue.
         ?RestatedMonetaryValue a epo:MonetaryValue;
-        				epo:hasAmountValue ?LotRestatedEstimatedValue;
-            			epo:hasCurrency ?LotRestatedEstimatedValueCurrencyURI.
+                               epo:hasAmountValue ?LotRestatedEstimatedValue;
+                               epo:hasCurrency ?LotRestatedEstimatedValueCurrencyURI.
     }
     optional{
         ?LotId epo:hasEstimatedValue ?MonetaryValue.
         ?MonetaryValue a epo:MonetaryValue;
-                               epo:hasAmountValue ?LotEstimatedValue;
-                               epo:hasCurrency ?LotEstimatedValueCurrencyURI.
+                       epo:hasAmountValue ?LotEstimatedValue;
+                       epo:hasCurrency ?LotEstimatedValueCurrencyURI.
     }
     optional {
         ?LotId epo:foreseesContractSpecificTerm / epo:definesSpecificPlaceOfPerformance ?PlaceOfPerformance.
@@ -62,17 +65,20 @@ where {
                            a epo:LotAwardOutcome.
     }
     optional {
+        ?LotId a epo:Lot.
         {
-            ?LotId epo:hasDescription ?LotDescriptionEn.
-            filter(lang(?LotDescriptionEn) = 'en')
-        }
-        {
-            SELECT ?LotId (SAMPLE (?LotDescriptionInternal) as ?LotDescriptionOther)
-            {
-                ?LotId epo:hasDescription ?LotDescriptionInternal .
+            optional {
+                ?LotId epo:hasDescription ?LotDescriptionEn.
+                filter(lang(?LotDescriptionEn) = 'en')
             }
-            GROUP BY ?LotId order by ?LotDescriptionInternal
+            optional {
+                SELECT ?LotId (SAMPLE (?LotDescriptionInternal) as ?LotDescriptionOther)
+                {
+                    ?LotId epo:hasDescription ?LotDescriptionInternal .
+                }
+                GROUP BY ?LotId order by ?LotDescriptionInternal
+            }
+            BIND(COALESCE(?LotDescriptionEn, ?LotDescriptionOther) as ?LotDescription)
         }
-        BIND(COALESCE(?LotDescriptionEn, ?LotDescriptionOther) as ?LotDescription)
     }
 }

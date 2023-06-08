@@ -44,6 +44,9 @@ CONVERSION_TO_EUR_DATE_COLUMN = "ConversionToEURDate"
 
 NOTICE_LINK_COLUMN = "NoticeLink"
 NOTICE_ID_COLUMN = "NoticeId"
+NOTICE_YEAR_COLUMN = "NoticeYear"
+NOTICE_NUMBER_COLUMN = "NoticeNumber"
+NOTICE_PUBLICATION_DATE_COLUMN = "NoticePublicationDate"
 
 ORIGINAL_CPV_COLUMN = "OriginalCPV"
 ORIGINAL_CPV_LABEL_COLUMN = "OriginalCPVLabel"
@@ -128,7 +131,7 @@ def transform_notice_table(data_csv: io.StringIO) -> DataFrame:
     """
     data_table = pd.read_csv(data_csv, dtype={
         TOTAL_AWARDED_VALUE_COLUMN: float
-    })
+    }, parse_dates=[NOTICE_PUBLICATION_DATE_COLUMN])
     data_table[NOTICE_LINK_COLUMN] = data_table.apply(
         lambda x: generate_link_to_notice(x[NOTICE_ID_COLUMN]), axis=1)
 
@@ -144,6 +147,11 @@ def transform_notice_table(data_csv: io.StringIO) -> DataFrame:
     data_table.rename(columns={TOTAL_AWARDED_VALUE_COLUMN: f"{TOTAL_AWARDED_VALUE_COLUMN}{EURO_ENDING}"}, inplace=True)
     # Remove currency column
     data_table.drop(columns=[TOTAL_AWARDED_VALUE_CURRENCY_COLUMN], inplace=True)
+    # Add notice year column
+    data_table[NOTICE_YEAR_COLUMN] = data_table.apply(lambda x: generate_notice_year(x[NOTICE_ID_COLUMN]), axis=1)
+    # Add notice Number column
+    data_table[NOTICE_NUMBER_COLUMN] = data_table.apply(lambda x: generate_notice_number(x[NOTICE_ID_COLUMN]), axis=1)
+    # Remove duplicates
     data_table.drop_duplicates(inplace=True)
     return data_table
 
@@ -332,11 +340,11 @@ TRANSFORMED_TABLES = {
 }
 
 
-def generate_link_to_notice(notice_uri: str) -> Optional[str]:
+def get_notice_metadata(notice_uri: str) -> Optional[Dict]:
     """
-        Generates the link to the notice from the Notice URI
+        Gets the metadata of the notice from the Notice URI
         :param notice_uri: URI of the lot as str
-        :return: Link to the notice as str
+        :return: Metadata of the notice as dict
 
         example Notice URI: epd:id_2015-S-250-456405_Notice
     """
@@ -348,7 +356,57 @@ def generate_link_to_notice(notice_uri: str) -> Optional[str]:
     lot_id = lot_id.group(1)
     notice_year = lot_id.split('-')[0]
     notice_number = lot_id.split('-')[-1]
-    return TED_NOTICES_LINK.format(notice_id=f"{notice_number}-{notice_year}")
+    return {
+        NOTICE_YEAR_COLUMN: notice_year,
+        NOTICE_NUMBER_COLUMN: notice_number
+    }
+
+def generate_link_to_notice(notice_uri: str) -> Optional[str]:
+    """
+        Generates the link to the notice from the Notice URI
+        :param notice_uri: URI of the lot as str
+        :return: Link to the notice as str
+
+        example Notice URI: epd:id_2015-S-250-456405_Notice
+    """
+    if not notice_uri:
+        return None
+    notice_metadata = get_notice_metadata(notice_uri)
+    if notice_metadata is None:
+        return None
+    return TED_NOTICES_LINK.format(notice_id=f"{notice_metadata[NOTICE_NUMBER_COLUMN]}-{notice_metadata[NOTICE_YEAR_COLUMN]}")
+
+
+def generate_notice_year(notice_uri: str) -> Optional[str]:
+    """
+        Generates the year of the notice from the Notice URI
+        :param notice_uri: URI of the lot as str
+        :return: Year of the notice as str
+
+        example Notice URI: epd:id_2015-S-250-456405_Notice
+    """
+    if not notice_uri:
+        return None
+    notice_metadata = get_notice_metadata(notice_uri)
+    if notice_metadata is None:
+        return None
+    return notice_metadata[NOTICE_YEAR_COLUMN]
+
+def generate_notice_number(notice_uri: str) -> Optional[str]:
+    """
+        Generates the number of the notice from the Notice URI
+        :param notice_uri: URI of the lot as str
+        :return: Number of the notice as str
+
+        example Notice URI: epd:id_2015-S-250-456405_Notice
+    """
+    if not notice_uri:
+        return None
+    notice_metadata = get_notice_metadata(notice_uri)
+    if notice_metadata is None:
+        return None
+    return notice_metadata[NOTICE_NUMBER_COLUMN]
+
 
 
 class PostgresETLException(Exception):
