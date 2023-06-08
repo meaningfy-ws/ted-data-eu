@@ -26,12 +26,12 @@ def init_etl_pipelines_register():
         This function is used for register all ETL pipelines inside DAG.
     :return:
     """
-    etl_pipelines_register.register(etl_pipeline_name=TDA_FREE_INDEX_NAME,
-                                    etl_pipeline=TedDataETLPipeline(business_pack_name=TDA_FREE_INDEX_NAME))
-    etl_pipelines_register.register(etl_pipeline_name=TDA_STARTER_INDEX_NAME,
-                                    etl_pipeline=TedDataETLPipeline(business_pack_name=TDA_STARTER_INDEX_NAME))
-    etl_pipelines_register.register(etl_pipeline_name=TDA_PREMIUM_INDEX_NAME,
-                                    etl_pipeline=TedDataETLPipeline(business_pack_name=TDA_PREMIUM_INDEX_NAME))
+    # etl_pipelines_register.register(etl_pipeline_name=TDA_FREE_INDEX_NAME,
+    #                                 etl_pipeline=TedDataETLPipeline(business_pack_name=TDA_FREE_INDEX_NAME))
+    # etl_pipelines_register.register(etl_pipeline_name=TDA_STARTER_INDEX_NAME,
+    #                                 etl_pipeline=TedDataETLPipeline(business_pack_name=TDA_STARTER_INDEX_NAME))
+    # etl_pipelines_register.register(etl_pipeline_name=TDA_PREMIUM_INDEX_NAME,
+    #                                 etl_pipeline=TedDataETLPipeline(business_pack_name=TDA_PREMIUM_INDEX_NAME))
 
     tables_metadata = config.TABLES_METADATA
 
