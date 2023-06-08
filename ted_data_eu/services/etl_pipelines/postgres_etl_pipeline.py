@@ -230,7 +230,7 @@ def transform_lot_cpv_table(data_csv: io.StringIO) -> DataFrame:
     data_table.drop_duplicates(inplace=True)
     return data_table
 
-def transform_proecure_cpv_table(data_csv: io.StringIO) -> DataFrame:
+def transform_procedure_cpv_table(data_csv: io.StringIO) -> DataFrame:
     """
 
     """

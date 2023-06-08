@@ -12,7 +12,8 @@ select distinct
 ?PostCode
 ?PostName
 ?Thoroughfare
-?FullAddress
+# Temporary disabled
+#?FullAddress
 where {
 
     ?NoticeId a epo:ResultNotice;
@@ -51,7 +52,8 @@ where {
     optional {
         ?AddressId locn:thoroughfare ?Thoroughfare.
     }
-    optional {
-        ?AddressId locn:address ?FullAddress.
-    }
+# Temporary disabled
+#    optional {
+#        ?AddressId locn:address ?FullAddress.
+#    }
 }
