@@ -1,0 +1,30 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX cccev: <http://data.europa.eu/m8g/>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
+PREFIX locn: <http://www.w3.org/ns/locn#>
+
+PREFIX dcterms: <http://purl.org/dc/terms/>
+select distinct
+(concat(str(afn:localname(?Organization)), str(afn:localname(?Address))) as ?OrganizationAddressId)
+(afn:localname(?Organization) as ?OrganizationId)
+(afn:localname(?Address) as ?AddressId)
+where {
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?NoticePublicationDate;
+              epo:refersToProcedure ?ProcedureId.
+    values ?NoticePublicationDate {
+        $date_range
+    }
+
+    ?NoticeId epo:announcesRole ?Role.
+    {
+        ?Role a epo:Buyer.
+    } union {
+        ?Role a epo:Winner.
+    }
+    ?Role epo:playedBy ?Organization.
+    ?Organization cccev:registeredAddress ?Address.
+    ?Address a locn:Address.
+}

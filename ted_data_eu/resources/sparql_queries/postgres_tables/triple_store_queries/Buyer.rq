@@ -4,14 +4,14 @@ PREFIX cpov: <http://data.europa.eu/m8g/>
 PREFIX org: <http://www.w3.org/ns/org#>
 
 select distinct
-(concat(str(?ProcedureId), str(?OrganizationId)) as ?ProcedureOrganizationId)
-?ProcedureId
-?OrganizationId
-?ContactPointId
+(concat(str(afn:localname(?Procedure)), str(afn:localname(?Organization))) as ?ProcedureOrganizationId)
+(afn:localname(?Procedure) as ?ProcedureId)
+(afn:localname(?Organization) as ?OrganizationId)
+(afn:localname(?ContactPoint) as ?ContactPointId)
 where {
     ?NoticeId a epo:ResultNotice;
                    epo:hasPublicationDate ?NoticePublicationDate;
-                   epo:refersToProcedure ?ProcedureId;
+                   epo:refersToProcedure ?Procedure;
 				   epo:announcesRole ?BuyerId.
 
     values ?NoticePublicationDate {
@@ -19,7 +19,7 @@ where {
     }
 
     ?BuyerId a epo:Buyer;
-             epo:hasContactPointInRole ?ContactPointId;
-             epo:playedBy ?OrganizationId.
-	?ContactPointId a cpov:ContactPoint.
+             epo:hasContactPointInRole ?ContactPoint;
+             epo:playedBy ?Organization.
+	?ContactPoint a cpov:ContactPoint.
 }

@@ -2,7 +2,7 @@ PREFIX epo: <http://data.europa.eu/a4g/ontology#>
 PREFIX afn: <http://jena.apache.org/ARQ/function#>
 
 select distinct
-?ProcedureId
+(afn:localname(?Procedure) as ?ProcedureId)
 ?ProcedureTitle
 ?ReferenceNumber
 ?ProcedureEstimatedValue
@@ -14,73 +14,73 @@ select distinct
 where {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
-              epo:refersToProcedure ?ProcedureId.
+              epo:refersToProcedure ?Procedure.
 
     values ?NoticePublicationDate {
         $date_range
     }
 
     optional {
-        ?ProcedureId a epo:Procedure.
+        ?Procedure a epo:Procedure.
         {
             optional {
-                ?ProcedureId epo:hasTitle ?ProcedureTitleEn.
+                ?Procedure epo:hasTitle ?ProcedureTitleEn.
                 filter(lang(?ProcedureTitleEn) = 'en')
             }
             optional {
-                SELECT ?ProcedureId (SAMPLE (?ProcedureTitleInternal) as ?ProcedureTitleOther)
+                SELECT ?Procedure (SAMPLE (?ProcedureTitleInternal) as ?ProcedureTitleOther)
                 {
-                    ?ProcedureId epo:hasTitle ?ProcedureTitleInternal .
+                    ?Procedure epo:hasTitle ?ProcedureTitleInternal .
                 }
-                GROUP BY ?ProcedureId order by ?ProcedureTitleInternal
+                GROUP BY ?Procedure order by ?ProcedureTitleInternal
             }
             BIND(COALESCE(?ProcedureTitleEn, ?ProcedureTitleOther) as ?ProcedureTitle)
         }
     }
     optional {
-        ?ProcedureId epo:hasID / epo:hasIdentifierValue ?ReferenceNumber.
+        ?Procedure epo:hasID / epo:hasIdentifierValue ?ReferenceNumber.
     }
     optional {
-        ?ProcedureId epo:hasEstimatedValue ?MonetaryValue.
+        ?Procedure epo:hasEstimatedValue ?MonetaryValue.
         ?MonetaryValue a epo:MonetaryValue;
                        epo:hasAmountValue ?ProcedureEstimatedValue;
                        epo:hasCurrency ?ProcedureEstimatedValueCurrencyURI.
     }
     optional {
-        ?ProcedureId epo:hasProcedureType ?hasProcedureType.
+        ?Procedure epo:hasProcedureType ?hasProcedureType.
     }
     optional {
-        ?ProcedureId epo:isCoveredByGPA ?isCoveredByGPA.
+        ?Procedure epo:isCoveredByGPA ?isCoveredByGPA.
     }
 
     optional {
-        ?ProcedureId a epo:Procedure.
+        ?Procedure a epo:Procedure.
         {
             optional {
-                ?ProcedureId epo:hasDescription ?DescriptionEn.
+                ?Procedure epo:hasDescription ?DescriptionEn.
                 filter(lang(?DescriptionEn) = 'en')
             }
             optional {
-                SELECT ?ProcedureId (SAMPLE (?DescriptionInternal) as ?DescriptionOther)
+                SELECT ?Procedure (SAMPLE (?DescriptionInternal) as ?DescriptionOther)
                 {
-                    ?ProcedureId epo:hasDescription ?DescriptionInternal .
+                    ?Procedure epo:hasDescription ?DescriptionInternal .
                 }
-                GROUP BY ?ProcedureId order by ?DescriptionInternal
+                GROUP BY ?Procedure order by ?DescriptionInternal
             }
             BIND(COALESCE(?DescriptionEn, ?DescriptionOther) as ?ProcedureDescription)
         }
     }
     optional {
         {
-            ?ProcedureId epo:hasAdditionalInformation ?AdditionalInformationEn.
+            ?Procedure epo:hasAdditionalInformation ?AdditionalInformationEn.
             filter(lang(?AdditionalInformationEn) = 'en')
         }
         {
-            SELECT ?ProcedureId (SAMPLE (?AdditionalInformationInternal) as ?AdditionalInformationOther)
+            SELECT ?Procedure (SAMPLE (?AdditionalInformationInternal) as ?AdditionalInformationOther)
             {
-                ?ProcedureId epo:hasAdditionalInformation ?AdditionalInformationInternal .
+                ?Procedure epo:hasAdditionalInformation ?AdditionalInformationInternal .
             }
-            GROUP BY ?ProcedureId order by ?AdditionalInformationInternal
+            GROUP BY ?Procedure order by ?AdditionalInformationInternal
         }
         BIND(COALESCE(?AdditionalInformationEn, ?AdditionalInformationOther) as ?ProcedureAdditionalInformation)
     }

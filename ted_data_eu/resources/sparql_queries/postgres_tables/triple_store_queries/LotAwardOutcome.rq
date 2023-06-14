@@ -2,47 +2,43 @@ PREFIX epo: <http://data.europa.eu/a4g/ontology#>
 PREFIX afn: <http://jena.apache.org/ARQ/function#>
 
 select distinct
-?LotAwardOutcomeId
+(afn:localname(?LotAwardOutcome) as ?LotAwardOutcomeId)
 (afn:localname(?hasAwardStatus) as ?AwardStatus)
 ?LotAwardedValue
 (afn:localname(?LotAwardedValueCurrencyURI) as ?LotAwardedValueCurrency)
 ?LotBargainPrice
 (afn:localname(?LotBargainPriceCurrencyURI) as ?LotBargainPriceCurrency)
 ?AwardDecisionDate
-?SubmissionStatisticalInformationId
+(afn:localname(?Lot) as ?LotId)
 where {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
-              epo:refersToLot ?LotId.
+              epo:refersToLot ?Lot.
 
     values ?NoticePublicationDate {
         $date_range
     }
 
-    ?LotId a epo:Lot.
-    ?LotAwardOutcomeId epo:describesLot ?LotId;
+    ?Lot a epo:Lot.
+    ?LotAwardOutcome epo:describesLot ?Lot;
                        a epo:LotAwardOutcome.
 
     optional {
-        ?LotAwardOutcomeId epo:hasAwardStatus ?hasAwardStatus.
+        ?LotAwardOutcome epo:hasAwardStatus ?hasAwardStatus.
     }
     optional {
-        ?LotAwardOutcomeId epo:hasAwardedValue ?MonetaryValue.
+        ?LotAwardOutcome epo:hasAwardedValue ?MonetaryValue.
         ?MonetaryValue a epo:MonetaryValue;
                        epo:hasAmountValue ?LotAwardedValue;
                        epo:hasCurrency ?LotAwardedValueCurrencyURI.
     }
     optional {
-        ?LotAwardOutcomeId epo:hasBargainPrice ?BargainPriceMonetaryValue.
+        ?LotAwardOutcome epo:hasBargainPrice ?BargainPriceMonetaryValue.
         ?BargainPriceMonetaryValue a epo:MonetaryValue;
                        epo:hasAmountValue ?LotBargainPrice;
                        epo:hasCurrency ?LotBargainPriceCurrencyURI.
     }
     optional {
-        ?LotAwardOutcomeId epo:hasAwardDecisionDate ?AwardDecisionDate.
-    }
-    optional {
-        ?SubmissionStatisticalInformationId epo:summarisesInformationForLotAwardOutcome ?LotAwardOutcomeId;
-                                            a epo:SubmissionStatisticalInformation.
+        ?LotAwardOutcome epo:hasAwardDecisionDate ?AwardDecisionDate.
     }
 }

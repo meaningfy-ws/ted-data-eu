@@ -4,12 +4,6 @@
     "FK": [
       {
         "ProcedureId": "Procedure"
-      },
-      {
-        "PlaceOfPerformance": "Address"
-      },
-      {
-        "LotAwardOutcomeId": "LotAwardOutcome"
       }
     ]
   },
@@ -17,7 +11,15 @@
     "PK": "LotAwardOutcomeId",
     "FK": [
       {
-        "SubmissionStatisticalInformationId": "SubmissionStatisticalInformation"
+        "LotId": "Lot"
+      }
+    ]
+  },
+  "SubmissionStatisticalInformation": {
+    "PK": "SubmissionStatisticalInformationId",
+    "FK": [
+      {
+        "LotAwardOutcomeId": "LotAwardOutcome"
       }
     ]
   },
@@ -32,10 +34,6 @@
         "ProcedureId": "Procedure"
       }
     ]
-  },
-  "SubmissionStatisticalInformation": {
-    "PK": "SubmissionStatisticalInformationId",
-    "FK": []
   },
   "Buyer": {
     "PK": "ProcedureOrganizationId",
@@ -67,11 +65,7 @@
   },
   "Organization": {
     "PK": "OrganizationId",
-    "FK": [
-      {
-        "AddressId": "Address"
-      }
-    ]
+    "FK": []
   },
   "Address": {
     "PK": "AddressId",
@@ -96,7 +90,7 @@
         "ProcedureId": "Procedure"
       },
       {
-        "OriginalCPV": "CPV"
+        "ProcedureCPV": "CPV"
       }
     ]
   },
@@ -107,12 +101,34 @@
         "LotId": "Lot"
       },
       {
-        "OriginalCPV": "CPV"
+        "LotCPV": "CPV"
       }
     ]
   },
   "ContactPoint": {
     "PK": "ContactPointId",
     "FK": []
+  },
+  "OrganizationAddress": {
+    "PK": "OrganizationAddressId",
+    "FK": [
+      {
+        "OrganizationId": "Organization"
+      },
+      {
+        "AddressId": "Address"
+      }
+    ]
+  },
+  "PlaceOfPerformance": {
+    "PK": "LotAddressId",
+    "FK": [
+      {
+        "LotId": "Lot"
+      },
+      {
+        "NUTSId": "NUTS"
+      }
+    ]
   }
 }

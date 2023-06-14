@@ -2,7 +2,7 @@ PREFIX epo: <http://data.europa.eu/a4g/ontology#>
 PREFIX afn: <http://jena.apache.org/ARQ/function#>
 
 select distinct
-?SubmissionStatisticalInformationId
+(afn:localname(?SubmissionStatisticalInformation) as ?SubmissionStatisticalInformationId)
 ?hasReceivedSMETenders
 ?hasReceivedTenders
 ?HighestReceivedTenderValue
@@ -12,6 +12,7 @@ select distinct
 ?hasEUReceivedTenders
 ?hasReceivedNonEUTenders
 ?hasElectronicTenders
+(afn:localname(?LotAwardOutcome) as ?LotAwardOutcomeId)
 where {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
@@ -22,38 +23,37 @@ where {
     }
 
     ?LotId a epo:Lot.
-    ?LotAwardOutcomeId epo:describesLot ?LotId;
+    ?LotAwardOutcome epo:describesLot ?LotId;
                        a epo:LotAwardOutcome.
-    ?SubmissionStatisticalInformationId epo:summarisesInformationForLotAwardOutcome ?LotAwardOutcomeId;
+    ?SubmissionStatisticalInformation epo:summarisesInformationForLotAwardOutcome ?LotAwardOutcome;
                                         a epo:SubmissionStatisticalInformation.
 
     optional {
-        ?SubmissionStatisticalInformationId epo:hasReceivedSMETenders ?hasReceivedSMETenders .
+        ?SubmissionStatisticalInformation epo:hasReceivedSMETenders ?hasReceivedSMETenders .
     }
     optional {
-        ?SubmissionStatisticalInformationId epo:hasReceivedTenders ?hasReceivedTenders .
+        ?SubmissionStatisticalInformation epo:hasReceivedTenders ?hasReceivedTenders .
     }
     optional {
-        ?SubmissionStatisticalInformationId epo:hasHighestReceivedTenderValue ?HighestReceivedTenderMonetaryValue .
+        ?SubmissionStatisticalInformation epo:hasHighestReceivedTenderValue ?HighestReceivedTenderMonetaryValue .
         ?HighestReceivedTenderMonetaryValue a epo:MonetaryValue;
                                             epo:hasAmountValue ?HighestReceivedTenderValue;
                                             epo:hasCurrency ?HighestReceivedTenderValueCurrencyURI.
 
     }
     optional {
-        ?SubmissionStatisticalInformationId epo:hasLowestReceivedTenderValue ?LowestReceivedTenderMonetaryValue .
+        ?SubmissionStatisticalInformation epo:hasLowestReceivedTenderValue ?LowestReceivedTenderMonetaryValue .
         ?LowestReceivedTenderMonetaryValue a epo:MonetaryValue;
                                             epo:hasAmountValue ?LowestReceivedTenderValue;
                                             epo:hasCurrency ?LowestReceivedTenderValueCurrencyURI.
     }
     optional {
-        ?SubmissionStatisticalInformationId epo:hasEUReceivedTenders ?hasEUReceivedTenders .
+        ?SubmissionStatisticalInformation epo:hasEUReceivedTenders ?hasEUReceivedTenders .
     }
     optional {
-        ?SubmissionStatisticalInformationId epo:hasElectronicTenders ?hasElectronicTenders .
+        ?SubmissionStatisticalInformation epo:hasElectronicTenders ?hasElectronicTenders .
     }
     optional {
-        ?SubmissionStatisticalInformationId epo:hasReceivedNonEUTenders ?hasReceivedNonEUTenders .
+        ?SubmissionStatisticalInformation epo:hasReceivedNonEUTenders ?hasReceivedNonEUTenders .
     }
-
 }

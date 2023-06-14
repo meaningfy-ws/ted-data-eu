@@ -2,22 +2,21 @@ PREFIX epo: <http://data.europa.eu/a4g/ontology#>
 PREFIX afn: <http://jena.apache.org/ARQ/function#>
 
 select distinct
-?NoticeId
+(afn:localname(?Notice) as ?NoticeId)
 ?NoticePublicationDate
-?ProcedureId
+(afn:localname(?Procedure) as ?ProcedureId)
 ?TotalAwardedValue
 (afn:localname(?TotalAwardedValueCurrencyURI) as ?TotalAwardedValueCurrency)
 where {
-    ?NoticeId a epo:ResultNotice;
+    ?Notice a epo:ResultNotice;
                    epo:hasPublicationDate ?NoticePublicationDate;
-                   epo:refersToProcedure ?ProcedureId.
-
+                   epo:refersToProcedure ?Procedure.
     values ?NoticePublicationDate {
         $date_range
     }
 
     optional {
-    	?NoticeId epo:announcesNoticeAwardInformation / epo:hasTotalAwardedValue ?MonetaryValue.
+    	?Notice epo:announcesNoticeAwardInformation / epo:hasTotalAwardedValue ?MonetaryValue.
         ?MonetaryValue a epo:MonetaryValue;
                        epo:hasAmountValue ?TotalAwardedValue;
                        epo:hasCurrency ?TotalAwardedValueCurrencyURI.

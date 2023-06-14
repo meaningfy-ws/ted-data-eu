@@ -6,7 +6,7 @@ PREFIX locn: <http://www.w3.org/ns/locn#>
 PREFIX cpov: <http://data.europa.eu/m8g/>
 
 select distinct
-?ContactPointId
+(afn:localname(?ContactPoint) as ?ContactPointId)
 ?ContactPointFax
 ?ContactPointTelephone
 ?ContactPointInternetAddress
@@ -21,29 +21,34 @@ where {
     }
 
     ?NoticeId epo:announcesRole ?Role.
+    {
+        ?Role a epo:Buyer.
+    } union {
+        ?Role a epo:Winner.
+    }
     ?Role epo:playedBy ?OrganizationId.
     ?OrganizationId a org:Organization.
 
     {
-    	?OrganizationId epo:hasPrimaryContactPoint ?ContactPointId.
+    	?OrganizationId epo:hasPrimaryContactPoint ?ContactPoint.
     }
     union
     {
-        ?Role epo:hasContactPointInRole ?ContactPointId .
+        ?Role epo:hasContactPointInRole ?ContactPoint .
     }
 
-	?ContactPointId a cpov:ContactPoint.
+	?ContactPoint a cpov:ContactPoint.
     optional {
-        ?ContactPointId epo:hasFax ?ContactPointFax.
+        ?ContactPoint epo:hasFax ?ContactPointFax.
     }
         optional {
-        ?ContactPointId cccev:telephone ?ContactPointTelephone.
+        ?ContactPoint cccev:telephone ?ContactPointTelephone.
     }
         optional {
-        ?ContactPointId epo:hasInternetAddress ?ContactPointInternetAddress.
+        ?ContactPoint epo:hasInternetAddress ?ContactPointInternetAddress.
     }
         optional {
-        ?ContactPointId cccev:email ?ContactPointEmail.
+        ?ContactPoint cccev:email ?ContactPointEmail.
     }
 
 }

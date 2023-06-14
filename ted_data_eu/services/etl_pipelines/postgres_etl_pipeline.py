@@ -9,6 +9,7 @@ from typing import Dict, Optional, List
 import pandas as pd
 import sqlalchemy
 from pandas import DataFrame
+from sqlalchemy.exc import IntegrityError
 from ted_sws.data_manager.adapters.triple_store import TripleStoreABC
 
 from ted_data_eu import config
@@ -230,6 +231,7 @@ def transform_lot_cpv_table(data_csv: io.StringIO) -> DataFrame:
     data_table.drop_duplicates(inplace=True)
     return data_table
 
+
 def transform_procedure_cpv_table(data_csv: io.StringIO) -> DataFrame:
     """
 
@@ -380,6 +382,7 @@ def get_notice_metadata(notice_uri: str) -> Optional[Dict]:
         NOTICE_NUMBER_COLUMN: notice_number
     }
 
+
 def generate_link_to_notice(notice_uri: str) -> Optional[str]:
     """
         Generates the link to the notice from the Notice URI
@@ -393,7 +396,8 @@ def generate_link_to_notice(notice_uri: str) -> Optional[str]:
     notice_metadata = get_notice_metadata(notice_uri)
     if notice_metadata is None:
         return None
-    return TED_NOTICES_LINK.format(notice_id=f"{notice_metadata[NOTICE_NUMBER_COLUMN]}-{notice_metadata[NOTICE_YEAR_COLUMN]}")
+    return TED_NOTICES_LINK.format(
+        notice_id=f"{notice_metadata[NOTICE_NUMBER_COLUMN]}-{notice_metadata[NOTICE_YEAR_COLUMN]}")
 
 
 def generate_notice_year(notice_uri: str) -> Optional[str]:
@@ -411,6 +415,7 @@ def generate_notice_year(notice_uri: str) -> Optional[str]:
         return None
     return notice_metadata[NOTICE_YEAR_COLUMN]
 
+
 def generate_notice_number(notice_uri: str) -> Optional[str]:
     """
         Generates the number of the notice from the Notice URI
@@ -425,7 +430,6 @@ def generate_notice_number(notice_uri: str) -> Optional[str]:
     if notice_metadata is None:
         return None
     return notice_metadata[NOTICE_NUMBER_COLUMN]
-
 
 
 class PostgresETLException(Exception):
@@ -532,23 +536,33 @@ class PostgresETLPipeline(ETLPipelineABC):
         data_table: DataFrame = transformed_data[DATA_FIELD]
 
         with self.sql_engine.connect() as sql_connection:
-            data_table.to_sql(self.table_name, con=sql_connection, if_exists='append',
-                              chunksize=SEND_CHUNK_SIZE,
-                              index=False)
+            try:
+                data_table.to_sql(self.table_name, con=sql_connection, if_exists='append',
+                                  chunksize=SEND_CHUNK_SIZE,
+                                  index=False)
+            except IntegrityError:
+                logging.error("Duplicate primary key found")
+                logging.error("Table name: %s", self.table_name)
+                logging.error("Date: START: %s END: %s", self.etl_metadata[START_DATE_METADATA_FIELD],
+                              self.etl_metadata[END_DATE_METADATA_FIELD])
+                logging.error("Primary key column name: %s", self.primary_key_column_name)
+                logging.error("Foreign key column names: %s", self.foreign_key_column_names)
+                logging.error("Data: %s", data_table.to_string())
+                raise PostgresETLException()
+
             sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name,
                                                                 primary_key_column_name=self.primary_key_column_name))
-        # TODO: temporary disable because of issue with dataframes with duplicate columns
-        # see issue: https://github.com/pandas-dev/pandas/issues/15988
-        # sql_connection.execute(ADD_PRIMARY_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
-        #                                                                   primary_key_column_name=self.primary_key_column_name))
-        # for foreign_keys in self.foreign_key_column_names:
-        #     for foreign_key_column_name, foreign_key_table_name in foreign_keys.items():
-        #         fk_table_exists = sql_connection.execute(
-        #             TABLE_EXISTS_QUERY.format(table_name=foreign_key_table_name)).fetchone()[0]
-        #         if fk_table_exists:
-        #             sql_connection.execute(ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
-        #                                                                               foreign_key_column_name=foreign_key_column_name,
-        #                                                                               foreign_key_table_name=foreign_key_table_name))
+
+        sql_connection.execute(ADD_PRIMARY_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
+                                                                          primary_key_column_name=self.primary_key_column_name))
+        for foreign_keys in self.foreign_key_column_names:
+            for foreign_key_column_name, foreign_key_table_name in foreign_keys.items():
+                fk_table_exists = sql_connection.execute(
+                    TABLE_EXISTS_QUERY.format(table_name=foreign_key_table_name)).fetchone()[0]
+                if fk_table_exists:
+                    sql_connection.execute(ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
+                                                                                      foreign_key_column_name=foreign_key_column_name,
+                                                                                      foreign_key_table_name=foreign_key_table_name))
 
         return {DATA_FIELD: transformed_data[DATA_FIELD]}
 

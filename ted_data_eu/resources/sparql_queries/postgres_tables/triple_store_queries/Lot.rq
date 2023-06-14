@@ -2,81 +2,64 @@ PREFIX epo: <http://data.europa.eu/a4g/ontology#>
 PREFIX afn: <http://jena.apache.org/ARQ/function#>
 
 select distinct
-?LotId
-?ProcedureId
+(afn:localname(?Lot) as ?LotId)
+(afn:localname(?Procedure) as ?ProcedureId)
 ?LotTitle
 ?isUsingEUFunds
 ?LotEstimatedValue
 (afn:localname(?LotEstimatedValueCurrencyURI) as ?LotEstimatedValueCurrency)
-?LotRestatedEstimatedValue
-(afn:localname(?LotRestatedEstimatedValueCurrencyURI) as ?LotRestatedEstimatedValueCurrency)
-?PlaceOfPerformance
-?LotAwardOutcomeId
 ?LotDescription
 where {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
-              epo:refersToLot ?LotId.
+              epo:refersToLot ?Lot.
 
     values ?NoticePublicationDate {
         $date_range
     }
 
-    ?LotId a epo:Lot.
-    ?ProcedureId epo:hasProcurementScopeDividedIntoLot ?LotId.
+    ?Lot a epo:Lot.
+    ?Procedure epo:hasProcurementScopeDividedIntoLot ?Lot.
 
     optional{
-        ?LotId a epo:Lot.
+        ?Lot a epo:Lot.
         {
             optional {
-                ?LotId epo:hasTitle ?LotTitleEn.
+                ?Lot epo:hasTitle ?LotTitleEn.
                 filter(lang(?LotTitleEn) = 'en')
             }
             optional {
-                SELECT ?LotId (SAMPLE (?LotTitleInternal) as ?LotTitleOther)
+                SELECT ?Lot (SAMPLE (?LotTitleInternal) as ?LotTitleOther)
                 {
-                    ?LotId epo:hasTitle ?LotTitleInternal .
+                    ?Lot epo:hasTitle ?LotTitleInternal .
                 }
-                GROUP BY ?LotId order by ?LotTitleInternal
+                GROUP BY ?Lot order by ?LotTitleInternal
             }
             BIND(COALESCE(?LotTitleEn, ?LotTitleOther) as ?LotTitle)
         }
     }
     optional{
-        ?LotId epo:isUsingEUFunds ?isUsingEUFunds.
+        ?Lot epo:isUsingEUFunds ?isUsingEUFunds.
     }
     optional{
-        ?LotId epo:hasRestatedEstimatedValue ?RestatedMonetaryValue.
-        ?RestatedMonetaryValue a epo:MonetaryValue;
-                               epo:hasAmountValue ?LotRestatedEstimatedValue;
-                               epo:hasCurrency ?LotRestatedEstimatedValueCurrencyURI.
-    }
-    optional{
-        ?LotId epo:hasEstimatedValue ?MonetaryValue.
+        ?Lot epo:hasEstimatedValue ?MonetaryValue.
         ?MonetaryValue a epo:MonetaryValue;
                        epo:hasAmountValue ?LotEstimatedValue;
                        epo:hasCurrency ?LotEstimatedValueCurrencyURI.
     }
     optional {
-        ?LotId epo:foreseesContractSpecificTerm / epo:definesSpecificPlaceOfPerformance ?PlaceOfPerformance.
-    }
-    optional{
-        ?LotAwardOutcomeId epo:describesLot ?LotId;
-                           a epo:LotAwardOutcome.
-    }
-    optional {
-        ?LotId a epo:Lot.
+        ?Lot a epo:Lot.
         {
             optional {
-                ?LotId epo:hasDescription ?LotDescriptionEn.
+                ?Lot epo:hasDescription ?LotDescriptionEn.
                 filter(lang(?LotDescriptionEn) = 'en')
             }
             optional {
-                SELECT ?LotId (SAMPLE (?LotDescriptionInternal) as ?LotDescriptionOther)
+                SELECT ?Lot (SAMPLE (?LotDescriptionInternal) as ?LotDescriptionOther)
                 {
-                    ?LotId epo:hasDescription ?LotDescriptionInternal .
+                    ?Lot epo:hasDescription ?LotDescriptionInternal .
                 }
-                GROUP BY ?LotId order by ?LotDescriptionInternal
+                GROUP BY ?Lot order by ?LotDescriptionInternal
             }
             BIND(COALESCE(?LotDescriptionEn, ?LotDescriptionOther) as ?LotDescription)
         }

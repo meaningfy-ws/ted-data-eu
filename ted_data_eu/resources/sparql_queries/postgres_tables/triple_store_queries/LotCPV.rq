@@ -2,19 +2,19 @@ PREFIX epo: <http://data.europa.eu/a4g/ontology#>
 PREFIX afn: <http://jena.apache.org/ARQ/function#>
 
 select distinct
-(concat(str(?LotId), ?LotCPV) as ?LotCPVId)
-?LotId
+(concat(str(afn:localname(?Lot)), ?LotCPV) as ?LotCPVId)
+(afn:localname(?Lot) as ?LotId)
 ?LotCPV
 where {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
-              epo:refersToLot ?LotId.
+              epo:refersToLot ?Lot.
 
     values ?NoticePublicationDate {
         $date_range
     }
 
-    ?LotId a epo:Lot;
+    ?Lot a epo:Lot;
            epo:hasPurpose / epo:hasAdditionalClassification ?LotSpecificCPVURI.
 	bind(afn:localname(?LotSpecificCPVURI) as ?LotCPV)
 }
