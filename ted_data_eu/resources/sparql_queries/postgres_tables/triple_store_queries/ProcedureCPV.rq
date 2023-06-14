@@ -2,7 +2,7 @@ PREFIX epo: <http://data.europa.eu/a4g/ontology#>
 PREFIX afn: <http://jena.apache.org/ARQ/function#>
 
 select distinct
-(concat(str(afn:localname(?Procedure)), ?ProcedureCPV) as ?ProcedureCPVId)
+(concat(str(afn:localname(?Procedure)), ?OriginalCPV) as ?ProcedureCPVId)
 (afn:localname(?Procedure) as ?ProcedureId)
 ?OriginalCPV
 where {
