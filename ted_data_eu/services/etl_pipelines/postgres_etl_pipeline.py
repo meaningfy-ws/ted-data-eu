@@ -533,8 +533,12 @@ class PostgresETLPipeline(ETLPipelineABC):
             except IntegrityError:
                 logging.error("Duplicate primary key found")
                 logging.error("Table name: %s", self.table_name)
-                logging.error("Date: START: %s END: %s", self.etl_metadata[START_DATE_METADATA_FIELD],
-                              self.etl_metadata[END_DATE_METADATA_FIELD])
+                etl_metadata_fields = self.etl_metadata.keys()
+                if START_DATE_METADATA_FIELD in etl_metadata_fields and END_DATE_METADATA_FIELD in etl_metadata_fields:
+                    logging.error("Date: START: %s END: %s", self.etl_metadata[START_DATE_METADATA_FIELD],
+                                  self.etl_metadata[END_DATE_METADATA_FIELD])
+                else:
+                    logging.error("Date: %s", (date.today() - timedelta(days=1)).strftime("\"%Y%m%d\""))
                 logging.error("Primary key column name: %s", self.primary_key_column_name)
                 logging.error("Foreign key column names: %s", self.foreign_key_column_names)
                 logging.error("Data: %s", data_table.to_string())
