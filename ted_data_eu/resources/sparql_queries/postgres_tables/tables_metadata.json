@@ -90,7 +90,7 @@
         "ProcedureId": "Procedure"
       },
       {
-        "ProcedureCPV": "CPV"
+        "OriginalCPV": "CPV"
       }
     ]
   },
@@ -101,7 +101,7 @@
         "LotId": "Lot"
       },
       {
-        "LotCPV": "CPV"
+        "OriginalCPV": "CPV"
       }
     ]
   },

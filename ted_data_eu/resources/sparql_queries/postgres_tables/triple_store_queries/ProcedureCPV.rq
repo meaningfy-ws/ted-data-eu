@@ -4,7 +4,7 @@ PREFIX afn: <http://jena.apache.org/ARQ/function#>
 select distinct
 (concat(str(afn:localname(?Procedure)), ?ProcedureCPV) as ?ProcedureCPVId)
 (afn:localname(?Procedure) as ?ProcedureId)
-?ProcedureCPV
+?OriginalCPV
 where {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
@@ -17,5 +17,5 @@ where {
     ?Procedure a epo:Procedure;
                  epo:hasPurpose / epo:hasMainClassification ?ProcedureCPVURI.
 
-    bind(afn:localname(?ProcedureCPVURI) as ?ProcedureCPV)
+    bind(afn:localname(?ProcedureCPVURI) as ?OriginalCPV)
 }

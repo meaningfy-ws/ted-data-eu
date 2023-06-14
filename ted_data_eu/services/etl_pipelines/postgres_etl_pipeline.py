@@ -65,8 +65,6 @@ LOWEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN = 'LowestReceivedTenderValueCurrenc
 
 LOT_ESTIMATED_VALUE_COLUMN = "LotEstimatedValue"
 LOT_ESTIMATED_VALUE_CURRENCY_COLUMN = "LotEstimatedValueCurrency"
-LOT_RESTATED_ESTIMATED_VALUE_COLUMN = "LotRestatedEstimatedValue"
-LOT_RESTATED_ESTIMATED_VALUE_CURRENCY_COLUMN = "LotRestatedEstimatedValueCurrency"
 TOTAL_AWARDED_VALUE_COLUMN = "TotalAwardedValue"
 TOTAL_AWARDED_VALUE_CURRENCY_COLUMN = "TotalAwardedValueCurrency"
 LOT_AWARDED_VALUE_COLUMN = "LotAwardedValue"
@@ -200,22 +198,14 @@ def transform_lot_table(data_csv: io.StringIO) -> DataFrame:
                                    currency=x[LOT_ESTIMATED_VALUE_CURRENCY_COLUMN],
                                    new_currency=EURO_CURRENCY_ID),
         axis=1)
-    data_table[LOT_RESTATED_ESTIMATED_VALUE_COLUMN] = data_table.apply(
-        lambda x: convert_currency(amount=x[LOT_RESTATED_ESTIMATED_VALUE_COLUMN],
-                                   currency=x[LOT_RESTATED_ESTIMATED_VALUE_CURRENCY_COLUMN],
-                                   new_currency=EURO_CURRENCY_ID),
-        axis=1)
     # change monetary value column type to int
     data_table[LOT_ESTIMATED_VALUE_COLUMN] = data_table[LOT_ESTIMATED_VALUE_COLUMN].astype(int)
-    data_table[LOT_RESTATED_ESTIMATED_VALUE_COLUMN] = data_table[LOT_RESTATED_ESTIMATED_VALUE_COLUMN].astype(int)
     # rename columns to include currency name EUR
-    data_table.rename(columns={LOT_ESTIMATED_VALUE_COLUMN: f"{LOT_ESTIMATED_VALUE_COLUMN}{EURO_ENDING}",
-                               LOT_RESTATED_ESTIMATED_VALUE_COLUMN: f"{LOT_RESTATED_ESTIMATED_VALUE_COLUMN}{EURO_ENDING}"},
+    data_table.rename(columns={LOT_ESTIMATED_VALUE_COLUMN: f"{LOT_ESTIMATED_VALUE_COLUMN}{EURO_ENDING}"},
                       inplace=True)
     # drop currency columns
     data_table.drop(
-        columns=[LOT_ESTIMATED_VALUE_CURRENCY_COLUMN,
-                 LOT_RESTATED_ESTIMATED_VALUE_CURRENCY_COLUMN],
+        columns=[LOT_ESTIMATED_VALUE_CURRENCY_COLUMN],
         inplace=True)
 
     data_table.drop_duplicates(inplace=True)

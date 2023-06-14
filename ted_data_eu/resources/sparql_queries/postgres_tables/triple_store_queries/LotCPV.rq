@@ -4,7 +4,7 @@ PREFIX afn: <http://jena.apache.org/ARQ/function#>
 select distinct
 (concat(str(afn:localname(?Lot)), ?LotCPV) as ?LotCPVId)
 (afn:localname(?Lot) as ?LotId)
-?LotCPV
+?OriginalCPV
 where {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
@@ -16,5 +16,5 @@ where {
 
     ?Lot a epo:Lot;
            epo:hasPurpose / epo:hasAdditionalClassification ?LotSpecificCPVURI.
-	bind(afn:localname(?LotSpecificCPVURI) as ?LotCPV)
+	bind(afn:localname(?LotSpecificCPVURI) as ?OriginalCPV)
 }
