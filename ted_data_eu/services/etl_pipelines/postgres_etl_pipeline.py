@@ -545,14 +545,16 @@ class PostgresETLPipeline(ETLPipelineABC):
 
             sql_connection.execute(ADD_PRIMARY_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
                                                                               primary_key_column_name=self.primary_key_column_name))
-            for foreign_keys in self.foreign_key_column_names:
-                for foreign_key_column_name, foreign_key_table_name in foreign_keys.items():
-                    fk_table_exists = sql_connection.execute(
-                        TABLE_EXISTS_QUERY.format(table_name=foreign_key_table_name)).fetchone()[0]
-                    if fk_table_exists:
-                        sql_connection.execute(ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
-                                                                                          foreign_key_column_name=foreign_key_column_name,
-                                                                                          foreign_key_table_name=foreign_key_table_name))
+            # TODO: Temporary disabled because ETL works in parallel and foreign keys are not created in time
+            # also see issue: https://github.com/pandas-dev/pandas/issues/15988
+            # for foreign_keys in self.foreign_key_column_names:
+            #     for foreign_key_column_name, foreign_key_table_name in foreign_keys.items():
+            #         fk_table_exists = sql_connection.execute(
+            #             TABLE_EXISTS_QUERY.format(table_name=foreign_key_table_name)).fetchone()[0]
+            #         if fk_table_exists:
+            #             sql_connection.execute(ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
+            #                                                                               foreign_key_column_name=foreign_key_column_name,
+            #                                                                               foreign_key_table_name=foreign_key_table_name))
 
         return {DATA_FIELD: transformed_data[DATA_FIELD]}
 
