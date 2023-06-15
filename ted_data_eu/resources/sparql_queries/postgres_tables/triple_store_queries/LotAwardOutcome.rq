@@ -9,7 +9,6 @@ select distinct
 ?LotBargainPrice
 (afn:localname(?LotBargainPriceCurrencyURI) as ?LotBargainPriceCurrency)
 ?AwardDecisionDate
-(afn:localname(?Lot) as ?LotId)
 where {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
