@@ -9,7 +9,14 @@
   },
   "LotAwardOutcome": {
     "PK": "LotAwardOutcomeId",
+    "FK": []
+  },
+  "LotAward": {
+    "PK": "LotAwardId",
     "FK": [
+      {
+        "LotAwardOutcomeId": "LotAwardOutcome"
+      },
       {
         "LotId": "Lot"
       }
@@ -108,6 +115,22 @@
   "ContactPoint": {
     "PK": "ContactPointId",
     "FK": []
+  },
+  "ContactPointEmail": {
+    "PK": "ContactPointEmailId",
+    "FK": [
+      {
+        "ContactPointId": "ContactPoint"
+      }
+    ]
+  },
+  "ContactPointInternetAddress": {
+    "PK": "ContactPointInternetAddressId",
+    "FK": [
+      {
+        "ContactPointId": "ContactPoint"
+      }
+    ]
   },
   "OrganizationAddress": {
     "PK": "OrganizationAddressId",

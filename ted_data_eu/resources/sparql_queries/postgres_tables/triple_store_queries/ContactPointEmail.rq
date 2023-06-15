@@ -6,10 +6,9 @@ PREFIX locn: <http://www.w3.org/ns/locn#>
 PREFIX cpov: <http://data.europa.eu/m8g/>
 
 select distinct
+(concat(str(afn:localname(?ContactPoint)), str(?Email)) as ?ContactPointEmailId)
 (afn:localname(?ContactPoint) as ?ContactPointId)
-?ContactPointFax
-?ContactPointTelephone
-?ContactPointName
+?Email
 where {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
@@ -35,31 +34,6 @@ where {
     {
         ?Role epo:hasContactPointInRole ?ContactPoint .
     }
-    ?ContactPoint a cpov:ContactPoint.
-
-    optional {
-        ?ContactPoint a cpov:ContactPoint.
-        {
-            optional {
-                ?ContactPoint epo:hasContactName ?ContactPointEn.
-                filter(lang(?ContactPointEn) = 'en')
-            }
-            optional {
-                SELECT ?ContactPoint (SAMPLE (?ContactPointInternal) as ?ContactPointOther)
-                {
-                    ?ContactPoint epo:hasContactName ?ContactPointInternal .
-                }
-                GROUP BY ?ContactPoint order by ?ContactPointInternal
-            }
-            BIND(COALESCE(?ContactPointEn, ?ContactPointOther) as ?ContactPointName)
-        }
-    }
-
-    optional {
-        ?ContactPoint epo:hasFax ?ContactPointFax.
-    }
-    optional {
-        ?ContactPoint cccev:telephone ?ContactPointTelephone.
-    }
-
+    ?ContactPoint a cpov:ContactPoint;
+                  cccev:email ?Email.
 }

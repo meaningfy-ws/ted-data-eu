@@ -1,0 +1,22 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
+PREFIX epd: <http://data.europa.eu/a4g/resource/>
+
+select distinct
+(concat(str(afn:localname(?Lot)), str(afn:localname(?LotAwardOutcome))) as ?LotAwardId)
+(afn:localname(?LotAwardOutcome) as ?LotAwardOutcomeId)
+(afn:localname(?Lot) as ?LotId)
+where {
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?NoticePublicationDate;
+              epo:refersToLot ?Lot.
+
+    values ?NoticePublicationDate {
+        $date_range
+    }
+
+    ?Lot a epo:Lot.
+    ?LotAwardOutcome epo:describesLot ?Lot;
+                       a epo:LotAwardOutcome.
+
+}
