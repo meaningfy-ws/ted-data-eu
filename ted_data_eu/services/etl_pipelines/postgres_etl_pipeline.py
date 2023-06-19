@@ -132,13 +132,13 @@ def transform_notice_table(data_csv: io.StringIO) -> DataFrame:
         TOTAL_AWARDED_VALUE_COLUMN: float
     }, parse_dates=[NOTICE_PUBLICATION_DATE_COLUMN])
     data_table[NOTICE_LINK_COLUMN] = data_table.apply(
-        lambda x: generate_link_to_notice(x[NOTICE_ID_COLUMN]), axis=1)
+        lambda row: generate_link_to_notice(row[NOTICE_ID_COLUMN]), axis=1)
 
     # Convert currency to EUR
     data_table[TOTAL_AWARDED_VALUE_COLUMN] = data_table.apply(
-        lambda x: convert_currency(amount=x[TOTAL_AWARDED_VALUE_COLUMN],
-                                   currency=x[TOTAL_AWARDED_VALUE_CURRENCY_COLUMN],
-                                   new_currency=EURO_CURRENCY_ID),
+        lambda row: convert_currency(amount=row[TOTAL_AWARDED_VALUE_COLUMN],
+                                     currency=row[TOTAL_AWARDED_VALUE_CURRENCY_COLUMN],
+                                     new_currency=EURO_CURRENCY_ID),
         axis=1)
     # change monetary value column type to int
     data_table[TOTAL_AWARDED_VALUE_COLUMN] = data_table[TOTAL_AWARDED_VALUE_COLUMN].astype(int)
@@ -147,9 +147,9 @@ def transform_notice_table(data_csv: io.StringIO) -> DataFrame:
     # Remove currency column
     data_table.drop(columns=[TOTAL_AWARDED_VALUE_CURRENCY_COLUMN], inplace=True)
     # Add notice year column
-    data_table[NOTICE_YEAR_COLUMN] = data_table.apply(lambda x: generate_notice_year(x[NOTICE_ID_COLUMN]), axis=1)
+    data_table[NOTICE_YEAR_COLUMN] = data_table.apply(lambda row: generate_notice_year(row[NOTICE_ID_COLUMN]), axis=1)
     # Add notice Number column
-    data_table[NOTICE_NUMBER_COLUMN] = data_table.apply(lambda x: generate_notice_number(x[NOTICE_ID_COLUMN]), axis=1)
+    data_table[NOTICE_NUMBER_COLUMN] = data_table.apply(lambda row: generate_notice_number(row[NOTICE_ID_COLUMN]), axis=1)
     # Remove duplicates
     data_table.drop_duplicates(inplace=True)
     return data_table
@@ -162,14 +162,14 @@ def transform_statistical_information_table(data_csv: io.StringIO) -> DataFrame:
     data_table = pd.read_csv(data_csv)
     # convert monetary value to EUR
     data_table[HIGHEST_RECEIVED_TENDER_VALUE_COLUMN] = data_table.apply(
-        lambda x: convert_currency(amount=x[HIGHEST_RECEIVED_TENDER_VALUE_COLUMN],
-                                   currency=x[HIGHEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN],
-                                   new_currency=EURO_CURRENCY_ID),
+        lambda row: convert_currency(amount=row[HIGHEST_RECEIVED_TENDER_VALUE_COLUMN],
+                                     currency=row[HIGHEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN],
+                                     new_currency=EURO_CURRENCY_ID),
         axis=1)
     data_table[LOWEST_RECEIVED_TENDER_VALUE_COLUMN] = data_table.apply(
-        lambda x: convert_currency(amount=x[LOWEST_RECEIVED_TENDER_VALUE_COLUMN],
-                                   currency=x[LOWEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN],
-                                   new_currency=EURO_CURRENCY_ID),
+        lambda row: convert_currency(amount=row[LOWEST_RECEIVED_TENDER_VALUE_COLUMN],
+                                     currency=row[LOWEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN],
+                                     new_currency=EURO_CURRENCY_ID),
         axis=1)
     # change monetary value column type to int
     data_table[HIGHEST_RECEIVED_TENDER_VALUE_COLUMN] = data_table[HIGHEST_RECEIVED_TENDER_VALUE_COLUMN].astype(int)
@@ -194,9 +194,9 @@ def transform_lot_table(data_csv: io.StringIO) -> DataFrame:
     data_table = pd.read_csv(data_csv)
     # convert monetary value to EUR
     data_table[LOT_ESTIMATED_VALUE_COLUMN] = data_table.apply(
-        lambda x: convert_currency(amount=x[LOT_ESTIMATED_VALUE_COLUMN],
-                                   currency=x[LOT_ESTIMATED_VALUE_CURRENCY_COLUMN],
-                                   new_currency=EURO_CURRENCY_ID),
+        lambda row: convert_currency(amount=row[LOT_ESTIMATED_VALUE_COLUMN],
+                                     currency=row[LOT_ESTIMATED_VALUE_CURRENCY_COLUMN],
+                                     new_currency=EURO_CURRENCY_ID),
         axis=1)
     # change monetary value column type to int
     data_table[LOT_ESTIMATED_VALUE_COLUMN] = data_table[LOT_ESTIMATED_VALUE_COLUMN].astype(int)
@@ -238,14 +238,14 @@ def transform_lot_award_outcome_table(data_csv: io.StringIO) -> DataFrame:
     data_table = pd.read_csv(data_csv)
     # convert monetary value to EUR
     data_table[LOT_AWARDED_VALUE_COLUMN] = data_table.apply(
-        lambda x: convert_currency(amount=x[LOT_AWARDED_VALUE_COLUMN],
-                                   currency=x[LOT_AWARDED_VALUE_CURRENCY_COLUMN],
-                                   new_currency=EURO_CURRENCY_ID),
+        lambda row: convert_currency(amount=row[LOT_AWARDED_VALUE_COLUMN],
+                                     currency=row[LOT_AWARDED_VALUE_CURRENCY_COLUMN],
+                                     new_currency=EURO_CURRENCY_ID),
         axis=1)
     data_table[LOT_BARGAIN_PRICE_COLUMN] = data_table.apply(
-        lambda x: convert_currency(amount=x[LOT_BARGAIN_PRICE_COLUMN],
-                                   currency=x[LOT_BARGAIN_PRICE_CURRENCY_COLUMN],
-                                   new_currency=EURO_CURRENCY_ID),
+        lambda row: convert_currency(amount=row[LOT_BARGAIN_PRICE_COLUMN],
+                                     currency=row[LOT_BARGAIN_PRICE_CURRENCY_COLUMN],
+                                     new_currency=EURO_CURRENCY_ID),
         axis=1)
     # change monetary value column type to int
     data_table[LOT_AWARDED_VALUE_COLUMN] = data_table[LOT_AWARDED_VALUE_COLUMN].astype(int)
@@ -270,9 +270,9 @@ def transform_procedure_table(data_csv: io.StringIO) -> DataFrame:
     data_table = pd.read_csv(data_csv)
     # convert monetary value to EUR
     data_table[PROCEDURE_ESTIMATED_VALUE_COLUMN] = data_table.apply(
-        lambda x: convert_currency(amount=x[PROCEDURE_ESTIMATED_VALUE_COLUMN],
-                                   currency=x[PROCEDURE_ESTIMATED_VALUE_CURRENCY_COLUMN],
-                                   new_currency=EURO_CURRENCY_ID),
+        lambda row: convert_currency(amount=row[PROCEDURE_ESTIMATED_VALUE_COLUMN],
+                                     currency=row[PROCEDURE_ESTIMATED_VALUE_CURRENCY_COLUMN],
+                                     new_currency=EURO_CURRENCY_ID),
         axis=1)
     # change monetary value column type to int
     data_table[PROCEDURE_ESTIMATED_VALUE_COLUMN] = data_table[PROCEDURE_ESTIMATED_VALUE_COLUMN].astype(int)
@@ -306,7 +306,7 @@ def transform_cpv_table(data_csv: io.StringIO) -> DataFrame:
         data_table[CPV_LEVEL_TEMPLATE.format(cpv_lvl=cpv_lvl)] = data_table.apply(
             lambda row: cpv_processor.get_cpv_parent_code_by_rank(row[ORIGINAL_CPV_COLUMN], cpv_lvl), axis=1)
         data_table[CPV_LABEL_TEMPLATE.format(cpv_lvl=cpv_lvl)] = data_table.apply(
-            lambda x: cpv_processor.get_cpv_label_by_code(x[CPV_LEVEL_TEMPLATE.format(cpv_lvl=cpv_lvl)]), axis=1)
+            lambda row: cpv_processor.get_cpv_label_by_code(row[CPV_LEVEL_TEMPLATE.format(cpv_lvl=cpv_lvl)]), axis=1)
     data_table.drop_duplicates(inplace=True)
     return data_table
 
@@ -327,12 +327,12 @@ def transform_nuts_table(data_csv: io.StringIO) -> DataFrame:
         axis=1)
     for nuts_lvl in range(MIN_NUTS_LVL, MAX_NUTS_LVL + 1):
         data_table[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)] = data_table.apply(
-            lambda x: cellar_nuts_processor.get_nuts_parent_code_by_level(x[NUTS_ID_COLUMN], nuts_lvl), axis=1)
+            lambda row: cellar_nuts_processor.get_nuts_parent_code_by_level(row[NUTS_ID_COLUMN], nuts_lvl), axis=1)
         data_table[NUTS_LABEL_TEMPLATE.format(nuts_lvl=nuts_lvl)] = data_table.apply(
-            lambda x: cellar_nuts_processor.get_nuts_label_by_code(x[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]),
+            lambda row: cellar_nuts_processor.get_nuts_label_by_code(row[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]),
             axis=1)
         data_table[NUTS_LABEL_ENG_TEMPLATE.format(nuts_lvl=nuts_lvl)] = data_table.apply(
-            lambda x: static_nuts_processor.get_nuts_label_by_code(x[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]),
+            lambda row: static_nuts_processor.get_nuts_label_by_code(row[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]),
             axis=1)
     data_table.drop_duplicates(inplace=True)
     return data_table
