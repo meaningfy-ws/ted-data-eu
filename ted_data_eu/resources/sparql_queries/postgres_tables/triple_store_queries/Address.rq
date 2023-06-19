@@ -6,52 +6,43 @@ PREFIX cccev: <http://data.europa.eu/m8g/>
 PREFIX dcterms: <http://purl.org/dc/terms/>
 
 select distinct
-?AddressId
+(afn:localname(?Address) as ?AddressId)
 (afn:localname(?hasCountryCode) as ?CountryCode)
 (afn:localname(?hasNUTSId) as ?NUTSId)
 ?PostCode
 ?PostName
 ?Thoroughfare
-?FullAddress
 where {
-
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
               epo:refersToProcedure ?ProcedureId.
-
     values ?NoticePublicationDate {
         $date_range
     }
 
+    ?NoticeId epo:announcesRole ?Role .
     {
-        ?NoticeId epo:announcesRole / epo:playedBy ?Organization.
-        ?Organization cccev:registeredAddress ?AddressId.
-    	?AddressId a locn:Address.
-    } union
-    {
-        ?NoticeId epo:refersToLot ?LotId.
-        ?LotId a epo:Lot;
-               epo:foreseesContractSpecificTerm / epo:definesSpecificPlaceOfPerformance ?AddressId .
-        ?AddressId a dcterms:Location .
+        ?Role a epo:Buyer.
+    } union {
+        ?Role a epo:Winner.
     }
-
+    ?Role epo:playedBy ?Organization.
+    ?Organization cccev:registeredAddress ?Address.
+    ?Address a locn:Address.
 
     optional {
-        ?AddressId epo:hasCountryCode ?hasCountryCode .
+        ?Address epo:hasCountryCode ?hasCountryCode .
     }
     optional {
-        ?AddressId epo:hasNutsCode ?hasNUTSId.
+        ?Address epo:hasNutsCode ?hasNUTSId.
     }
     optional {
-        ?AddressId locn:postCode ?PostCode.
+        ?Address locn:postCode ?PostCode.
     }
     optional {
-        ?AddressId locn:postName ?PostName.
+        ?Address locn:postName ?PostName.
     }
     optional {
-        ?AddressId locn:thoroughfare ?Thoroughfare.
-    }
-    optional {
-        ?AddressId locn:address ?FullAddress.
+        ?Address locn:thoroughfare ?Thoroughfare.
     }
 }

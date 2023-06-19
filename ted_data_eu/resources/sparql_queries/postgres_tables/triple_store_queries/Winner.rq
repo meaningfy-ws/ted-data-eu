@@ -1,11 +1,12 @@
 PREFIX epo: <http://data.europa.eu/a4g/ontology#>
 PREFIX cpov: <http://data.europa.eu/m8g/>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
 
 select distinct
-(concat(str(?LotAwardOutcomeId), str(?OrganizationId)) as ?LotAwardOutcomeOrganizationId)
-?LotAwardOutcomeId
-?OrganizationId
-?ContactPointId
+(concat(str(afn:localname(?LotAwardOutcome)), str(afn:localname(?Organization))) as ?LotAwardOutcomeOrganizationId)
+(afn:localname(?LotAwardOutcome) as ?LotAwardOutcomeId)
+(afn:localname(?Organization) as ?OrganizationId)
+(afn:localname(?ContactPoint) as ?ContactPointId)
 where {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
@@ -17,12 +18,12 @@ where {
     }
 
     ?LotId a epo:Lot.
-    ?LotAwardOutcomeId epo:describesLot ?LotId;
+    ?LotAwardOutcome epo:describesLot ?LotId;
                        a epo:LotAwardOutcome;
-                       epo:comprisesTenderAwardOutcome ?tender.
-    ?tender epo:indicatesAwardOfLotToWinner ?WinnerId.
+                       epo:comprisesTenderAwardOutcome ?Tender.
+    ?Tender epo:indicatesAwardOfLotToWinner ?WinnerId.
     ?WinnerId a epo:Winner;
-              epo:playedBy ?OrganizationId.
-    ?OrganizationId epo:hasPrimaryContactPoint ?ContactPointId .
-    ?ContactPointId a cpov:ContactPoint.
+              epo:playedBy ?Organization.
+    ?Organization epo:hasPrimaryContactPoint ?ContactPoint .
+    ?ContactPoint a cpov:ContactPoint.
 }
