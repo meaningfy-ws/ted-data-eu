@@ -1,3 +1,6 @@
+import json
+
+import pandas as pd
 import pytest
 
 from ted_data_eu.adapters.storage import ElasticStorage
@@ -5,6 +8,7 @@ from ted_data_eu.adapters.triple_store import GraphDBAdapter
 from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import TedDataETLPipeline, TDA_FREE_INDEX_NAME, \
     TDA_STARTER_INDEX_NAME, TDA_PREMIUM_INDEX_NAME
 from tests.test_data import TEST_RDF_MANIFESTATIONS_PATH, TEST_DOCUMENTS_PATH, TEST_NOTICES_PATH
+from tests.test_data.deduplication_model import SPLINK_TEST_MODEL_PATH
 
 REPOSITORY_NAME = "unknown_repository_123456677"
 SPARQL_QUERY_TRIPLES = "select * {?s ?p ?o}"
@@ -90,3 +94,25 @@ def real_country_code_alpha_3():
 @pytest.fixture
 def fake_country_code_alpha_3():
     return "XXX"
+
+
+
+@pytest.fixture
+def duplicates_records_unique_column_name() -> str:
+    return "test_unique_id"
+
+@pytest.fixture
+def duplicates_records_dataframe(duplicates_records_unique_column_name) -> pd.DataFrame:
+    return pd.DataFrame({'name': ['John Doe', 'J. Doe'] * 2,
+                         'address': ['123 Main St', '47 Green St'] * 2,
+                         'country': ['USA', 'Canada'] * 2,
+                         duplicates_records_unique_column_name: ["r1", "r2", "r3", "r4"]
+                         })
+@pytest.fixture
+def reference_table_name() -> str:
+    return "test_reference_table"
+
+
+@pytest.fixture
+def linkage_model_config() -> dict:
+    return json.loads(SPLINK_TEST_MODEL_PATH.read_text(encoding="utf-8"))

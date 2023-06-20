@@ -1,0 +1,71 @@
+{
+    "link_type": "dedupe_only",
+    "comparisons": [
+        {
+            "output_column_name": "address",
+            "comparison_levels": [
+                {
+                    "sql_condition": "\"address_l\" IS NULL OR \"address_r\" IS NULL",
+                    "label_for_charts": "Null",
+                    "is_null_level": true
+                },
+                {
+                    "sql_condition": "\"address_l\" = \"address_r\"",
+                    "label_for_charts": "Exact match"
+                },
+                {
+                    "sql_condition": "jaro_winkler_similarity(\"address_l\", \"address_r\") >= 0.9",
+                    "label_for_charts": "Jaro_winkler_similarity >= 0.9"
+                },
+                {
+                    "sql_condition": "jaro_winkler_similarity(\"address_l\", \"address_r\") >= 0.7",
+                    "label_for_charts": "Jaro_winkler_similarity >= 0.7"
+                },
+                {
+                    "sql_condition": "ELSE",
+                    "label_for_charts": "All other comparisons"
+                }
+            ],
+            "comparison_description": "Exact match vs. Address within jaro_winkler_similarity thresholds 0.9, 0.7 vs. anything else"
+        },
+        {
+            "output_column_name": "name",
+            "comparison_levels": [
+                {
+                    "sql_condition": "\"name_l\" IS NULL OR \"name_r\" IS NULL",
+                    "label_for_charts": "Null",
+                    "is_null_level": true
+                },
+                {
+                    "sql_condition": "\"name_l\" = \"name_r\"",
+                    "label_for_charts": "Exact match name"
+                },
+                {
+                    "sql_condition": "damerau_levenshtein(\"name_l\", \"name_r\") <= 1",
+                    "label_for_charts": "Damerau_levenshtein <= 1"
+                },
+                {
+                    "sql_condition": "jaro_winkler_similarity(\"name_l\", \"name_r\") >= 0.9",
+                    "label_for_charts": "Jaro_winkler_similarity >= 0.9"
+                },
+                {
+                    "sql_condition": "jaro_winkler_similarity(\"name_l\", \"name_r\") >= 0.8",
+                    "label_for_charts": "Jaro_winkler_similarity >= 0.8"
+                },
+                {
+                    "sql_condition": "ELSE",
+                    "label_for_charts": "All other comparisons"
+                }
+            ],
+            "comparison_description": "Exact match vs. Name within levenshtein threshold 1 vs. Name within damerau-levenshtein threshold 1 vs. Name within jaro_winkler thresholds 0.9, 0.8 vs. anything else"
+        }
+    ],
+    "blocking_rules_to_generate_predictions": [
+        "l.country = r.country"
+    ],
+    "retain_matching_columns": true,
+    "retain_intermediate_calculation_columns": false,
+    "sql_dialect": "duckdb",
+    "linker_uid": "LM64LyAY",
+    "probability_two_random_records_match": 0.0001
+}
