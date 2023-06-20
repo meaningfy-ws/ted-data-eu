@@ -1,0 +1,44 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
+PREFIX locn: <http://www.w3.org/ns/locn#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+
+select distinct
+(concat(str(afn:localname(?Lot)), afn:localname(?Address)) as ?LotAddressId)
+(afn:localname(?Lot) as ?LotId)
+(afn:localname(?hasNutsCode) as ?NUTSId)
+?FullAddress
+where {
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?NoticePublicationDate;
+              epo:refersToLot ?Lot.
+
+    values ?NoticePublicationDate {
+        $date_range
+    }
+
+    ?Lot a epo:Lot;
+         epo:foreseesContractSpecificTerm / epo:definesSpecificPlaceOfPerformance ?Location .
+    ?Location a dcterms:Location;
+              locn:address ?Address.
+    optional {
+        ?Location epo:hasNutsCode ?hasNutsCode.
+    }
+    optional {
+        ?Address a locn:Address.
+        {
+            optional {
+                ?Address locn:fullAddress ?FullAddressEn.
+                filter(lang(?FullAddressEn) = 'en')
+            }
+            optional {
+                SELECT ?Address (SAMPLE (?FullAddressInternal) as ?FullAddressOther)
+                {
+                    ?Address locn:fullAddress ?FullAddressInternal .
+                }
+                GROUP BY ?Address order by ?FullAddressInternal
+            }
+            BIND(COALESCE(?FullAddressEn, ?FullAddressOther) as ?FullAddress)
+        }
+    }
+}

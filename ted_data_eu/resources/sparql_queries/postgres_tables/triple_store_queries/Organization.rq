@@ -5,47 +5,38 @@ PREFIX cccev: <http://data.europa.eu/m8g/>
 PREFIX afn: <http://jena.apache.org/ARQ/function#>
 
 select distinct
-?OrganizationId
+(afn:localname(?Organization) as ?OrganizationId)
 ?LegalName
-?AddressId
-(afn:localname(?hasBusinessSize) as ?BusinessSize)
 where {
     ?ResultNotice a epo:ResultNotice;
-                   epo:hasPublicationDate ?NoticePublicationDate;
-                   epo:refersToProcedure ?ProcedureId.
+                  epo:hasPublicationDate ?NoticePublicationDate;
+                  epo:refersToProcedure ?ProcedureId.
     values ?NoticePublicationDate {
         $date_range
     }
+
+    ?ResultNotice epo:announcesRole ?Role.
+    {
+        ?Role a epo:Buyer.
+    } union {
+        ?Role a epo:Winner.
+    }
+    ?Role epo:playedBy ?Organization.
     optional {
-        ?ResultNotice epo:announcesRole ?Role.
+        ?Organization a org:Organization.
         {
-            ?Role a epo:Buyer.
-        } union {
-            ?Role a epo:Winner.
-        }
-        ?Role epo:playedBy ?OrganizationId.
-        optional {
-            ?OrganizationId a org:Organization.
-            {
-                optional {
-                    ?OrganizationId epo:hasLegalName ?LegalNameEn .
-                    filter(lang(?LegalNameEn) = 'en')
-                }
-                optional {
-                    SELECT ?OrganizationId (SAMPLE (?LegalNameInternal) as ?LegalNameOther)
-                    {
-                        ?OrganizationId epo:hasLegalName ?LegalNameInternal .
-                    }
-                    GROUP BY ?OrganizationId order by ?LegalNameInternal
-                }
-                BIND(COALESCE(?LegalNameEn, ?LegalNameOther) as ?LegalName)
+            optional {
+                ?Organization epo:hasLegalName ?LegalNameEn .
+                filter(lang(?LegalNameEn) = 'en')
             }
             optional {
-                ?OrganizationId cccev:registeredAddress ?AddressId.
+                SELECT ?Organization (SAMPLE (?LegalNameInternal) as ?LegalNameOther)
+                {
+                    ?Organization epo:hasLegalName ?LegalNameInternal .
+                }
+                GROUP BY ?Organization order by ?LegalNameInternal
             }
-            optional {
-                ?OrganizationId epo:hasBusinessSize ?hasBusinessSize.
-            }
+            BIND(COALESCE(?LegalNameEn, ?LegalNameOther) as ?LegalName)
         }
     }
-} 
+}

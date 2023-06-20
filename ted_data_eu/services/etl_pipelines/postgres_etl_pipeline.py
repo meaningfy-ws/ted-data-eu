@@ -9,6 +9,8 @@ from typing import Dict, Optional, List
 import pandas as pd
 import sqlalchemy
 from pandas import DataFrame
+from sqlalchemy.exc import IntegrityError
+from ted_sws.data_manager.adapters.triple_store import TripleStoreABC
 
 from ted_data_eu import config
 from ted_data_eu.adapters.cpv_processor import CellarCPVProcessor
@@ -43,6 +45,9 @@ CONVERSION_TO_EUR_DATE_COLUMN = "ConversionToEURDate"
 
 NOTICE_LINK_COLUMN = "NoticeLink"
 NOTICE_ID_COLUMN = "NoticeId"
+NOTICE_YEAR_COLUMN = "NoticeYear"
+NOTICE_NUMBER_COLUMN = "NoticeNumber"
+NOTICE_PUBLICATION_DATE_COLUMN = "NoticePublicationDate"
 
 ORIGINAL_CPV_COLUMN = "OriginalCPV"
 ORIGINAL_CPV_LABEL_COLUMN = "OriginalCPVLabel"
@@ -60,8 +65,6 @@ LOWEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN = 'LowestReceivedTenderValueCurrenc
 
 LOT_ESTIMATED_VALUE_COLUMN = "LotEstimatedValue"
 LOT_ESTIMATED_VALUE_CURRENCY_COLUMN = "LotEstimatedValueCurrency"
-LOT_RESTATED_ESTIMATED_VALUE_COLUMN = "LotRestatedEstimatedValue"
-LOT_RESTATED_ESTIMATED_VALUE_CURRENCY_COLUMN = "LotRestatedEstimatedValueCurrency"
 TOTAL_AWARDED_VALUE_COLUMN = "TotalAwardedValue"
 TOTAL_AWARDED_VALUE_CURRENCY_COLUMN = "TotalAwardedValueCurrency"
 LOT_AWARDED_VALUE_COLUMN = "LotAwardedValue"
@@ -127,15 +130,15 @@ def transform_notice_table(data_csv: io.StringIO) -> DataFrame:
     """
     data_table = pd.read_csv(data_csv, dtype={
         TOTAL_AWARDED_VALUE_COLUMN: float
-    })
+    }, parse_dates=[NOTICE_PUBLICATION_DATE_COLUMN])
     data_table[NOTICE_LINK_COLUMN] = data_table.apply(
-        lambda x: generate_link_to_notice(x[NOTICE_ID_COLUMN]), axis=1)
+        lambda row: generate_link_to_notice(row[NOTICE_ID_COLUMN]), axis=1)
 
     # Convert currency to EUR
     data_table[TOTAL_AWARDED_VALUE_COLUMN] = data_table.apply(
-        lambda x: convert_currency(amount=x[TOTAL_AWARDED_VALUE_COLUMN],
-                                   currency=x[TOTAL_AWARDED_VALUE_CURRENCY_COLUMN],
-                                   new_currency=EURO_CURRENCY_ID),
+        lambda row: convert_currency(amount=row[TOTAL_AWARDED_VALUE_COLUMN],
+                                     currency=row[TOTAL_AWARDED_VALUE_CURRENCY_COLUMN],
+                                     new_currency=EURO_CURRENCY_ID),
         axis=1)
     # change monetary value column type to int
     data_table[TOTAL_AWARDED_VALUE_COLUMN] = data_table[TOTAL_AWARDED_VALUE_COLUMN].astype(int)
@@ -143,6 +146,11 @@ def transform_notice_table(data_csv: io.StringIO) -> DataFrame:
     data_table.rename(columns={TOTAL_AWARDED_VALUE_COLUMN: f"{TOTAL_AWARDED_VALUE_COLUMN}{EURO_ENDING}"}, inplace=True)
     # Remove currency column
     data_table.drop(columns=[TOTAL_AWARDED_VALUE_CURRENCY_COLUMN], inplace=True)
+    # Add notice year column
+    data_table[NOTICE_YEAR_COLUMN] = data_table.apply(lambda row: generate_notice_year(row[NOTICE_ID_COLUMN]), axis=1)
+    # Add notice Number column
+    data_table[NOTICE_NUMBER_COLUMN] = data_table.apply(lambda row: generate_notice_number(row[NOTICE_ID_COLUMN]), axis=1)
+    # Remove duplicates
     data_table.drop_duplicates(inplace=True)
     return data_table
 
@@ -154,14 +162,14 @@ def transform_statistical_information_table(data_csv: io.StringIO) -> DataFrame:
     data_table = pd.read_csv(data_csv)
     # convert monetary value to EUR
     data_table[HIGHEST_RECEIVED_TENDER_VALUE_COLUMN] = data_table.apply(
-        lambda x: convert_currency(amount=x[HIGHEST_RECEIVED_TENDER_VALUE_COLUMN],
-                                   currency=x[HIGHEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN],
-                                   new_currency=EURO_CURRENCY_ID),
+        lambda row: convert_currency(amount=row[HIGHEST_RECEIVED_TENDER_VALUE_COLUMN],
+                                     currency=row[HIGHEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN],
+                                     new_currency=EURO_CURRENCY_ID),
         axis=1)
     data_table[LOWEST_RECEIVED_TENDER_VALUE_COLUMN] = data_table.apply(
-        lambda x: convert_currency(amount=x[LOWEST_RECEIVED_TENDER_VALUE_COLUMN],
-                                   currency=x[LOWEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN],
-                                   new_currency=EURO_CURRENCY_ID),
+        lambda row: convert_currency(amount=row[LOWEST_RECEIVED_TENDER_VALUE_COLUMN],
+                                     currency=row[LOWEST_RECEIVED_TENDER_VALUE_CURRENCY_COLUMN],
+                                     new_currency=EURO_CURRENCY_ID),
         axis=1)
     # change monetary value column type to int
     data_table[HIGHEST_RECEIVED_TENDER_VALUE_COLUMN] = data_table[HIGHEST_RECEIVED_TENDER_VALUE_COLUMN].astype(int)
@@ -186,30 +194,40 @@ def transform_lot_table(data_csv: io.StringIO) -> DataFrame:
     data_table = pd.read_csv(data_csv)
     # convert monetary value to EUR
     data_table[LOT_ESTIMATED_VALUE_COLUMN] = data_table.apply(
-        lambda x: convert_currency(amount=x[LOT_ESTIMATED_VALUE_COLUMN],
-                                   currency=x[LOT_ESTIMATED_VALUE_CURRENCY_COLUMN],
-                                   new_currency=EURO_CURRENCY_ID),
-        axis=1)
-    data_table[LOT_RESTATED_ESTIMATED_VALUE_COLUMN] = data_table.apply(
-        lambda x: convert_currency(amount=x[LOT_RESTATED_ESTIMATED_VALUE_COLUMN],
-                                   currency=x[LOT_RESTATED_ESTIMATED_VALUE_CURRENCY_COLUMN],
-                                   new_currency=EURO_CURRENCY_ID),
+        lambda row: convert_currency(amount=row[LOT_ESTIMATED_VALUE_COLUMN],
+                                     currency=row[LOT_ESTIMATED_VALUE_CURRENCY_COLUMN],
+                                     new_currency=EURO_CURRENCY_ID),
         axis=1)
     # change monetary value column type to int
     data_table[LOT_ESTIMATED_VALUE_COLUMN] = data_table[LOT_ESTIMATED_VALUE_COLUMN].astype(int)
-    data_table[LOT_RESTATED_ESTIMATED_VALUE_COLUMN] = data_table[LOT_RESTATED_ESTIMATED_VALUE_COLUMN].astype(int)
     # rename columns to include currency name EUR
-    data_table.rename(columns={LOT_ESTIMATED_VALUE_COLUMN: f"{LOT_ESTIMATED_VALUE_COLUMN}{EURO_ENDING}",
-                               LOT_RESTATED_ESTIMATED_VALUE_COLUMN: f"{LOT_RESTATED_ESTIMATED_VALUE_COLUMN}{EURO_ENDING}"},
+    data_table.rename(columns={LOT_ESTIMATED_VALUE_COLUMN: f"{LOT_ESTIMATED_VALUE_COLUMN}{EURO_ENDING}"},
                       inplace=True)
     # drop currency columns
     data_table.drop(
-        columns=[LOT_ESTIMATED_VALUE_CURRENCY_COLUMN,
-                 LOT_RESTATED_ESTIMATED_VALUE_CURRENCY_COLUMN],
+        columns=[LOT_ESTIMATED_VALUE_CURRENCY_COLUMN],
         inplace=True)
 
     data_table.drop_duplicates(inplace=True)
 
+    return data_table
+
+
+def transform_lot_cpv_table(data_csv: io.StringIO) -> DataFrame:
+    """
+
+    """
+    data_table = pd.read_csv(data_csv, dtype=str)
+    data_table.drop_duplicates(inplace=True)
+    return data_table
+
+
+def transform_procedure_cpv_table(data_csv: io.StringIO) -> DataFrame:
+    """
+
+    """
+    data_table = pd.read_csv(data_csv, dtype=str)
+    data_table.drop_duplicates(inplace=True)
     return data_table
 
 
@@ -220,14 +238,14 @@ def transform_lot_award_outcome_table(data_csv: io.StringIO) -> DataFrame:
     data_table = pd.read_csv(data_csv)
     # convert monetary value to EUR
     data_table[LOT_AWARDED_VALUE_COLUMN] = data_table.apply(
-        lambda x: convert_currency(amount=x[LOT_AWARDED_VALUE_COLUMN],
-                                   currency=x[LOT_AWARDED_VALUE_CURRENCY_COLUMN],
-                                   new_currency=EURO_CURRENCY_ID),
+        lambda row: convert_currency(amount=row[LOT_AWARDED_VALUE_COLUMN],
+                                     currency=row[LOT_AWARDED_VALUE_CURRENCY_COLUMN],
+                                     new_currency=EURO_CURRENCY_ID),
         axis=1)
     data_table[LOT_BARGAIN_PRICE_COLUMN] = data_table.apply(
-        lambda x: convert_currency(amount=x[LOT_BARGAIN_PRICE_COLUMN],
-                                   currency=x[LOT_BARGAIN_PRICE_CURRENCY_COLUMN],
-                                   new_currency=EURO_CURRENCY_ID),
+        lambda row: convert_currency(amount=row[LOT_BARGAIN_PRICE_COLUMN],
+                                     currency=row[LOT_BARGAIN_PRICE_CURRENCY_COLUMN],
+                                     new_currency=EURO_CURRENCY_ID),
         axis=1)
     # change monetary value column type to int
     data_table[LOT_AWARDED_VALUE_COLUMN] = data_table[LOT_AWARDED_VALUE_COLUMN].astype(int)
@@ -252,9 +270,9 @@ def transform_procedure_table(data_csv: io.StringIO) -> DataFrame:
     data_table = pd.read_csv(data_csv)
     # convert monetary value to EUR
     data_table[PROCEDURE_ESTIMATED_VALUE_COLUMN] = data_table.apply(
-        lambda x: convert_currency(amount=x[PROCEDURE_ESTIMATED_VALUE_COLUMN],
-                                   currency=x[PROCEDURE_ESTIMATED_VALUE_CURRENCY_COLUMN],
-                                   new_currency=EURO_CURRENCY_ID),
+        lambda row: convert_currency(amount=row[PROCEDURE_ESTIMATED_VALUE_COLUMN],
+                                     currency=row[PROCEDURE_ESTIMATED_VALUE_CURRENCY_COLUMN],
+                                     new_currency=EURO_CURRENCY_ID),
         axis=1)
     # change monetary value column type to int
     data_table[PROCEDURE_ESTIMATED_VALUE_COLUMN] = data_table[PROCEDURE_ESTIMATED_VALUE_COLUMN].astype(int)
@@ -288,7 +306,7 @@ def transform_cpv_table(data_csv: io.StringIO) -> DataFrame:
         data_table[CPV_LEVEL_TEMPLATE.format(cpv_lvl=cpv_lvl)] = data_table.apply(
             lambda row: cpv_processor.get_cpv_parent_code_by_rank(row[ORIGINAL_CPV_COLUMN], cpv_lvl), axis=1)
         data_table[CPV_LABEL_TEMPLATE.format(cpv_lvl=cpv_lvl)] = data_table.apply(
-            lambda x: cpv_processor.get_cpv_label_by_code(x[CPV_LEVEL_TEMPLATE.format(cpv_lvl=cpv_lvl)]), axis=1)
+            lambda row: cpv_processor.get_cpv_label_by_code(row[CPV_LEVEL_TEMPLATE.format(cpv_lvl=cpv_lvl)]), axis=1)
     data_table.drop_duplicates(inplace=True)
     return data_table
 
@@ -309,11 +327,13 @@ def transform_nuts_table(data_csv: io.StringIO) -> DataFrame:
         axis=1)
     for nuts_lvl in range(MIN_NUTS_LVL, MAX_NUTS_LVL + 1):
         data_table[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)] = data_table.apply(
-            lambda x: cellar_nuts_processor.get_nuts_parent_code_by_level(x[NUTS_ID_COLUMN], nuts_lvl), axis=1)
+            lambda row: cellar_nuts_processor.get_nuts_parent_code_by_level(row[NUTS_ID_COLUMN], nuts_lvl), axis=1)
         data_table[NUTS_LABEL_TEMPLATE.format(nuts_lvl=nuts_lvl)] = data_table.apply(
-            lambda x: cellar_nuts_processor.get_nuts_label_by_code(x[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]), axis=1)
+            lambda row: cellar_nuts_processor.get_nuts_label_by_code(row[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]),
+            axis=1)
         data_table[NUTS_LABEL_ENG_TEMPLATE.format(nuts_lvl=nuts_lvl)] = data_table.apply(
-            lambda x: static_nuts_processor.get_nuts_label_by_code(x[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]), axis=1)
+            lambda row: static_nuts_processor.get_nuts_label_by_code(row[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]),
+            axis=1)
     data_table.drop_duplicates(inplace=True)
     return data_table
 
@@ -325,8 +345,32 @@ TRANSFORMED_TABLES = {
     "LotAwardOutcome": transform_lot_award_outcome_table,
     "Procedure": transform_procedure_table,
     "CPV": transform_cpv_table,
-    "NUTS": transform_nuts_table
+    "NUTS": transform_nuts_table,
+    "LotCPV": transform_lot_cpv_table,
+    "ProcedureCPV": transform_procedure_cpv_table,
 }
+
+
+def get_notice_metadata(notice_uri: str) -> Optional[Dict]:
+    """
+        Gets the metadata of the notice from the Notice URI
+        :param notice_uri: URI of the lot as str
+        :return: Metadata of the notice as dict
+
+        example Notice URI: epd:id_2015-S-250-456405_Notice
+    """
+    if not notice_uri:
+        return None
+    lot_id = re.search(r"id_(.*)_Notice", notice_uri)
+    if lot_id is None:
+        return None
+    lot_id = lot_id.group(1)
+    notice_year = lot_id.split('-')[0]
+    notice_number = lot_id.split('-')[-1]
+    return {
+        NOTICE_YEAR_COLUMN: notice_year,
+        NOTICE_NUMBER_COLUMN: notice_number
+    }
 
 
 def generate_link_to_notice(notice_uri: str) -> Optional[str]:
@@ -339,13 +383,43 @@ def generate_link_to_notice(notice_uri: str) -> Optional[str]:
     """
     if not notice_uri:
         return None
-    lot_id = re.search(r"id_(.*)_Notice", notice_uri)
-    if lot_id is None:
+    notice_metadata = get_notice_metadata(notice_uri)
+    if notice_metadata is None:
         return None
-    lot_id = lot_id.group(1)
-    notice_year = lot_id.split('-')[0]
-    notice_number = lot_id.split('-')[-1]
-    return TED_NOTICES_LINK.format(notice_id=f"{notice_number}-{notice_year}")
+    return TED_NOTICES_LINK.format(
+        notice_id=f"{notice_metadata[NOTICE_NUMBER_COLUMN]}-{notice_metadata[NOTICE_YEAR_COLUMN]}")
+
+
+def generate_notice_year(notice_uri: str) -> Optional[str]:
+    """
+        Generates the year of the notice from the Notice URI
+        :param notice_uri: URI of the lot as str
+        :return: Year of the notice as str
+
+        example Notice URI: epd:id_2015-S-250-456405_Notice
+    """
+    if not notice_uri:
+        return None
+    notice_metadata = get_notice_metadata(notice_uri)
+    if notice_metadata is None:
+        return None
+    return notice_metadata[NOTICE_YEAR_COLUMN]
+
+
+def generate_notice_number(notice_uri: str) -> Optional[str]:
+    """
+        Generates the number of the notice from the Notice URI
+        :param notice_uri: URI of the lot as str
+        :return: Number of the notice as str
+
+        example Notice URI: epd:id_2015-S-250-456405_Notice
+    """
+    if not notice_uri:
+        return None
+    notice_metadata = get_notice_metadata(notice_uri)
+    if notice_metadata is None:
+        return None
+    return notice_metadata[NOTICE_NUMBER_COLUMN]
 
 
 class PostgresETLException(Exception):
@@ -361,7 +435,8 @@ class PostgresETLPipeline(ETLPipelineABC):
     """
 
     def __init__(self, table_name: str, sparql_query_path: Path, primary_key_column_name: str,
-                 postgres_url: str = None, foreign_key_column_names: List[dict] = None):
+                 postgres_url: str = None, foreign_key_column_names: List[dict] = None,
+                 triple_store: TripleStoreABC = None, triple_store_endpoint: str = None):
         """
             Constructor
         """
@@ -373,6 +448,8 @@ class PostgresETLPipeline(ETLPipelineABC):
                                                    isolation_level=SQLALCHEMY_ISOLATION_LEVEL)
         self.primary_key_column_name = primary_key_column_name
         self.foreign_key_column_names = foreign_key_column_names if foreign_key_column_names else []
+        self.triple_store = triple_store or GraphDBAdapter()
+        self.triple_store_endpoint = triple_store_endpoint or TRIPLE_STORE_ENDPOINT
 
     def set_metadata(self, etl_metadata: dict):
         """
@@ -413,9 +490,8 @@ class PostgresETLPipeline(ETLPipelineABC):
 
         sparql_query_template = Template(self.sparql_query_path.read_text(encoding="utf-8"))
         sparql_query = sparql_query_template.substitute(date_range=date_range)
-        triple_store_endpoint = GraphDBAdapter().get_sparql_tda_triple_store_endpoint(
-            repository_name=TRIPLE_STORE_ENDPOINT)
-
+        triple_store_endpoint = self.triple_store.get_sparql_tda_triple_store_endpoint(
+            repository_name=self.triple_store_endpoint)
         result_table = triple_store_endpoint.with_query(sparql_query).fetch_csv()
         return {DATA_FIELD: result_table}
 
@@ -450,23 +526,39 @@ class PostgresETLPipeline(ETLPipelineABC):
         data_table: DataFrame = transformed_data[DATA_FIELD]
 
         with self.sql_engine.connect() as sql_connection:
-            data_table.to_sql(self.table_name, con=sql_connection, if_exists='append',
-                              chunksize=SEND_CHUNK_SIZE,
-                              index=False)
+            try:
+                data_table.to_sql(self.table_name, con=sql_connection, if_exists='append',
+                                  chunksize=SEND_CHUNK_SIZE,
+                                  index=False)
+            except IntegrityError:
+                logging.error("Duplicate primary key found")
+                logging.error("Table name: %s", self.table_name)
+                etl_metadata_fields = self.etl_metadata.keys()
+                if START_DATE_METADATA_FIELD in etl_metadata_fields and END_DATE_METADATA_FIELD in etl_metadata_fields:
+                    logging.error("Date: START: %s END: %s", self.etl_metadata[START_DATE_METADATA_FIELD],
+                                  self.etl_metadata[END_DATE_METADATA_FIELD])
+                else:
+                    logging.error("Date: %s", (date.today() - timedelta(days=1)).strftime("\"%Y%m%d\""))
+                logging.error("Primary key column name: %s", self.primary_key_column_name)
+                logging.error("Foreign key column names: %s", self.foreign_key_column_names)
+                logging.error("Data: %s", data_table.to_string())
+                raise PostgresETLException()
+
             sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name,
                                                                 primary_key_column_name=self.primary_key_column_name))
-        # TODO: temporary disable because of issue with dataframes with duplicate columns
-        # see issue: https://github.com/pandas-dev/pandas/issues/15988
-        # sql_connection.execute(ADD_PRIMARY_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
-        #                                                                   primary_key_column_name=self.primary_key_column_name))
-        # for foreign_keys in self.foreign_key_column_names:
-        #     for foreign_key_column_name, foreign_key_table_name in foreign_keys.items():
-        #         fk_table_exists = sql_connection.execute(
-        #             TABLE_EXISTS_QUERY.format(table_name=foreign_key_table_name)).fetchone()[0]
-        #         if fk_table_exists:
-        #             sql_connection.execute(ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
-        #                                                                               foreign_key_column_name=foreign_key_column_name,
-        #                                                                               foreign_key_table_name=foreign_key_table_name))
+
+            sql_connection.execute(ADD_PRIMARY_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
+                                                                              primary_key_column_name=self.primary_key_column_name))
+            # TODO: Temporary disabled because ETL works in parallel and foreign keys are not created in time
+            # also see issue: https://github.com/pandas-dev/pandas/issues/15988
+            # for foreign_keys in self.foreign_key_column_names:
+            #     for foreign_key_column_name, foreign_key_table_name in foreign_keys.items():
+            #         fk_table_exists = sql_connection.execute(
+            #             TABLE_EXISTS_QUERY.format(table_name=foreign_key_table_name)).fetchone()[0]
+            #         if fk_table_exists:
+            #             sql_connection.execute(ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
+            #                                                                               foreign_key_column_name=foreign_key_column_name,
+            #                                                                               foreign_key_table_name=foreign_key_table_name))
 
         return {DATA_FIELD: transformed_data[DATA_FIELD]}
 
@@ -486,4 +578,3 @@ class CellarETLPipeline(PostgresETLPipeline):
             self.sparql_query_path.read_text(encoding='utf-8')).fetch_csv()
 
         return {DATA_FIELD: data_table, SKIP_NEXT_STEP_FIELD: False}
-
