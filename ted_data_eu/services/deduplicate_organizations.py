@@ -1,5 +1,4 @@
 import pandas as pd
-import requests
 
 from ted_data_eu import config
 from ted_data_eu.adapters.master_data_registry import MasterDataRegistryAdapter
