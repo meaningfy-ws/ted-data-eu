@@ -153,5 +153,16 @@
         "NUTSId": "NUTS"
       }
     ]
+  },
+  "OrganizationDeduplication": {
+    "PK": "OrganizationDeduplicationId",
+    "FK": [
+      {
+        "OrganizationAddressId": "OrganizationAddress"
+      },
+      {
+        "ReferenceOrganizationAddressId": "OrganizationAddress"
+      }
+    ]
   }
 }
