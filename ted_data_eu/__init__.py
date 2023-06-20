@@ -23,6 +23,21 @@ class CommonConfig:
         return config_value
 
 
+class MasterDataRegistryAPIConfig:
+
+    @env_property()
+    def MASTER_DATA_REGISTRY_API_URL(self, config_value: str) -> str:
+        return config_value
+
+    @env_property()
+    def MASTER_DATA_REGISTRY_API_USER(self, config_value: str) -> str:
+        return config_value
+
+    @env_property()
+    def MASTER_DATA_REGISTRY_API_PASSWORD(self, config_value: str) -> str:
+        return config_value
+
+
 class PostgresTablesConfig:
 
     @property
@@ -33,7 +48,6 @@ class PostgresTablesConfig:
             if query_path.is_file():
                 query_paths_map[query_path.stem] = query_path
         return query_paths_map
-
 
     @property
     def CELLAR_TABLE_QUERY_PATHS(self) -> Dict:
@@ -121,7 +135,7 @@ class ElasticConfig:
 
 
 class TedDataConfigResolver(TedConfigResolver, BQResourcesConfig, GraphDBConfig, ElasticConfig, PostgresTablesConfig,
-                            CommonConfig):
+                            CommonConfig, MasterDataRegistryAPIConfig):
     """
         This class is used for automatic config discovery.
     """
