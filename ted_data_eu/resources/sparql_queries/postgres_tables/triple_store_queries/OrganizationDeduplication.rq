@@ -1,0 +1,68 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX cccev: <http://data.europa.eu/m8g/>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
+PREFIX locn: <http://www.w3.org/ns/locn#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+
+select distinct
+(concat(str(afn:localname(?Organization)), str(afn:localname(?Address))) as ?OrganizationAddressId)
+?LegalName
+(afn:localname(?hasCountryCode) as ?CountryCode)
+(afn:localname(?hasNUTSId) as ?NUTSId)
+?PostCode
+?PostName
+?Thoroughfare
+where {
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?NoticePublicationDate;
+              epo:refersToProcedure ?ProcedureId.
+    values ?NoticePublicationDate {
+        $date_range
+    }
+
+    ?NoticeId epo:announcesRole ?Role.
+    {
+        ?Role a epo:Buyer.
+    } union {
+        ?Role a epo:Winner.
+    }
+    ?Role epo:playedBy ?Organization.
+    ?Organization cccev:registeredAddress ?Address.
+    ?Address a locn:Address.
+
+    optional {
+        ?Organization a org:Organization.
+        {
+            optional {
+                ?Organization epo:hasLegalName ?LegalNameEn .
+                filter(lang(?LegalNameEn) = 'en')
+            }
+            optional {
+                SELECT ?Organization (SAMPLE (?LegalNameInternal) as ?LegalNameOther)
+                {
+                    ?Organization epo:hasLegalName ?LegalNameInternal .
+                }
+                GROUP BY ?Organization order by ?LegalNameInternal
+            }
+            BIND(COALESCE(?LegalNameEn, ?LegalNameOther) as ?LegalName)
+        }
+    }
+
+    optional {
+        ?Address epo:hasCountryCode ?hasCountryCode .
+    }
+    optional {
+        ?Address epo:hasNutsCode ?hasNUTSId.
+    }
+    optional {
+        ?Address locn:postCode ?PostCode.
+    }
+    optional {
+        ?Address locn:postName ?PostName.
+    }
+    optional {
+        ?Address locn:thoroughfare ?Thoroughfare.
+    }
+}

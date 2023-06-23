@@ -15,9 +15,12 @@ from ted_sws.data_manager.adapters.triple_store import TripleStoreABC
 from ted_data_eu import config
 from ted_data_eu.adapters.cpv_processor import CellarCPVProcessor
 from ted_data_eu.adapters.etl_pipeline_abc import ETLPipelineABC
+from ted_data_eu.adapters.master_data_registry import UNIQUE_ID_SRC_COLUMN_NAME, UNIQUE_ID_DST_COLUMN_NAME, \
+    MATCH_PROBABILITY_COLUMN_NAME
 from ted_data_eu.adapters.nuts_processor import CellarNUTSProcessor, NUTSProcessor
 from ted_data_eu.adapters.triple_store import GraphDBAdapter, TDATripleStoreEndpoint
 from ted_data_eu.services.currency_convertor import convert_currency
+from ted_data_eu.services.deduplicate_organizations import get_organization_records_links
 from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import START_DATE_METADATA_FIELD, \
     generate_sparql_filter_by_date_range, END_DATE_METADATA_FIELD
 
@@ -337,6 +340,31 @@ def transform_nuts_table(data_csv: io.StringIO) -> DataFrame:
     data_table.drop_duplicates(inplace=True)
     return data_table
 
+ORGANIZATION_DEDUPLICATION_ID_COLUMN_NAME = "OrganizationDeduplicationId"
+ORGANIZATION_ADDRESS_ID_COLUMN_NAME = "OrganizationAddressId"
+REFERENCE_ORGANIZATION_ADDRESS_ID_COLUMN_NAME = "ReferenceOrganizationAddressId"
+REFERENCE_MATCH_PROBABILITY_COLUMN_NAME = "MatchProbability"
+def transform_organization_deduplication_table(data_csv: io.StringIO) -> DataFrame:
+    """
+    Transforms Organization Deduplication table by making deduplication between the organizations
+    """
+    data_table = pd.read_csv(data_csv)
+
+
+
+    deduplicated_data_table = get_organization_records_links(data_table, ORGANIZATION_ADDRESS_ID_COLUMN_NAME)
+
+    deduplicated_data_table.rename(columns={
+        UNIQUE_ID_SRC_COLUMN_NAME: ORGANIZATION_ADDRESS_ID_COLUMN_NAME,
+        UNIQUE_ID_DST_COLUMN_NAME: REFERENCE_ORGANIZATION_ADDRESS_ID_COLUMN_NAME,
+        MATCH_PROBABILITY_COLUMN_NAME: REFERENCE_MATCH_PROBABILITY_COLUMN_NAME
+    }, inplace=True)
+
+    deduplicated_data_table[ORGANIZATION_DEDUPLICATION_ID_COLUMN_NAME] = deduplicated_data_table[[ORGANIZATION_ADDRESS_ID_COLUMN_NAME, REFERENCE_ORGANIZATION_ADDRESS_ID_COLUMN_NAME]].apply(
+        "".join, axis=1)
+
+    return deduplicated_data_table
+
 
 TRANSFORMED_TABLES = {
     "Notice": transform_notice_table,
@@ -348,6 +376,7 @@ TRANSFORMED_TABLES = {
     "NUTS": transform_nuts_table,
     "LotCPV": transform_lot_cpv_table,
     "ProcedureCPV": transform_procedure_cpv_table,
+    "OrganizationDeduplication": transform_organization_deduplication_table
 }
 
 
