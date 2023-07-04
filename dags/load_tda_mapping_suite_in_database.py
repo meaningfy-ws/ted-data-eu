@@ -28,6 +28,7 @@ GITHUB_TOKEN_DAG_PARAM_KEY = "github_token"
 FINISH_LOADING_MAPPING_SUITE_TASK_ID = "finish_loading_mapping_suite"
 TRIGGER_DOCUMENT_PROC_PIPELINE_TASK_ID = "trigger_document_proc_pipeline"
 CHECK_IF_LOAD_TEST_DATA_TASK_ID = "check_if_load_test_data"
+DEFAULT_REPOSITORY_NAME = "tda-mapping-artefacts"
 
 
 @dag(default_args=DEFAULT_DAG_ARGUMENTS,
@@ -64,7 +65,8 @@ def load_tda_mapping_suite_in_database():
             branch_or_tag_name=branch_or_tag_name,
             github_repository_url=github_repository_url,
             github_username=github_username,
-            github_token=github_token
+            github_token=github_token,
+            github_repository_name=DEFAULT_REPOSITORY_NAME
         )
         notice_ids = list(set(notice_ids))
         if load_test_data:
