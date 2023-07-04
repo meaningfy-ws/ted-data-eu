@@ -7,7 +7,7 @@ from pymongo import MongoClient
 from dags import DEFAULT_DAG_ARGUMENTS
 from dags.dags_utils import push_dag_downstream, pull_dag_upstream, get_dag_param
 from dags.operators.DagBatchPipelineOperator import NOTICE_IDS_KEY, TriggerNoticeBatchPipelineOperator
-from ted_sws import config
+from ted_data_eu import config
 from ted_sws.event_manager.adapters.event_log_decorator import event_log
 from ted_sws.event_manager.adapters.event_logger import EventLogger
 from ted_sws.event_manager.model.event_message import MappingSuiteEventMessage
