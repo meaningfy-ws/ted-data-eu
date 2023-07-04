@@ -22,6 +22,8 @@ MAPPING_SUITE_PACKAGE_NAME_DAG_PARAM_KEY = 'mapping_suite_package_name'
 LOAD_TEST_DATA_DAG_PARAM_KEY = 'load_test_data'
 BRANCH_OR_TAG_NAME_DAG_PARAM_KEY = "branch_or_tag_name"
 GITHUB_REPOSITORY_URL_DAG_PARAM_KEY = "github_repository_url"
+GITHUB_USERNAME_DAG_PARAM_KEY = "github_username"
+GITHUB_TOKEN_DAG_PARAM_KEY = "github_token"
 
 FINISH_LOADING_MAPPING_SUITE_TASK_ID = "finish_loading_mapping_suite"
 TRIGGER_DOCUMENT_PROC_PIPELINE_TASK_ID = "trigger_document_proc_pipeline"
@@ -30,8 +32,8 @@ CHECK_IF_LOAD_TEST_DATA_TASK_ID = "check_if_load_test_data"
 
 @dag(default_args=DEFAULT_DAG_ARGUMENTS,
      schedule_interval=None,
-     tags=['fetch', 'mapping-suite', 'github', 'ted-sws'])
-def load_mapping_suite_in_database():
+     tags=['fetch', 'mapping-suite', 'github', 'ted-data'])
+def load_tda_mapping_suite_in_database():
     @task
     @event_log(is_loggable=False)
     def fetch_mapping_suite_package_from_github_into_mongodb(**context_args):
@@ -47,7 +49,12 @@ def load_mapping_suite_in_database():
         load_test_data = get_dag_param(key=LOAD_TEST_DATA_DAG_PARAM_KEY, default_value=False)
         mapping_suite_package_name = get_dag_param(key=MAPPING_SUITE_PACKAGE_NAME_DAG_PARAM_KEY)
         branch_or_tag_name = get_dag_param(key=BRANCH_OR_TAG_NAME_DAG_PARAM_KEY)
-        github_repository_url = get_dag_param(key=GITHUB_REPOSITORY_URL_DAG_PARAM_KEY)
+        github_repository_url = get_dag_param(key=GITHUB_REPOSITORY_URL_DAG_PARAM_KEY,
+                                              default_value=config.GITHUB_TED_DATA_ARTEFACTS_URL)
+        github_username = get_dag_param(key=GITHUB_USERNAME_DAG_PARAM_KEY,
+                                        default_value=config.GITHUB_USERNAME)
+        github_token = get_dag_param(key=GITHUB_TOKEN_DAG_PARAM_KEY,
+                                     default_value=config.GITHUB_TOKEN)
 
         mongodb_client = MongoClient(config.MONGO_DB_AUTH_URL)
         notice_ids = mapping_suite_processor_from_github_expand_and_load_package_in_mongo_db(
@@ -55,7 +62,9 @@ def load_mapping_suite_in_database():
             mapping_suite_package_name=mapping_suite_package_name,
             load_test_data=load_test_data,
             branch_or_tag_name=branch_or_tag_name,
-            github_repository_url=github_repository_url
+            github_repository_url=github_repository_url,
+            github_username=github_username,
+            github_token=github_token
         )
         notice_ids = list(set(notice_ids))
         if load_test_data:
@@ -86,4 +95,4 @@ def load_mapping_suite_in_database():
     branch_task >> [trigger_document_proc_pipeline, finish_step]
 
 
-dag = load_mapping_suite_in_database()
+dag = load_tda_mapping_suite_in_database()
