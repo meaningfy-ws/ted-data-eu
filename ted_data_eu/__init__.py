@@ -134,8 +134,23 @@ class ElasticConfig:
         return config_value
 
 
+class GitHubConfig:
+
+    @env_property()
+    def GITHUB_TOKEN(self, config_value: str) -> str:
+        return config_value
+
+    @env_property()
+    def GITHUB_USERNAME(self, config_value: str) -> str:
+        return config_value
+
+    @env_property()
+    def GITHUB_TED_DATA_ARTEFACTS_URL(self, config_value: str) -> str:
+        return config_value
+
+
 class TedDataConfigResolver(TedConfigResolver, BQResourcesConfig, GraphDBConfig, ElasticConfig, PostgresTablesConfig,
-                            CommonConfig, MasterDataRegistryAPIConfig):
+                            CommonConfig, MasterDataRegistryAPIConfig, GitHubConfig):
     """
         This class is used for automatic config discovery.
     """
