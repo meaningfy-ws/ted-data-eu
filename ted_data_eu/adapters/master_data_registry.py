@@ -1,10 +1,11 @@
 import pandas as pd
 import requests
 
-DATAFRAME_TO_JSON_ORIENT_TYPE = "split"
+DATAFRAME_TO_JSON_ORIENT_TYPE = "table"
 UNIQUE_ID_SRC_COLUMN_NAME = "unique_id_src"
 UNIQUE_ID_DST_COLUMN_NAME = "unique_id_dst"
 MATCH_PROBABILITY_COLUMN_NAME = "match_probability"
+
 
 class MasterDataRegistryAdapter:
 
