@@ -12,6 +12,12 @@ PROJECT_RESOURCES_BQ_FOLDER_PATH = PROJECT_RESOURCES_PATH / "sparql_queries"
 PROJECT_RESOURCES_POSTGRES_TABLES_PATH = PROJECT_RESOURCES_BQ_FOLDER_PATH / "postgres_tables"
 
 
+class MongoDBConfig:
+
+    @env_property()
+    def MONGO_DB_AUTH_URL(self, config_value: str) -> str:
+        return config_value
+
 class CommonConfig:
 
     @env_property()
@@ -150,7 +156,7 @@ class GitHubConfig:
 
 
 class TedDataConfigResolver(TedConfigResolver, BQResourcesConfig, GraphDBConfig, ElasticConfig, PostgresTablesConfig,
-                            CommonConfig, MasterDataRegistryAPIConfig, GitHubConfig):
+                            CommonConfig, MasterDataRegistryAPIConfig, GitHubConfig, MongoDBConfig):
     """
         This class is used for automatic config discovery.
     """

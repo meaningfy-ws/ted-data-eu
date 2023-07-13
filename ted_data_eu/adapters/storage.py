@@ -1,10 +1,20 @@
 from typing import Dict, List
+
+from elasticsearch import Elasticsearch, helpers
+from pymongo import MongoClient
+
 from ted_data_eu import config
 from ted_data_eu.adapters.storage_abc import DocumentStorageABC
-from elasticsearch import Elasticsearch, helpers
 
 
 class ElasticStorageException(Exception):
+    """
+        Implements custom exception for ElasticStorage
+    """
+    pass
+
+
+class MongoDBStorageException(Exception):
     """
         Implements custom exception for ElasticStorage
     """
@@ -97,3 +107,70 @@ class ElasticStorage(DocumentStorageABC):
             return [document_hit["_source"] for document_hit in response['hits']['hits']]
         else:
             raise ElasticStorageException(str(response))
+
+
+class MongoDBStorage(DocumentStorageABC):
+    """
+       Implements interaction with MongoDB storage by using its API.
+    """
+
+    def __init__(self,
+                 database_name: str,
+                 collection_name: str,
+                 mongo_auth_url: str = None):
+        """
+           Implements interaction with MongoDB storage by using its API.
+
+            :param database_name: MongoDB database name where the documents will be stored
+            :param collection_name: MongoDB collection name where the documents will be stored
+            :param mongo_auth_url: MongoDB authentication URL
+            :return:
+        """
+
+        self.mongodb_client = MongoClient(mongo_auth_url or config.MONGO_DB_AUTH_URL)
+        self.database_name = database_name
+        self.collection_name = collection_name
+
+    def add_document(self, document: Dict):
+        """
+           Add document to storage.
+
+            :param document: Document to be stored
+            :return:
+        """
+        response = self.mongodb_client[self.database_name][self.collection_name].insert_one(document)
+        if not response:
+            raise MongoDBStorageException(str(response))
+
+    def add_documents(self, documents: List[Dict]):
+        """
+           Add documents to storage.
+
+            :param documents: List of documents to be stored
+            :return:
+        """
+        response = self.mongodb_client[self.database_name][self.collection_name].insert_many(documents)
+        if not response:
+            raise MongoDBStorageException(str(response))
+
+    def clear(self):
+        """
+            Delete current collection.
+
+        :return:
+        """
+        response = self.mongodb_client[self.database_name][self.collection_name].delete_many({})
+        if not response:
+            raise MongoDBStorageException(str(response))
+
+    def count(self) -> int:
+        """
+            Return number of documents from current collection.
+
+        :return:
+        """
+        response = self.mongodb_client[self.database_name][self.collection_name].count_documents({})
+        if response:
+            return response
+        else:
+            raise MongoDBStorageException(str(response))

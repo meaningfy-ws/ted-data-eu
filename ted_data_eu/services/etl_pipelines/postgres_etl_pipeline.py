@@ -15,6 +15,7 @@ from ted_sws.data_manager.adapters.triple_store import TripleStoreABC
 from ted_data_eu import config
 from ted_data_eu.adapters.cpv_processor import CellarCPVProcessor
 from ted_data_eu.adapters.etl_pipeline_abc import ETLPipelineABC
+from ted_data_eu.adapters.event_logger import MongoDBEventLogger
 from ted_data_eu.adapters.master_data_registry import UNIQUE_ID_SRC_COLUMN_NAME, UNIQUE_ID_DST_COLUMN_NAME, \
     MATCH_PROBABILITY_COLUMN_NAME
 from ted_data_eu.adapters.nuts_processor import CellarNUTSProcessor, NUTSProcessor
@@ -152,7 +153,8 @@ def transform_notice_table(data_csv: io.StringIO) -> DataFrame:
     # Add notice year column
     data_table[NOTICE_YEAR_COLUMN] = data_table.apply(lambda row: generate_notice_year(row[NOTICE_ID_COLUMN]), axis=1)
     # Add notice Number column
-    data_table[NOTICE_NUMBER_COLUMN] = data_table.apply(lambda row: generate_notice_number(row[NOTICE_ID_COLUMN]), axis=1)
+    data_table[NOTICE_NUMBER_COLUMN] = data_table.apply(lambda row: generate_notice_number(row[NOTICE_ID_COLUMN]),
+                                                        axis=1)
     # Remove duplicates
     data_table.drop_duplicates(inplace=True)
     return data_table
@@ -332,25 +334,28 @@ def transform_nuts_table(data_csv: io.StringIO) -> DataFrame:
         data_table[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)] = data_table.apply(
             lambda row: cellar_nuts_processor.get_nuts_parent_code_by_level(row[NUTS_ID_COLUMN], nuts_lvl), axis=1)
         data_table[NUTS_LABEL_TEMPLATE.format(nuts_lvl=nuts_lvl)] = data_table.apply(
-            lambda row: cellar_nuts_processor.get_nuts_label_by_code(row[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]),
+            lambda row: cellar_nuts_processor.get_nuts_label_by_code(
+                row[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]),
             axis=1)
         data_table[NUTS_LABEL_ENG_TEMPLATE.format(nuts_lvl=nuts_lvl)] = data_table.apply(
-            lambda row: static_nuts_processor.get_nuts_label_by_code(row[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]),
+            lambda row: static_nuts_processor.get_nuts_label_by_code(
+                row[NUTS_LEVEL_TEMPLATE.format(nuts_lvl=nuts_lvl)]),
             axis=1)
     data_table.drop_duplicates(inplace=True)
     return data_table
+
 
 ORGANIZATION_DEDUPLICATION_ID_COLUMN_NAME = "OrganizationDeduplicationId"
 ORGANIZATION_ADDRESS_ID_COLUMN_NAME = "OrganizationAddressId"
 REFERENCE_ORGANIZATION_ADDRESS_ID_COLUMN_NAME = "ReferenceOrganizationAddressId"
 REFERENCE_MATCH_PROBABILITY_COLUMN_NAME = "MatchProbability"
+
+
 def transform_organization_deduplication_table(data_csv: io.StringIO) -> DataFrame:
     """
     Transforms Organization Deduplication table by making deduplication between the organizations
     """
     data_table = pd.read_csv(data_csv)
-
-
 
     deduplicated_data_table = get_organization_records_links(data_table, ORGANIZATION_ADDRESS_ID_COLUMN_NAME)
 
@@ -360,7 +365,8 @@ def transform_organization_deduplication_table(data_csv: io.StringIO) -> DataFra
         MATCH_PROBABILITY_COLUMN_NAME: REFERENCE_MATCH_PROBABILITY_COLUMN_NAME
     }, inplace=True)
 
-    deduplicated_data_table[ORGANIZATION_DEDUPLICATION_ID_COLUMN_NAME] = deduplicated_data_table[[ORGANIZATION_ADDRESS_ID_COLUMN_NAME, REFERENCE_ORGANIZATION_ADDRESS_ID_COLUMN_NAME]].apply(
+    deduplicated_data_table[ORGANIZATION_DEDUPLICATION_ID_COLUMN_NAME] = deduplicated_data_table[
+        [ORGANIZATION_ADDRESS_ID_COLUMN_NAME, REFERENCE_ORGANIZATION_ADDRESS_ID_COLUMN_NAME]].apply(
         "".join, axis=1)
 
     return deduplicated_data_table
@@ -458,14 +464,23 @@ class PostgresETLException(Exception):
     pass
 
 
+POSTGRES_ETL_NAME = "PostgresETLPipeline"
+EXTRACTED_DAY_FIELD = "extracted_day"
+
+
 class PostgresETLPipeline(ETLPipelineABC):
     """
         ETL Class that gets data from TDA endpoint, transforms and inserts result to document storage
     """
 
-    def __init__(self, table_name: str, sparql_query_path: Path, primary_key_column_name: str,
-                 postgres_url: str = None, foreign_key_column_names: List[dict] = None,
-                 triple_store: TripleStoreABC = None, triple_store_endpoint: str = None):
+    def __init__(self,
+                 table_name: str,
+                 sparql_query_path: Path,
+                 primary_key_column_name: str,
+                 postgres_url: str = None,
+                 foreign_key_column_names: List[dict] = None,
+                 triple_store: TripleStoreABC = None,
+                 triple_store_endpoint: str = None):
         """
             Constructor
         """
@@ -473,12 +488,16 @@ class PostgresETLPipeline(ETLPipelineABC):
         self.table_name = table_name
         self.sparql_query_path = sparql_query_path
         self.postgres_url = postgres_url if postgres_url else POSTGRES_URL
-        self.sql_engine = sqlalchemy.create_engine(self.postgres_url, echo=False,
+        self.sql_engine = sqlalchemy.create_engine(self.postgres_url,
+                                                   echo=False,
                                                    isolation_level=SQLALCHEMY_ISOLATION_LEVEL)
         self.primary_key_column_name = primary_key_column_name
-        self.foreign_key_column_names = foreign_key_column_names if foreign_key_column_names else []
+        self.foreign_key_column_names = foreign_key_column_names or []
         self.triple_store = triple_store or GraphDBAdapter()
         self.triple_store_endpoint = triple_store_endpoint or TRIPLE_STORE_ENDPOINT
+        self.event_logger = logging.Logger(f"{POSTGRES_ETL_NAME}-{self.table_name}")
+        self.event_logger.addHandler(MongoDBEventLogger(database_name=POSTGRES_ETL_NAME,
+                                                        collection_name=self.table_name))
 
     def set_metadata(self, etl_metadata: dict):
         """
@@ -508,11 +527,9 @@ class PostgresETLPipeline(ETLPipelineABC):
         if START_DATE_METADATA_FIELD in etl_metadata_fields and END_DATE_METADATA_FIELD in etl_metadata_fields:
             if START_DATE_METADATA_FIELD == END_DATE_METADATA_FIELD:
                 date_range = datetime.strptime(START_DATE_METADATA_FIELD, "\"%Y%m%d\"")
-                logging.info("Querying data from one day")
             else:
                 date_range = generate_sparql_filter_by_date_range(etl_metadata[START_DATE_METADATA_FIELD],
                                                                   etl_metadata[END_DATE_METADATA_FIELD])
-                logging.info("Querying data from date range")
         else:
             logging.info("Querying data from yesterday")
             date_range = (date.today() - timedelta(days=1)).strftime("\"%Y%m%d\"")
@@ -522,7 +539,7 @@ class PostgresETLPipeline(ETLPipelineABC):
         triple_store_endpoint = self.triple_store.get_sparql_tda_triple_store_endpoint(
             repository_name=self.triple_store_endpoint)
         result_table = triple_store_endpoint.with_query(sparql_query).fetch_csv()
-        return {DATA_FIELD: result_table}
+        return {DATA_FIELD: result_table, EXTRACTED_DAY_FIELD: date_range}
 
     def transform(self, extracted_data: Dict) -> Dict:
         """
@@ -533,9 +550,13 @@ class PostgresETLPipeline(ETLPipelineABC):
             return extracted_data
         data_json: io.StringIO = extracted_data.get(DATA_FIELD, None)
         if not data_json:
+            self.event_logger.error(ERROR_NO_DATA_FETCHED,
+                                    extra={EXTRACTED_DAY_FIELD: extracted_data.get(EXTRACTED_DAY_FIELD, None)})
             raise PostgresETLException(ERROR_NO_DATA_FETCHED)
         extracted_table: DataFrame = pd.read_csv(data_json)
         if extracted_table.empty:
+            self.event_logger.error(ERROR_NO_DATA_FETCHED,
+                                    extra={EXTRACTED_DAY_FIELD: extracted_data.get(EXTRACTED_DAY_FIELD, None)})
             raise PostgresETLException(ERROR_NO_DATA_FETCHED)
         data_json.seek(0)
         if self.table_name in TRANSFORMED_TABLES.keys():
@@ -543,6 +564,7 @@ class PostgresETLPipeline(ETLPipelineABC):
         else:
             data_table: DataFrame = pd.read_csv(data_json)
         extracted_data[DATA_FIELD] = data_table
+
         return extracted_data
 
     def load(self, transformed_data: Dict):
@@ -559,18 +581,9 @@ class PostgresETLPipeline(ETLPipelineABC):
                 data_table.to_sql(self.table_name, con=sql_connection, if_exists='append',
                                   chunksize=SEND_CHUNK_SIZE,
                                   index=False)
-            except IntegrityError:
-                logging.error("Duplicate primary key found")
-                logging.error("Table name: %s", self.table_name)
-                etl_metadata_fields = self.etl_metadata.keys()
-                if START_DATE_METADATA_FIELD in etl_metadata_fields and END_DATE_METADATA_FIELD in etl_metadata_fields:
-                    logging.error("Date: START: %s END: %s", self.etl_metadata[START_DATE_METADATA_FIELD],
-                                  self.etl_metadata[END_DATE_METADATA_FIELD])
-                else:
-                    logging.error("Date: %s", (date.today() - timedelta(days=1)).strftime("\"%Y%m%d\""))
-                logging.error("Primary key column name: %s", self.primary_key_column_name)
-                logging.error("Foreign key column names: %s", self.foreign_key_column_names)
-                logging.error("Data: %s", data_table.to_string())
+            except IntegrityError as integrity_error:
+                self.event_logger.error("Integrity error: %s", integrity_error,
+                                        extra={EXTRACTED_DAY_FIELD: transformed_data.get(EXTRACTED_DAY_FIELD, None)})
                 raise PostgresETLException()
 
             sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name,
@@ -588,7 +601,8 @@ class PostgresETLPipeline(ETLPipelineABC):
             #             sql_connection.execute(ADD_FOREIGN_KEY_IF_NOT_EXISTS_QUERY.format(table_name=self.table_name,
             #                                                                               foreign_key_column_name=foreign_key_column_name,
             #                                                                               foreign_key_table_name=foreign_key_table_name))
-
+        self.event_logger.info("Data loaded to postgres",
+                               extra={EXTRACTED_DAY_FIELD: transformed_data.get(EXTRACTED_DAY_FIELD, None)})
         return {DATA_FIELD: transformed_data[DATA_FIELD]}
 
 
@@ -601,7 +615,8 @@ class CellarETLPipeline(PostgresETLPipeline):
             table_exists = sql_connection.execute(TABLE_EXISTS_QUERY.format(table_name=self.table_name)).fetchone()[0]
             if table_exists:
                 return {DATA_FIELD: None, SKIP_NEXT_STEP_FIELD: True}
-
+        self.event_logger.info("Cellar data loaded to postgres",
+                               extra={EXTRACTED_DAY_FIELD: self.get_metadata().get(START_DATE_METADATA_FIELD, None)})
         cellar_endpoint = TDATripleStoreEndpoint(CELLAR_ENDPOINT_URL)
         data_table = cellar_endpoint.with_query(
             self.sparql_query_path.read_text(encoding='utf-8')).fetch_csv()
