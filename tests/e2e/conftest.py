@@ -3,7 +3,7 @@ import json
 import pandas as pd
 import pytest
 
-from ted_data_eu.adapters.storage import ElasticStorage
+from ted_data_eu.adapters.storage import ElasticStorage, MongoDBStorage
 from ted_data_eu.adapters.triple_store import GraphDBAdapter
 from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import TedDataETLPipeline, TDA_FREE_INDEX_NAME, \
     TDA_STARTER_INDEX_NAME, TDA_PREMIUM_INDEX_NAME
@@ -53,11 +53,17 @@ def elastic_index():
 def elastic_storage(elastic_index):
     return ElasticStorage(elastic_index=elastic_index)
 
+@pytest.fixture
+def mongo_storage():
+    return MongoDBStorage(database_name="test_mongo_db_123", collection_name="test_coll_name_123")
 
 @pytest.fixture
 def elastic_query():
     return {"match_all": {}}
 
+@pytest.fixture
+def mongo_query():
+    return {}
 
 @pytest.fixture
 def ted_data_etl_pipelines():
