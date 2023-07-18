@@ -497,7 +497,7 @@ class PostgresETLPipeline(ETLPipelineABC):
         self.triple_store_endpoint = triple_store_endpoint or TRIPLE_STORE_ENDPOINT
         self.event_logger = logging.Logger(f"{POSTGRES_ETL_NAME}-{self.table_name}")
         self.event_logger.addHandler(MongoDBEventLogger(database_name=POSTGRES_ETL_NAME,
-                                                        collection_name=self.table_name))
+                                                        collection_name=POSTGRES_ETL_NAME))
 
     def set_metadata(self, etl_metadata: dict):
         """
