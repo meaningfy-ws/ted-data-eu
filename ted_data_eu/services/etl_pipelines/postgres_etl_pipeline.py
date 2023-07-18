@@ -480,7 +480,8 @@ class PostgresETLPipeline(ETLPipelineABC):
                  postgres_url: str = None,
                  foreign_key_column_names: List[dict] = None,
                  triple_store: TripleStoreABC = None,
-                 triple_store_endpoint: str = None):
+                 triple_store_endpoint: str = None,
+                 etl_name: str = POSTGRES_ETL_NAME):
         """
             Constructor
         """
@@ -495,8 +496,8 @@ class PostgresETLPipeline(ETLPipelineABC):
         self.foreign_key_column_names = foreign_key_column_names or []
         self.triple_store = triple_store or GraphDBAdapter()
         self.triple_store_endpoint = triple_store_endpoint or TRIPLE_STORE_ENDPOINT
-        self.event_logger = logging.Logger(f"{POSTGRES_ETL_NAME}-{self.table_name}".lower())
-        self.mongo_logger = MongoDBEventLogger(database_name=POSTGRES_ETL_NAME, collection_name=POSTGRES_ETL_NAME)
+        self.event_logger = logging.Logger(f"{etl_name}-{self.table_name}".lower())
+        self.mongo_logger = MongoDBEventLogger(database_name=etl_name, collection_name=etl_name)
         self.event_logger.addHandler(self.mongo_logger)
 
     def set_metadata(self, etl_metadata: dict):
