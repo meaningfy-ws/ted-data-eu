@@ -127,7 +127,7 @@ class MongoDBStorage(DocumentStorageABC):
             :return:
         """
 
-        self.mongodb_client = MongoClient(mongo_auth_url or config.MONGO_DB_AUTH_URL)
+        self.mongodb_client = MongoClient(mongo_auth_url or config.MONGO_DB_AUTH_URL, maxPoolSize=None)
         self.database_name = database_name
         self.collection_name = collection_name
 
