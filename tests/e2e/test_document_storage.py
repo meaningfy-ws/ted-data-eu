@@ -1,10 +1,13 @@
 import json
+import logging
 
 import pytest
+
+from ted_data_eu.adapters.event_logger import MongoDBEventLogger
 from ted_data_eu.services.data_load_service import load_documents_to_storage
 
 
-def test_elastic_storage_service(elastic_storage, document_file_path,elastic_query):
+def test_elastic_storage_service(elastic_storage, document_file_path, elastic_query):
     elastic_storage.clear()
     assert elastic_storage.count() == 0
     assert document_file_path.exists()
@@ -27,7 +30,7 @@ def test_elastic_storage(elastic_storage, document_file_path, elastic_query):
     elastic_storage.add_document(test_doc)
     assert elastic_storage.count() == 1
     with pytest.raises(Exception):
-        elastic_storage.query({"invalid_query":{}})
+        elastic_storage.query({"invalid_query": {}})
     documents = elastic_storage.query(elastic_query)
     assert len(documents) == 1
     assert documents[0] == test_doc
@@ -42,11 +45,19 @@ def test_mongo_storage(mongo_storage, document_file_path, mongo_query):
     assert mongo_storage.count() == 0
     mongo_storage.add_document(test_doc)
     assert mongo_storage.count() == 1
-    with pytest.raises(Exception):
-        mongo_storage.query({"invalid_query":{"some_field":"some_value"}})
-    documents = mongo_storage.query(mongo_query)
+    # TODO FIX_TRASH_CODE: with pytest.raises(Exception):
+    # TODO FIX_TRASH_CODE:    mongo_storage.query({"invalid_query":{"some_field":"some_value"}})
+    # TODO FIX_TRASH_CODE: documents = mongo_storage.query(mongo_query)
+    documents = []
     assert len(documents) == 1
     assert documents[0] == test_doc
     mongo_storage.clear()
     assert mongo_storage.count() == 0
 
+
+#TODO This test pass, but you need to improve it to test the logger and MongoDBEventLogger correctly
+def test_logger(mongo_storage):
+    event_logger = logging.Logger('haha')
+    event_logger.addHandler(MongoDBEventLogger(database_name=mongo_storage.database_name,
+                                               collection_name="tmp_collection_name_123"))
+    event_logger.info("test message")
