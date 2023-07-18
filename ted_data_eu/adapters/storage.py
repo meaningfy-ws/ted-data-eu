@@ -141,8 +141,9 @@ class MongoDBStorage(DocumentStorageABC):
             :return:
         """
         response = self.collection.insert_one(document)
-        if not response:
-            raise MongoDBStorageException(str(response))
+        # read documentation for each MongoDB response per operation
+        #TODO FIX_TRASH_CODE:if not response:
+        #TODO FIX_TRASH_CODE:    raise MongoDBStorageException(str(response))
 
     def add_documents(self, documents: List[Dict]):
         """
@@ -152,8 +153,9 @@ class MongoDBStorage(DocumentStorageABC):
             :return:
         """
         response = self.collection.insert_many(documents)
-        if not response:
-            raise MongoDBStorageException(str(response))
+        # response can be 0 if documents list is empty
+        #TODO FIX_TRASH_CODE: if not response:
+        #TODO FIX_TRASH_CODE:    raise MongoDBStorageException(str(response))
 
     def clear(self):
         """
@@ -162,8 +164,9 @@ class MongoDBStorage(DocumentStorageABC):
         :return:
         """
         response = self.collection.delete_many({})
-        if not response:
-            raise MongoDBStorageException(str(response))
+        #response can be 0 if collection is empty
+        #TODO FIX_TRASH_CODE: if not response:
+        #TODO FIX_TRASH_CODE:    raise MongoDBStorageException(str(response))
 
     def count(self) -> int:
         """
@@ -172,7 +175,9 @@ class MongoDBStorage(DocumentStorageABC):
         :return:
         """
         response = self.collection.count_documents({})
-        if response:
-            return response
-        else:
-            raise MongoDBStorageException(str(response))
+        return response
+        # response can be empty if collection is empty
+        #TODO FIX_TRASH_CODE:if response:
+        #TODO FIX_TRASH_CODE:    return response
+        #TODO FIX_TRASH_CODE:else:
+        #TODO FIX_TRASH_CODE:    raise MongoDBStorageException(str(response))
