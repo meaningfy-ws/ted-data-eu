@@ -539,7 +539,7 @@ class PostgresETLPipeline(ETLPipelineABC):
         triple_store_endpoint = self.triple_store.get_sparql_tda_triple_store_endpoint(
             repository_name=self.triple_store_endpoint)
         result_table = triple_store_endpoint.with_query(sparql_query).fetch_csv()
-        return {DATA_FIELD: result_table, EXTRACTED_DAY_FIELD: date_range}
+        return {DATA_FIELD: result_table, EXTRACTED_DAY_FIELD: date_range.strftime("%Y%m%d")}
 
     def transform(self, extracted_data: Dict) -> Dict:
         """
@@ -551,12 +551,12 @@ class PostgresETLPipeline(ETLPipelineABC):
         data_json: io.StringIO = extracted_data.get(DATA_FIELD, None)
         if not data_json:
             self.event_logger.error(ERROR_NO_DATA_FETCHED,
-                                    extra={EXTRACTED_DAY_FIELD: extracted_data.get(EXTRACTED_DAY_FIELD, None)})
+                                    extra={EXTRACTED_DAY_FIELD: extracted_data.get(EXTRACTED_DAY_FIELD, None), "table_name": self.table_name})
             raise PostgresETLException(ERROR_NO_DATA_FETCHED)
         extracted_table: DataFrame = pd.read_csv(data_json)
         if extracted_table.empty:
             self.event_logger.error(ERROR_NO_DATA_FETCHED,
-                                    extra={EXTRACTED_DAY_FIELD: extracted_data.get(EXTRACTED_DAY_FIELD, None)})
+                                    extra={EXTRACTED_DAY_FIELD: extracted_data.get(EXTRACTED_DAY_FIELD, None), "table_name": self.table_name})
             raise PostgresETLException(ERROR_NO_DATA_FETCHED)
         data_json.seek(0)
         if self.table_name in TRANSFORMED_TABLES.keys():
@@ -583,7 +583,7 @@ class PostgresETLPipeline(ETLPipelineABC):
                                   index=False)
             except IntegrityError as integrity_error:
                 self.event_logger.error("Integrity error: %s", integrity_error,
-                                        extra={EXTRACTED_DAY_FIELD: transformed_data.get(EXTRACTED_DAY_FIELD, None)})
+                                        extra={EXTRACTED_DAY_FIELD: transformed_data.get(EXTRACTED_DAY_FIELD, None), "table_name": self.table_name})
                 raise PostgresETLException()
 
             sql_connection.execute(DROP_DUPLICATES_QUERY.format(table_name=self.table_name,
@@ -602,7 +602,7 @@ class PostgresETLPipeline(ETLPipelineABC):
             #                                                                               foreign_key_column_name=foreign_key_column_name,
             #                                                                               foreign_key_table_name=foreign_key_table_name))
         self.event_logger.info("Data loaded to postgres",
-                               extra={EXTRACTED_DAY_FIELD: transformed_data.get(EXTRACTED_DAY_FIELD, None)})
+                               extra={EXTRACTED_DAY_FIELD: transformed_data.get(EXTRACTED_DAY_FIELD, None), "table_name": self.table_name})
         return {DATA_FIELD: transformed_data[DATA_FIELD]}
 
 
@@ -616,7 +616,7 @@ class CellarETLPipeline(PostgresETLPipeline):
             if table_exists:
                 return {DATA_FIELD: None, SKIP_NEXT_STEP_FIELD: True}
         self.event_logger.info("Cellar data loaded to postgres",
-                               extra={EXTRACTED_DAY_FIELD: self.get_metadata().get(START_DATE_METADATA_FIELD, None)})
+                               extra={EXTRACTED_DAY_FIELD: self.get_metadata().get(START_DATE_METADATA_FIELD, None), "table_name": self.table_name})
         cellar_endpoint = TDATripleStoreEndpoint(CELLAR_ENDPOINT_URL)
         data_table = cellar_endpoint.with_query(
             self.sparql_query_path.read_text(encoding='utf-8')).fetch_csv()
