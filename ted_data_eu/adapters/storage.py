@@ -117,8 +117,8 @@ class MongoDBStorage(DocumentStorageABC):
     def __init__(self,
                  database_name: str,
                  collection_name: str,
-                 mongo_auth_url: str = None,
-                 mongo_client: MongoClient = None):
+                 mongo_auth_url: str = None
+                 ):
         """
            Implements interaction with MongoDB storage by using its API.
 
@@ -128,7 +128,7 @@ class MongoDBStorage(DocumentStorageABC):
             :return:
         """
 
-        self.mongodb_client = mongo_client or MongoClient(mongo_auth_url or config.MONGO_DB_AUTH_URL)
+        self.mongodb_client = MongoClient(mongo_auth_url or config.MONGO_DB_AUTH_URL, connect=False)
         self.database_name = database_name
         self.collection_name = collection_name
         self.connection = self.mongodb_client[self.database_name]
@@ -143,8 +143,8 @@ class MongoDBStorage(DocumentStorageABC):
         """
         response = self.collection.insert_one(document)
         # read documentation for each MongoDB response per operation
-        #TODO FIX_TRASH_CODE:if not response:
-        #TODO FIX_TRASH_CODE:    raise MongoDBStorageException(str(response))
+        # TODO FIX_TRASH_CODE:if not response:
+        # TODO FIX_TRASH_CODE:    raise MongoDBStorageException(str(response))
 
     def add_documents(self, documents: List[Dict]):
         """
@@ -155,8 +155,8 @@ class MongoDBStorage(DocumentStorageABC):
         """
         response = self.collection.insert_many(documents)
         # response can be 0 if documents list is empty
-        #TODO FIX_TRASH_CODE: if not response:
-        #TODO FIX_TRASH_CODE:    raise MongoDBStorageException(str(response))
+        # TODO FIX_TRASH_CODE: if not response:
+        # TODO FIX_TRASH_CODE:    raise MongoDBStorageException(str(response))
 
     def clear(self):
         """
@@ -165,9 +165,9 @@ class MongoDBStorage(DocumentStorageABC):
         :return:
         """
         response = self.collection.delete_many({})
-        #response can be 0 if collection is empty
-        #TODO FIX_TRASH_CODE: if not response:
-        #TODO FIX_TRASH_CODE:    raise MongoDBStorageException(str(response))
+        # response can be 0 if collection is empty
+        # TODO FIX_TRASH_CODE: if not response:
+        # TODO FIX_TRASH_CODE:    raise MongoDBStorageException(str(response))
 
     def count(self) -> int:
         """
@@ -178,7 +178,7 @@ class MongoDBStorage(DocumentStorageABC):
         response = self.collection.count_documents({})
         return response
         # response can be empty if collection is empty
-        #TODO FIX_TRASH_CODE:if response:
-        #TODO FIX_TRASH_CODE:    return response
-        #TODO FIX_TRASH_CODE:else:
-        #TODO FIX_TRASH_CODE:    raise MongoDBStorageException(str(response))
+        # TODO FIX_TRASH_CODE:if response:
+        # TODO FIX_TRASH_CODE:    return response
+        # TODO FIX_TRASH_CODE:else:
+        # TODO FIX_TRASH_CODE:    raise MongoDBStorageException(str(response))
