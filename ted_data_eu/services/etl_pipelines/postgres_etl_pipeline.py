@@ -539,7 +539,7 @@ class PostgresETLPipeline(ETLPipelineABC):
         triple_store_endpoint = self.triple_store.get_sparql_tda_triple_store_endpoint(
             repository_name=self.triple_store_endpoint)
         result_table = triple_store_endpoint.with_query(sparql_query).fetch_csv()
-        return {DATA_FIELD: result_table, EXTRACTED_DAY_FIELD: date_range.strftime("%Y%m%d")}
+        return {DATA_FIELD: result_table, EXTRACTED_DAY_FIELD: date_range}
 
     def transform(self, extracted_data: Dict) -> Dict:
         """
@@ -615,8 +615,6 @@ class CellarETLPipeline(PostgresETLPipeline):
             table_exists = sql_connection.execute(TABLE_EXISTS_QUERY.format(table_name=self.table_name)).fetchone()[0]
             if table_exists:
                 return {DATA_FIELD: None, SKIP_NEXT_STEP_FIELD: True}
-        self.event_logger.info("Cellar data loaded to postgres",
-                               extra={EXTRACTED_DAY_FIELD: self.get_metadata().get(START_DATE_METADATA_FIELD, None), "table_name": self.table_name})
         cellar_endpoint = TDATripleStoreEndpoint(CELLAR_ENDPOINT_URL)
         data_table = cellar_endpoint.with_query(
             self.sparql_query_path.read_text(encoding='utf-8')).fetch_csv()
