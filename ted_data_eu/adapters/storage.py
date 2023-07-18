@@ -151,7 +151,7 @@ class MongoDBStorage(DocumentStorageABC):
             :param documents: List of documents to be stored
             :return:
         """
-        response = self.mongodb_client[self.database_name][self.collection_name].insert_many(documents)
+        response = self.collection.insert_many(documents)
         if not response:
             raise MongoDBStorageException(str(response))
 
@@ -161,7 +161,7 @@ class MongoDBStorage(DocumentStorageABC):
 
         :return:
         """
-        response = self.mongodb_client[self.database_name][self.collection_name].delete_many({})
+        response = self.collection.delete_many({})
         if not response:
             raise MongoDBStorageException(str(response))
 
@@ -171,7 +171,7 @@ class MongoDBStorage(DocumentStorageABC):
 
         :return:
         """
-        response = self.mongodb_client[self.database_name][self.collection_name].count_documents({})
+        response = self.collection.count_documents({})
         if response:
             return response
         else:
