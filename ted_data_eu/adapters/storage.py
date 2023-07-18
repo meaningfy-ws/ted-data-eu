@@ -130,6 +130,8 @@ class MongoDBStorage(DocumentStorageABC):
         self.mongodb_client = MongoClient(mongo_auth_url or config.MONGO_DB_AUTH_URL, maxPoolSize=None)
         self.database_name = database_name
         self.collection_name = collection_name
+        self.connection = self.mongodb_client[self.database_name]
+        self.collection = self.connection[self.collection_name]
 
     def add_document(self, document: Dict):
         """
@@ -138,7 +140,7 @@ class MongoDBStorage(DocumentStorageABC):
             :param document: Document to be stored
             :return:
         """
-        response = self.mongodb_client[self.database_name][self.collection_name].insert_one(document)
+        response = self.collection.insert_one(document)
         if not response:
             raise MongoDBStorageException(str(response))
 
