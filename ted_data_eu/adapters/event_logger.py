@@ -1,5 +1,7 @@
 import logging
 
+from pymongo import MongoClient
+
 from ted_data_eu import config
 from ted_data_eu.adapters.storage import MongoDBStorage
 
@@ -13,7 +15,7 @@ class MongoDBEventLogger(logging.StreamHandler):
                  database_name: str,
                  collection_name: str,
                  mongo_auth_url: str = None,
-
+                 mongo_client: MongoClient = None
                  ):
         """
             Implements logging handler for MongoDB storage.
@@ -29,7 +31,8 @@ class MongoDBEventLogger(logging.StreamHandler):
         self.mongo_auth_url = mongo_auth_url or config.MONGO_DB_AUTH_URL
         self.mongo_storage = MongoDBStorage(database_name=self.database_name,
                                             collection_name=self.collection_name,
-                                            mongo_auth_url=self.mongo_auth_url)
+                                            mongo_auth_url=self.mongo_auth_url,
+                                            mongo_client=mongo_client)
 
     def emit(self, record: logging.LogRecord):
         """

@@ -117,7 +117,8 @@ class MongoDBStorage(DocumentStorageABC):
     def __init__(self,
                  database_name: str,
                  collection_name: str,
-                 mongo_auth_url: str = None):
+                 mongo_auth_url: str = None,
+                 mongo_client: MongoClient = None):
         """
            Implements interaction with MongoDB storage by using its API.
 
@@ -127,7 +128,7 @@ class MongoDBStorage(DocumentStorageABC):
             :return:
         """
 
-        self.mongodb_client = MongoClient(mongo_auth_url or config.MONGO_DB_AUTH_URL)
+        self.mongodb_client = mongo_client or MongoClient(mongo_auth_url or config.MONGO_DB_AUTH_URL)
         self.database_name = database_name
         self.collection_name = collection_name
         self.connection = self.mongodb_client[self.database_name]

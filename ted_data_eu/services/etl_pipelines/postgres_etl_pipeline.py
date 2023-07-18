@@ -9,6 +9,7 @@ from typing import Dict, Optional, List
 import pandas as pd
 import sqlalchemy
 from pandas import DataFrame
+from pymongo import MongoClient
 from sqlalchemy.exc import IntegrityError
 from ted_sws.data_manager.adapters.triple_store import TripleStoreABC
 
@@ -496,8 +497,10 @@ class PostgresETLPipeline(ETLPipelineABC):
         self.triple_store = triple_store or GraphDBAdapter()
         self.triple_store_endpoint = triple_store_endpoint or TRIPLE_STORE_ENDPOINT
         self.event_logger = logging.Logger(f"{POSTGRES_ETL_NAME}-{self.table_name}")
-        self.event_logger.addHandler(MongoDBEventLogger(database_name=POSTGRES_ETL_NAME,
-                                                        collection_name=POSTGRES_ETL_NAME))
+        mongo_client = MongoClient(config.MONGO_DB_AUTH_URL)
+        self.mongo_logger = MongoDBEventLogger(database_name=POSTGRES_ETL_NAME, collection_name=POSTGRES_ETL_NAME,
+                                               mongo_client=mongo_client)
+        self.event_logger.addHandler(self.mongo_logger)
 
     def set_metadata(self, etl_metadata: dict):
         """
