@@ -1,9 +1,7 @@
 import json
-import logging
 
 import pytest
 
-from ted_data_eu.adapters.event_logger import MongoDBEventLogger
 from ted_data_eu.services.data_load_service import load_documents_to_storage
 
 
