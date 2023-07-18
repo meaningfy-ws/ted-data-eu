@@ -495,7 +495,7 @@ class PostgresETLPipeline(ETLPipelineABC):
         self.foreign_key_column_names = foreign_key_column_names or []
         self.triple_store = triple_store or GraphDBAdapter()
         self.triple_store_endpoint = triple_store_endpoint or TRIPLE_STORE_ENDPOINT
-        self.event_logger = logging.Logger(f"{POSTGRES_ETL_NAME}-{self.table_name}")
+        self.event_logger = logging.Logger(f"{POSTGRES_ETL_NAME}_{self.table_name}".lower())
         self.event_logger.addHandler(MongoDBEventLogger(database_name=POSTGRES_ETL_NAME,
                                                         collection_name=POSTGRES_ETL_NAME))
 
