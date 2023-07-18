@@ -64,10 +64,6 @@ def elastic_query():
     return {"match_all": {}}
 
 @pytest.fixture
-def mongo_query():
-    return {}
-
-@pytest.fixture
 def ted_data_etl_pipelines():
     return [TedDataETLPipeline(business_pack_name=TDA_FREE_INDEX_NAME),
             TedDataETLPipeline(business_pack_name=TDA_STARTER_INDEX_NAME),
@@ -134,3 +130,7 @@ def event_logger():
 @pytest.fixture
 def log_record():
     return logging.LogRecord(name='test', level=logging.INFO, pathname='test', lineno=1, msg='test', args=None, exc_info=None)
+
+@pytest.fixture
+def mongodb_invalid_query():
+    return {"invalid_query":{"some_field":"some_value"}}

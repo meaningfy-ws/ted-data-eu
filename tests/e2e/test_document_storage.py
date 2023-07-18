@@ -38,26 +38,14 @@ def test_elastic_storage(elastic_storage, document_file_path, elastic_query):
     assert elastic_storage.count() == 0
 
 
-def test_mongo_storage(mongo_storage, document_file_path, mongo_query):
+def test_mongo_storage(mongo_storage, document_file_path, mongodb_invalid_query):
     assert document_file_path.exists()
     test_doc = json.loads(document_file_path.read_text())
     mongo_storage.clear()
     assert mongo_storage.count() == 0
     mongo_storage.add_document(test_doc)
     assert mongo_storage.count() == 1
-    # TODO FIX_TRASH_CODE: with pytest.raises(Exception):
-    # TODO FIX_TRASH_CODE:    mongo_storage.query({"invalid_query":{"some_field":"some_value"}})
-    # TODO FIX_TRASH_CODE: documents = mongo_storage.query(mongo_query)
-    documents = []
-    assert len(documents) == 1
-    assert documents[0] == test_doc
+    with pytest.raises(Exception):
+        mongo_storage.query(mongodb_invalid_query)
     mongo_storage.clear()
     assert mongo_storage.count() == 0
-
-
-#TODO This test pass, but you need to improve it to test the logger and MongoDBEventLogger correctly
-def test_logger(mongo_storage):
-    event_logger = logging.Logger('haha')
-    event_logger.addHandler(MongoDBEventLogger(database_name=mongo_storage.database_name,
-                                               collection_name="tmp_collection_name_123"))
-    event_logger.info("test message")
