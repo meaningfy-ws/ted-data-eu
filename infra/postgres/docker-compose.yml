@@ -3,7 +3,7 @@ services:
   postgres-tda:
     image: postgres:14.8-alpine
     container_name: postgres-tda-${ENVIRONMENT}
-    command: -c ssl=on -c ssl_cert_file=/var/lib/postgresql/server.p7b -c ssl_key_file=/var/lib/postgresql/server.key
+    command: -c ssl=on -c ssl_cert_file=/var/lib/postgresql/server.crt -c ssl_key_file=/var/lib/postgresql/server.key
     environment:
       POSTGRES_USER: ${POSTGRES_TDA_DB_USER}
       POSTGRES_PASSWORD: ${POSTGRES_TDA_DB_PASSWORD}
@@ -13,7 +13,7 @@ services:
        - ${POSTGRES_TDA_DB_PORT}:5432
     volumes:
       - postgres-db:/var/lib/postgresql/data
-      - ~/work/postgresql_ssl/server.p7b:/var/lib/postgresql/server.p7b:ro
+      - ~/work/postgresql_ssl/server.p7b:/var/lib/postgresql/server.crt:ro
       - ~/work/postgresql_ssl/server.key:/var/lib/postgresql/server.key:ro
     networks:
       - proxy-net
