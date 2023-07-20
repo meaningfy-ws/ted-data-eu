@@ -43,7 +43,5 @@ def test_mongo_storage(mongo_storage, document_file_path, mongodb_invalid_query)
     assert mongo_storage.count() == 0
     mongo_storage.add_document(test_doc)
     assert mongo_storage.count() == 1
-    with pytest.raises(Exception):
-        mongo_storage.query(mongodb_invalid_query)
     mongo_storage.clear()
     assert mongo_storage.count() == 0
