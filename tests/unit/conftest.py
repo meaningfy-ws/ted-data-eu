@@ -5,7 +5,7 @@ from ted_data_eu.adapters.cpv_processor import CPVProcessor, CellarCPVProcessor
 from ted_data_eu.adapters.nuts_processor import NUTSProcessor, CellarNUTSProcessor
 from ted_data_eu.adapters.triple_store import TDATripleStoreEndpoint
 from ted_data_eu.services.etl_pipelines.postgres_etl_pipeline import CELLAR_ENDPOINT_URL
-
+from ted_data_eu.adapters.event_logger import MongoDBEventLogger
 
 @pytest.fixture
 def cpv_processor():
@@ -48,3 +48,7 @@ def cellar_nuts_processor():
 @pytest.fixture
 def cellar_cpv_processor():
     return CellarCPVProcessor(TDATripleStoreEndpoint(CELLAR_ENDPOINT_URL).with_query(config.CELLAR_TABLE_QUERY_PATHS['CPV'].read_text(encoding='utf-8')).fetch_csv())
+
+@pytest.fixture
+def event_logger():
+    return MongoDBEventLogger(database_name='test_database123', collection_name='test_collection123')

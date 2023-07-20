@@ -1,9 +1,11 @@
 import json
+import logging
 
 import pandas as pd
 import pytest
 
-from ted_data_eu.adapters.storage import ElasticStorage
+from ted_data_eu.adapters.event_logger import MongoDBEventLogger
+from ted_data_eu.adapters.storage import ElasticStorage, MongoDBStorage
 from ted_data_eu.adapters.triple_store import GraphDBAdapter
 from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import TedDataETLPipeline, TDA_FREE_INDEX_NAME, \
     TDA_STARTER_INDEX_NAME, TDA_PREMIUM_INDEX_NAME
@@ -53,11 +55,13 @@ def elastic_index():
 def elastic_storage(elastic_index):
     return ElasticStorage(elastic_index=elastic_index)
 
+@pytest.fixture
+def mongo_storage():
+    return MongoDBStorage(database_name="test_mongo_db_123", collection_name="test_coll_name_123")
 
 @pytest.fixture
 def elastic_query():
     return {"match_all": {}}
-
 
 @pytest.fixture
 def ted_data_etl_pipelines():
@@ -116,3 +120,17 @@ def reference_table_name() -> str:
 @pytest.fixture
 def linkage_model_config() -> dict:
     return json.loads(SPLINK_TEST_MODEL_PATH.read_text(encoding="utf-8"))
+
+
+@pytest.fixture
+def event_logger():
+    return MongoDBEventLogger(database_name='test_database123', collection_name='test_collection123')
+
+
+@pytest.fixture
+def log_record():
+    return logging.LogRecord(name='test', level=logging.INFO, pathname='test', lineno=1, msg='test', args=None, exc_info=None)
+
+@pytest.fixture
+def mongodb_invalid_query():
+    return {"invalid_query":{"some_field":"some_value"}}

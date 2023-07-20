@@ -4,3 +4,4 @@ currencyconverter~=0.17.6
 pycountry~=22.3.5
 SQLAlchemy==1.4.46
 psycopg2-binary==2.9.6
+pymongo~=4.0.2

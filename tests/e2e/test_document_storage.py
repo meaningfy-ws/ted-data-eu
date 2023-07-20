@@ -1,10 +1,11 @@
 import json
 
 import pytest
+
 from ted_data_eu.services.data_load_service import load_documents_to_storage
 
 
-def test_elastic_storage_service(elastic_storage, document_file_path,elastic_query):
+def test_elastic_storage_service(elastic_storage, document_file_path, elastic_query):
     elastic_storage.clear()
     assert elastic_storage.count() == 0
     assert document_file_path.exists()
@@ -27,10 +28,20 @@ def test_elastic_storage(elastic_storage, document_file_path, elastic_query):
     elastic_storage.add_document(test_doc)
     assert elastic_storage.count() == 1
     with pytest.raises(Exception):
-        elastic_storage.query({"invalid_query":{}})
+        elastic_storage.query({"invalid_query": {}})
     documents = elastic_storage.query(elastic_query)
     assert len(documents) == 1
     assert documents[0] == test_doc
     elastic_storage.clear()
     assert elastic_storage.count() == 0
 
+
+def test_mongo_storage(mongo_storage, document_file_path, mongodb_invalid_query):
+    assert document_file_path.exists()
+    test_doc = json.loads(document_file_path.read_text())
+    mongo_storage.clear()
+    assert mongo_storage.count() == 0
+    mongo_storage.add_document(test_doc)
+    assert mongo_storage.count() == 1
+    mongo_storage.clear()
+    assert mongo_storage.count() == 0

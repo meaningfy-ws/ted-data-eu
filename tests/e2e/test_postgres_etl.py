@@ -7,7 +7,7 @@ import sqlalchemy
 
 from ted_data_eu import config
 from ted_data_eu.services.etl_pipelines.postgres_etl_pipeline import PostgresETLPipeline, CellarETLPipeline, DATA_FIELD, \
-    SKIP_NEXT_STEP_FIELD, DROP_TABLE_IF_EXISTS_QUERY
+    SKIP_NEXT_STEP_FIELD, DROP_TABLE_IF_EXISTS_QUERY, POSTGRES_ETL_NAME
 
 TEST_TABLE_NAME_EXTENSION = "_test"
 QUERY_LIMIT = "LIMIT 100"
@@ -28,7 +28,8 @@ def test_postgres_pipeline(graphdb_triple_store, example_notices,
                                                     primary_key_column_name=tables_metadata[table_name]['PK'],
                                                     foreign_key_column_names=tables_metadata[table_name]['FK'],
                                                     triple_store=graphdb_triple_store,
-                                                    triple_store_endpoint=tmp_repository_name)
+                                                    triple_store_endpoint=tmp_repository_name,
+                                                    etl_name=POSTGRES_ETL_NAME+TEST_TABLE_NAME_EXTENSION)
         with postgres_etl_pipeline.sql_engine.connect() as sql_connection:
             sql_connection.execute(DROP_TABLE_IF_EXISTS_QUERY.format(table_name=postgres_etl_pipeline.table_name))
         postgres_etl_pipeline.set_metadata(etl_pipeline_config)
@@ -63,7 +64,8 @@ def test_cellar_etl_pipeline():
             cellar_etl_pipeline = CellarETLPipeline(table_name=table_name,
                                                     sparql_query_path=query_path,
                                                     primary_key_column_name=tables_metadata[table_name]['PK'],
-                                                    foreign_key_column_names=tables_metadata[table_name]['FK'])
+                                                    foreign_key_column_names=tables_metadata[table_name]['FK'],
+                                                    etl_name=POSTGRES_ETL_NAME+TEST_TABLE_NAME_EXTENSION)
             with cellar_etl_pipeline.sql_engine.connect() as sql_connection:
                 sql_connection.execute(DROP_TABLE_IF_EXISTS_QUERY.format(table_name=cellar_etl_pipeline.table_name))
             test_data = cellar_etl_pipeline.extract()[DATA_FIELD]
