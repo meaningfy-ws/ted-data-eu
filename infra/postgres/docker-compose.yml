@@ -13,8 +13,8 @@ services:
        - ${POSTGRES_TDA_DB_PORT}:5432
     volumes:
       - postgres-db:/var/lib/postgresql/data
-      - ~/work/postgresql_ssl/server.crt:/var/lib/postgresql/server.crt
-      - ~/work/postgresql_ssl/server.key:/var/lib/postgresql/server.key
+      - ~/work/postgresql_ssl/server.crt:/var/lib/postgresql/server.crt:ro
+      - ~/work/postgresql_ssl/server.key:/var/lib/postgresql/server.key:ro
     networks:
       - proxy-net
     labels:
