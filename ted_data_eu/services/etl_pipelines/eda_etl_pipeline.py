@@ -50,8 +50,16 @@ class EDAETLPipeline(ETLPipelineABC):
 
     def transform(self, extracted_data: Dict) -> Dict:
         data_table: pd.DataFrame = extracted_data[DATA_FIELD]
-        data_json = data_table.to_json(orient="records")
+        data_json = data_table.to_dict(orient="records")
         return {DATA_FIELD: data_json}
 
     def load(self, transformed_data: Dict):
-        self.document_db_adapter.add_documents(transformed_data[DATA_FIELD])
+        data_to_load = transformed_data[DATA_FIELD]
+        self.document_db_adapter.add_documents(data_to_load)
+
+
+# if __name__ == '__main__':
+#     eda_pipeline = EDAETLPipeline()
+#     data = eda_pipeline.extract()
+#     data = eda_pipeline.transform(data)
+#     eda_pipeline.load(data)
