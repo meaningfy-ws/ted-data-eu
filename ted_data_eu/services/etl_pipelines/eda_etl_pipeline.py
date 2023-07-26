@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 from typing import Dict
 
@@ -14,6 +13,7 @@ from ted_data_eu.adapters.triple_store import GraphDBAdapter
 EDA_COLLECTION_NAME = "tda_eda"
 EDA_PIPELINE_NAME = "tda_eda_pipeline"
 DATA_FIELD = "eda_data"
+TRIPLE_STORE_ENDPOINT = "notices"
 
 
 class EDAETLPipeline(ETLPipelineABC):
@@ -43,7 +43,8 @@ class EDAETLPipeline(ETLPipelineABC):
 
     def extract(self) -> Dict:
         example_query: str = self.triple_store_queries_path["test_query"].read_text()
-        result_table: pd.DataFrame = self.triple_store_adapter.get_sparql_triple_store_endpoint().with_query(
+        result_table: pd.DataFrame = self.triple_store_adapter.get_sparql_triple_store_endpoint(
+            repository_name=TRIPLE_STORE_ENDPOINT).with_query(
             example_query).fetch_tabular()
         return {DATA_FIELD: result_table}
 
