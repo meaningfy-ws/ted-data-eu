@@ -10,6 +10,7 @@ dotenv.load_dotenv(verbose=True, override=True)
 PROJECT_RESOURCES_PATH = pathlib.Path(__file__).parent.resolve() / "resources"
 PROJECT_RESOURCES_BQ_FOLDER_PATH = PROJECT_RESOURCES_PATH / "sparql_queries"
 PROJECT_RESOURCES_POSTGRES_TABLES_PATH = PROJECT_RESOURCES_BQ_FOLDER_PATH / "postgres_tables"
+PROJECT_RESOURCE_EDA_QUERIES_PATH = PROJECT_RESOURCES_BQ_FOLDER_PATH / "eda_queries"
 
 
 class MongoDBConfig:
@@ -43,6 +44,16 @@ class MasterDataRegistryAPIConfig:
     def MASTER_DATA_REGISTRY_API_PASSWORD(self, config_value: str) -> str:
         return config_value
 
+
+class EDAETLPipelineConfig:
+
+    @env_property()
+    def EDA_TRIPLE_STORE_QUERIES_PATHS(self, config_value: str) -> Dict:
+        query_paths_map = {}
+        for query_path in PROJECT_RESOURCE_EDA_QUERIES_PATH.iterdir():
+            if query_path.is_file():
+                query_paths_map[query_path.stem] = query_path
+        return query_paths_map
 
 class PostgresTablesConfig:
 
@@ -156,7 +167,7 @@ class GitHubConfig:
 
 
 class TedDataConfigResolver(TedConfigResolver, BQResourcesConfig, GraphDBConfig, ElasticConfig, PostgresTablesConfig,
-                            CommonConfig, MasterDataRegistryAPIConfig, GitHubConfig, MongoDBConfig):
+                            CommonConfig, MasterDataRegistryAPIConfig, GitHubConfig, MongoDBConfig, EDAETLPipelineConfig):
     """
         This class is used for automatic config discovery.
     """

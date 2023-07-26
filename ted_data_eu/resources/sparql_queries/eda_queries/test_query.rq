@@ -1,0 +1,22 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
+
+select distinct
+(afn:localname(?Notice) as ?NoticeId)
+?NoticePublicationDate
+(afn:localname(?Procedure) as ?ProcedureId)
+?TotalAwardedValue
+(afn:localname(?TotalAwardedValueCurrencyURI) as ?TotalAwardedValueCurrency)
+where {
+    ?Notice a epo:ResultNotice;
+                   epo:hasPublicationDate ?NoticePublicationDate;
+                   epo:refersToProcedure ?Procedure.
+
+
+    optional {
+    	?Notice epo:announcesNoticeAwardInformation / epo:hasTotalAwardedValue ?MonetaryValue.
+        ?MonetaryValue a epo:MonetaryValue;
+                       epo:hasAmountValue ?TotalAwardedValue;
+                       epo:hasCurrency ?TotalAwardedValueCurrencyURI.
+    }
+} limit 100
