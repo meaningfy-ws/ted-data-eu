@@ -42,7 +42,7 @@ class EDAETLPipeline(ETLPipelineABC):
         return self.metadata
 
     def extract(self) -> Dict:
-        example_query: str = self.triple_store_queries_path["test_query"].read_text()
+        example_query: str = self.triple_store_queries_path["lot_queries","contact_point_queries","contact_point_internet_address_queries","contact_point_email_queries"].read_text()
         result_table: pd.DataFrame = self.triple_store_adapter.get_sparql_triple_store_endpoint(
             repository_name=TRIPLE_STORE_ENDPOINT).with_query(
             example_query).fetch_tabular()
