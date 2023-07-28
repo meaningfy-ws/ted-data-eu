@@ -1,0 +1,97 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX cccev: <http://data.europa.eu/m8g/>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
+PREFIX locn: <http://www.w3.org/ns/locn#>
+PREFIX cpov: <http://data.europa.eu/m8g/>
+PREFIX agg: <http://jena.apache.org/ARQ/function/aggregate#>
+
+
+SELECT DISTINCT
+    ((COUNT(?ContactPointFax) / COUNT(?ContactPoint) * 100) as ?FaxCoverage)
+    (COUNT(DISTINCT ?ContactPointFax) / COUNT(?ContactPoint) * 100 as ?FaxUniquenessPercentage)
+	((COUNT(DISTINCT ?ValidFax) / COUNT(DISTINCT ?ContactPoint) * 100) as ?ValidFaxCoveragePercentage)
+    (agg:stdev(strlen(?ContactPointFax)) as ?FaxStd)
+    (MIN(strlen(?ContactPointFax)) as ?TFaxMinLen)
+    (MAX(strlen(?ContactPointFax)) as ?FaxMaxLen)
+    (AVG(strlen(?ContactPointFax)) as ?FaxAvgLen)
+
+    ((COUNT(?ContactPointName) / COUNT(?ContactPoint) * 100) as ?NameCoverage)
+    (COUNT(DISTINCT ?ContactPointName) / COUNT(?ContactPoint) * 100 as ?NameUniquenessPercentage)
+	(agg:stdev(strlen(?ContactPointName)) as ?NameStd)
+    (MIN(strlen(?ContactPointName)) as ?NameMinLen)
+    (MAX(strlen(?ContactPointName)) as ?NameMaxLen)
+    (AVG(strlen(?ContactPointName)) as ?NameAvgLen)
+
+    ((COUNT(?ContactPointTelephone) / COUNT(?ContactPoint) * 100) as ?TelephoneCoverage)
+    (COUNT(DISTINCT ?ContactPointTelephone) / COUNT(?ContactPoint) * 100 as ?TelephoneUniquenessPercentage)
+  	((COUNT(DISTINCT ?ValidTelephone) / COUNT(DISTINCT ?ContactPoint) * 100) as ?ValidTelephoneCoveragePercentage)
+	(agg:stdev(strlen(?ContactPointTelephone)) as ?TelephoneStd)
+    (MIN(strlen(?ContactPointTelephone)) as ?TelephoneMinLen)
+    (MAX(strlen(?ContactPointTelephone)) as ?TelephoneMaxLen)
+    (AVG(strlen(?ContactPointTelephone)) as ?TelephoneAvgLen)
+
+WHERE {
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?NoticePublicationDate;
+              epo:refersToProcedure ?ProcedureId.
+
+    VALUES ?NoticePublicationDate {
+        "20220706"
+    }
+
+    ?NoticeId epo:announcesRole ?Role.
+    {
+        ?Role a epo:Buyer.
+    } union {
+        ?Role a epo:Winner.
+    }
+    ?Role epo:playedBy ?OrganizationId.
+    ?OrganizationId a org:Organization.
+
+    {
+        ?OrganizationId epo:hasPrimaryContactPoint ?ContactPoint.
+    }
+    union
+    {
+        ?Role epo:hasContactPointInRole ?ContactPoint .
+    }
+    ?ContactPoint a cpov:ContactPoint.
+
+    optional {
+        ?ContactPoint a cpov:ContactPoint.
+        {
+            optional {
+                ?ContactPoint epo:hasContactName ?ContactPointEn.
+                filter(lang(?ContactPointEn) = 'en')
+            }
+            optional {
+                SELECT ?ContactPoint (SAMPLE (?ContactPointInternal) as ?ContactPointOther)
+                {
+                    ?ContactPoint epo:hasContactName ?ContactPointInternal .
+                }
+                GROUP BY ?ContactPoint order by ?ContactPointInternal
+            }
+            BIND(COALESCE(?ContactPointEn, ?ContactPointOther) as ?ContactPointName)
+        }
+    }
+
+    optional {
+        ?ContactPoint epo:hasFax ?ContactPointFax.
+    }
+    optional {
+        ?ContactPoint cccev:telephone ?ContactPointTelephone.
+    }
+    optional {
+    ?ContactPoint epo:hasFax ?FaxNumber.
+    FILTER(REGEX(?FaxNumber, "^[+][\\d\\s/-]+$"))
+    BIND(?ContactPoint as ?ValidFax)
+  }
+
+  # Check for valid telephone numbers (adjust the regular expression as needed)
+  optional {
+    ?ContactPoint cccev:telephone ?TelephoneNumber.
+    FILTER(REGEX(?TelephoneNumber, "^[+][\\d\\s/-]+$"))
+    BIND(?ContactPoint as ?ValidTelephone)
+  }
+}

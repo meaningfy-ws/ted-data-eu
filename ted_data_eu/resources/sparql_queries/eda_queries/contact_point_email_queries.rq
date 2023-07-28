@@ -1,0 +1,46 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX cccev: <http://data.europa.eu/m8g/>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
+PREFIX locn: <http://www.w3.org/ns/locn#>
+PREFIX cpov: <http://data.europa.eu/m8g/>
+PREFIX agg: <http://jena.apache.org/ARQ/function/aggregate#>
+
+SELECT DISTINCT
+    ((COUNT(?Email) / COUNT(?ContactPoint) * 100) as ?EmailCoverage)
+    ((COUNT(?ValidEmail) / COUNT(?ContactPoint) * 100) as ?ValidEmailCoverage)
+    (COUNT(DISTINCT ?Email) / COUNT(?ContactPoint) * 100 as ?EmailUniquenessPercentage)
+    (agg:stdev(strlen(?Email)) as ?EmailStd)
+    (MIN(strlen(?Email)) as ?EmailMinLen)
+    (MAX(strlen(?Email)) as ?EmailMaxLen)
+    (AVG(strlen(?Email)) as ?EmailAvgLen)
+WHERE {
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?NoticePublicationDate;
+              epo:refersToProcedure ?ProcedureId.
+
+    values ?NoticePublicationDate {
+        "20220706"
+    }
+
+    ?NoticeId epo:announcesRole ?Role.
+    {
+        ?Role a epo:Buyer.
+    } union {
+        ?Role a epo:Winner.
+    }
+    ?Role epo:playedBy ?OrganizationId.
+    ?OrganizationId a org:Organization.
+
+    {
+        ?OrganizationId epo:hasPrimaryContactPoint ?ContactPoint.
+    }
+    union
+    {
+        ?Role epo:hasContactPointInRole ?ContactPoint .
+    }
+    ?ContactPoint a cpov:ContactPoint;
+                  cccev:email ?Email.
+    FILTER regex(?Email, '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$')
+    BIND(?Email AS ?ValidEmail)
+}

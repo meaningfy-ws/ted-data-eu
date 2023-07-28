@@ -1,0 +1,92 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
+PREFIX agg: <http://jena.apache.org/ARQ/function/aggregate#>
+
+SELECT DISTINCT
+    ((COUNT(?LotTitle) / COUNT(?Lot) * 100) as ?TitleCoverage)
+    ((agg:stdev(strlen(?LotTitle)) / AVG(strlen(?LotTitle))) * 100 as ?TitleConsistency)
+    (COUNT(DISTINCT ?LotTitle) / COUNT(?Lot) * 100 as ?TitleUniquenessPercentage)
+    (agg:stdev(strlen(?LotTitle)) as ?TitleStd)
+    (MIN(strlen(?LotTitle)) as ?TitleMinLen)
+    (MAX(strlen(?LotTitle)) as ?TitleMaxLen)
+    (AVG(strlen(?LotTitle)) as ?TitleAvgLen)
+
+
+    (agg:stdev(strlen(?LotDescription)) as ?DescriptionStd)
+    (MIN(strlen(?LotDescription)) as ?DescriptionMinLen)
+    (MAX(strlen(?LotDescription)) as ?DescriptionMaxLen)
+    (AVG(strlen(?LotDescription)) as ?DescriptionAvgLen)
+    ((agg:stdev(strlen(?LotDescription)) / AVG(strlen(?LotDescription))) * 100 as ?DescriptionConsistency)
+    ((COUNT(?LotDescription) / COUNT(?Lot) * 100) as ?DescriptionCoverage)
+
+
+    (agg:stdev(strlen(?MonetaryValueStr)) as ?EstimatedValueStd)
+    (MIN(strlen(?MonetaryValueStr)) as ?EstimatedValueMinLen)
+    (MAX(strlen(?MonetaryValueStr)) as ?EstimatedValueMaxLen)
+    (AVG(strlen(?MonetaryValueStr)) as ?EstimatedValueAvgLen)
+    ((agg:stdev(strlen(?MonetaryValueStr)) / AVG(strlen(?MonetaryValueStr))) * 100 as ?EstimatedValueConsistency)
+    ((COUNT(?LotEstimatedValue) / COUNT(?Lot) * 100) as ?EstimatedValueCoverage)
+	((COUNT(?LotDescription) / COUNT(?Lot) * 100) as ?DescriptionCoverage)
+
+WHERE {
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?NoticePublicationDate;
+              epo:refersToLot ?Lot.
+
+    VALUES ?NoticePublicationDate {
+        "20220706"
+    }
+
+    ?Lot a epo:Lot.
+    ?Procedure epo:hasProcurementScopeDividedIntoLot ?Lot.
+
+    OPTIONAL {
+        ?Lot epo:hasTitle ?LotTitleEn.
+        FILTER (lang(?LotTitleEn) = 'en')
+    }
+
+    OPTIONAL {
+        SELECT ?Lot (SAMPLE(?LotTitleInternal) as ?LotTitleOther)
+        {
+            ?Lot epo:hasTitle ?LotTitleInternal .
+        }
+        GROUP BY ?Lot
+    }
+
+    BIND(COALESCE(?LotTitleEn, ?LotTitleOther) as ?LotTitle)
+
+    OPTIONAL {
+        ?Lot epo:isUsingEUFunds ?isUsingEUFunds.
+    }
+
+    OPTIONAL {
+        ?Lot epo:hasEstimatedValue ?MonetaryValue.
+        ?MonetaryValue a epo:MonetaryValue;
+                       epo:hasAmountValue ?LotEstimatedValue;
+                       epo:hasCurrency ?LotEstimatedValueCurrencyURI.
+    }
+
+    OPTIONAL {
+        ?Lot epo:hasDescription ?LotDescriptionEn.
+        FILTER (lang(?LotDescriptionEn) = 'en')
+    }
+
+    OPTIONAL {
+        SELECT ?Lot (SAMPLE(?LotDescriptionInternal) as ?LotDescriptionOther)
+        {
+            ?Lot epo:hasDescription ?LotDescriptionInternal .
+        }
+        GROUP BY ?Lot
+    }
+
+    BIND(COALESCE(?LotDescriptionEn, ?LotDescriptionOther) as ?LotDescription)
+
+    OPTIONAL {
+        ?Lot epo:hasEstimatedValue ?MonetaryValue.
+        ?MonetaryValue a epo:MonetaryValue;
+                       epo:hasAmountValue ?LotEstimatedValue;
+                       epo:hasCurrency ?LotEstimatedValueCurrencyURI.
+    }
+
+    BIND(STR(?MonetaryValue) as ?MonetaryValueStr)
+}

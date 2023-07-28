@@ -1,0 +1,45 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX cccev: <http://data.europa.eu/m8g/>
+PREFIX afn: <http://jena.apache.org/ARQ/function#>
+PREFIX locn: <http://www.w3.org/ns/locn#>
+PREFIX cpov: <http://data.europa.eu/m8g/>
+PREFIX agg: <http://jena.apache.org/ARQ/function/aggregate#>
+
+
+select distinct
+	((COUNT(?InternetAddress) / COUNT(?ContactPoint) * 100) as ?InternetAddressCoverage)
+    (COUNT(DISTINCT ?InternetAddress) / COUNT(?ContactPoint) * 100 as ?InternetAddressUniquenessPercentage)
+	(agg:stdev(strlen(?InternetAddress)) as ?InternetAddressStd)
+    (MIN(strlen(?InternetAddress)) as ?InternetAddressMinLen)
+    (MAX(strlen(?InternetAddress)) as ?InternetAddressMaxLen)
+    (AVG(strlen(?InternetAddress)) as ?InternetAddressAvgLen)
+where {
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?NoticePublicationDate;
+              epo:refersToProcedure ?ProcedureId.
+
+    values ?NoticePublicationDate {
+        "20220706"
+    }
+
+    ?NoticeId epo:announcesRole ?Role.
+    {
+        ?Role a epo:Buyer.
+    } union {
+        ?Role a epo:Winner.
+    }
+    ?Role epo:playedBy ?OrganizationId.
+    ?OrganizationId a org:Organization.
+
+    {
+        ?OrganizationId epo:hasPrimaryContactPoint ?ContactPoint.
+    }
+    union
+    {
+        ?Role epo:hasContactPointInRole ?ContactPoint .
+    }
+    ?ContactPoint a cpov:ContactPoint;
+                  epo:hasInternetAddress ?InternetAddress.
+
+}
