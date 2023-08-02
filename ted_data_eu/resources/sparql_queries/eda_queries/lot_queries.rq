@@ -26,8 +26,6 @@ SELECT DISTINCT
     (AVG(strlen(?MonetaryValueStr)) as ?EstimatedValueAvgLen)
     ((agg:stdev(strlen(?MonetaryValueStr)) / AVG(strlen(?MonetaryValueStr))) * 100 as ?EstimatedValueConsistency)
     ((COUNT(?LotEstimatedValue) / COUNT(?Lot) * 100) as ?EstimatedValueCoverage)
-	((COUNT(?LotDescription) / COUNT(?Lot) * 100) as ?DescriptionCoverage)
-
 WHERE {
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
