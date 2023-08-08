@@ -14,14 +14,44 @@ SELECT DISTINCT
     (MIN(strlen(?Email)) as ?EmailMinLen)
     (MAX(strlen(?Email)) as ?EmailMaxLen)
     (AVG(strlen(?Email)) as ?EmailAvgLen)
+
+    ((COUNT(?InternetAddress) / COUNT(?ContactPoint) * 100) as ?InternetAddressCoverage)
+    (COUNT(DISTINCT ?InternetAddress) / COUNT(?ContactPoint) * 100 as ?InternetAddressUniquenessPercentage)
+    (agg:stdev(strlen(?InternetAddress)) as ?InternetAddressStd)
+    (MIN(strlen(?InternetAddress)) as ?InternetAddressMinLen)
+    (MAX(strlen(?InternetAddress)) as ?InternetAddressMaxLen)
+    (AVG(strlen(?InternetAddress)) as ?InternetAddressAvgLen)
+
+    ((COUNT(?ContactPointFax) / COUNT(?ContactPoint) * 100) as ?FaxCoverage)
+    (COUNT(DISTINCT ?ContactPointFax) / COUNT(?ContactPoint) * 100 as ?FaxUniquenessPercentage)
+    ((COUNT(DISTINCT ?ValidFax) / COUNT(DISTINCT ?ContactPoint) * 100) as ?ValidFaxCoveragePercentage)
+    (agg:stdev(strlen(?ContactPointFax)) as ?FaxStd)
+    (MIN(strlen(?ContactPointFax)) as ?TFaxMinLen)
+    (MAX(strlen(?ContactPointFax)) as ?FaxMaxLen)
+    (AVG(strlen(?ContactPointFax)) as ?FaxAvgLen)
+
+    ((COUNT(?ContactPointName) / COUNT(?ContactPoint) * 100) as ?NameCoverage)
+    (COUNT(DISTINCT ?ContactPointName) / COUNT(?ContactPoint) * 100 as ?NameUniquenessPercentage)
+    (agg:stdev(strlen(?ContactPointName)) as ?NameStd)
+    (MIN(strlen(?ContactPointName)) as ?NameMinLen)
+    (MAX(strlen(?ContactPointName)) as ?NameMaxLen)
+    (AVG(strlen(?ContactPointName)) as ?NameAvgLen)
+
+    ((COUNT(?ContactPointTelephone) / COUNT(?ContactPoint) * 100) as ?TelephoneCoverage)
+    (COUNT(DISTINCT ?ContactPointTelephone) / COUNT(?ContactPoint) * 100 as ?TelephoneUniquenessPercentage)
+    ((COUNT(DISTINCT ?ValidTelephone) / COUNT(DISTINCT ?ContactPoint) * 100) as ?ValidTelephoneCoveragePercentage)
+    (agg:stdev(strlen(?ContactPointTelephone)) as ?TelephoneStd)
+    (MIN(strlen(?ContactPointTelephone)) as ?TelephoneMinLen)
+    (MAX(strlen(?ContactPointTelephone)) as ?TelephoneMaxLen)
+    (AVG(strlen(?ContactPointTelephone)) as ?TelephoneAvgLen)
 WHERE {
+    VALUES ?NoticePublicationDate {
+        "20220706"
+    }
+
     ?NoticeId a epo:ResultNotice;
               epo:hasPublicationDate ?NoticePublicationDate;
               epo:refersToProcedure ?ProcedureId.
-
-    values ?NoticePublicationDate {
-        "20220706"
-    }
 
     ?NoticeId epo:announcesRole ?Role.
     {
@@ -39,8 +69,48 @@ WHERE {
     {
         ?Role epo:hasContactPointInRole ?ContactPoint .
     }
-    ?ContactPoint a cpov:ContactPoint;
-                  cccev:email ?Email.
-    FILTER regex(?Email, '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$')
-    BIND(?Email AS ?ValidEmail)
+    ?ContactPoint a cpov:ContactPoint.
+
+    optional {
+        ?ContactPoint a cpov:ContactPoint.
+        {
+            optional {
+                ?ContactPoint epo:hasContactName ?ContactPointEn.
+                filter(lang(?ContactPointEn) = 'en')
+            }
+            optional {
+                SELECT ?ContactPoint (SAMPLE (?ContactPointInternal) as ?ContactPointOther)
+                {
+                    ?ContactPoint epo:hasContactName ?ContactPointInternal .
+                }
+                GROUP BY ?ContactPoint order by ?ContactPointInternal
+            }
+            BIND(COALESCE(?ContactPointEn, ?ContactPointOther) as ?ContactPointName)
+        }
+    }
+
+    optional {
+        ?ContactPoint epo:hasFax ?ContactPointFax.
+    }
+    optional {
+        ?ContactPoint cccev:telephone ?ContactPointTelephone.
+    }
+    optional {
+        ?ContactPoint epo:hasInternetAddress ?InternetAddress.
+    }
+    optional {
+        ?ContactPoint cccev:email ?Email.
+        FILTER regex(?Email, '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$')
+        BIND(?Email AS ?ValidEmail)
+    }
+    optional {
+        ?ContactPoint epo:hasFax ?FaxNumber.
+        FILTER(REGEX(?FaxNumber, "^[+][\\d\\s/-]+$"))
+        BIND(?ContactPoint as ?ValidFax)
+    }
+    optional {
+        ?ContactPoint cccev:telephone ?TelephoneNumber.
+        FILTER(REGEX(?TelephoneNumber, "^[+][\\d\\s/-]+$"))
+        BIND(?ContactPoint as ?ValidTelephone)
+    }
 }
