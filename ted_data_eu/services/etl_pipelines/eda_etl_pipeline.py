@@ -42,7 +42,7 @@ class EDAETLPipeline(ETLPipelineABC):
         return self.metadata
 
     def extract(self) -> Dict:
-        example_query: str = self.triple_store_queries_path["lot_queries"].read_text()
+        example_query: str = self.triple_store_queries_path["contact_point_queries"].read_text()
         result_table: pd.DataFrame = self.triple_store_adapter.get_sparql_triple_store_endpoint(
             repository_name=TRIPLE_STORE_ENDPOINT).with_query(
             example_query).fetch_tabular()
@@ -57,7 +57,7 @@ class EDAETLPipeline(ETLPipelineABC):
         data_to_load = transformed_data[DATA_FIELD]
         self.document_db_adapter.add_documents(data_to_load)
 
-
+#
 # if __name__ == '__main__':
 #     eda_pipeline = EDAETLPipeline()
 #     data = eda_pipeline.extract()

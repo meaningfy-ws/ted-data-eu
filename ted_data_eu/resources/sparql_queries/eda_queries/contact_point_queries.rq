@@ -6,11 +6,25 @@ PREFIX locn: <http://www.w3.org/ns/locn#>
 PREFIX cpov: <http://data.europa.eu/m8g/>
 PREFIX agg: <http://jena.apache.org/ARQ/function/aggregate#>
 
-
 SELECT DISTINCT
+    ((COUNT(?Email) / COUNT(?ContactPoint) * 100) as ?EmailCoverage)
+    ((COUNT(?ValidEmail) / COUNT(?ContactPoint) * 100) as ?ValidEmailCoverage)
+    (COUNT(DISTINCT ?Email) / COUNT(?ContactPoint) * 100 as ?EmailUniquenessPercentage)
+    (agg:stdev(strlen(?Email)) as ?EmailStd)
+    (MIN(strlen(?Email)) as ?EmailMinLen)
+    (MAX(strlen(?Email)) as ?EmailMaxLen)
+    (AVG(strlen(?Email)) as ?EmailAvgLen)
+
+    ((COUNT(?InternetAddress) / COUNT(?ContactPoint) * 100) as ?InternetAddressCoverage)
+    (COUNT(DISTINCT ?InternetAddress) / COUNT(?ContactPoint) * 100 as ?InternetAddressUniquenessPercentage)
+    (agg:stdev(strlen(?InternetAddress)) as ?InternetAddressStd)
+    (MIN(strlen(?InternetAddress)) as ?InternetAddressMinLen)
+    (MAX(strlen(?InternetAddress)) as ?InternetAddressMaxLen)
+    (AVG(strlen(?InternetAddress)) as ?InternetAddressAvgLen)
+
     ((COUNT(?ContactPointFax) / COUNT(?ContactPoint) * 100) as ?FaxCoverage)
     (COUNT(DISTINCT ?ContactPointFax) / COUNT(?ContactPoint) * 100 as ?FaxUniquenessPercentage)
-	((COUNT(DISTINCT ?ValidFax) / COUNT(DISTINCT ?ContactPoint) * 100) as ?ValidFaxCoveragePercentage)
+    ((COUNT(DISTINCT ?ValidFax) / COUNT(DISTINCT ?ContactPoint) * 100) as ?ValidFaxCoveragePercentage)
     (agg:stdev(strlen(?ContactPointFax)) as ?FaxStd)
     (MIN(strlen(?ContactPointFax)) as ?TFaxMinLen)
     (MAX(strlen(?ContactPointFax)) as ?FaxMaxLen)
@@ -18,27 +32,26 @@ SELECT DISTINCT
 
     ((COUNT(?ContactPointName) / COUNT(?ContactPoint) * 100) as ?NameCoverage)
     (COUNT(DISTINCT ?ContactPointName) / COUNT(?ContactPoint) * 100 as ?NameUniquenessPercentage)
-	(agg:stdev(strlen(?ContactPointName)) as ?NameStd)
+    (agg:stdev(strlen(?ContactPointName)) as ?NameStd)
     (MIN(strlen(?ContactPointName)) as ?NameMinLen)
     (MAX(strlen(?ContactPointName)) as ?NameMaxLen)
     (AVG(strlen(?ContactPointName)) as ?NameAvgLen)
 
     ((COUNT(?ContactPointTelephone) / COUNT(?ContactPoint) * 100) as ?TelephoneCoverage)
     (COUNT(DISTINCT ?ContactPointTelephone) / COUNT(?ContactPoint) * 100 as ?TelephoneUniquenessPercentage)
-  	((COUNT(DISTINCT ?ValidTelephone) / COUNT(DISTINCT ?ContactPoint) * 100) as ?ValidTelephoneCoveragePercentage)
-	(agg:stdev(strlen(?ContactPointTelephone)) as ?TelephoneStd)
+    ((COUNT(DISTINCT ?ValidTelephone) / COUNT(DISTINCT ?ContactPoint) * 100) as ?ValidTelephoneCoveragePercentage)
+    (agg:stdev(strlen(?ContactPointTelephone)) as ?TelephoneStd)
     (MIN(strlen(?ContactPointTelephone)) as ?TelephoneMinLen)
     (MAX(strlen(?ContactPointTelephone)) as ?TelephoneMaxLen)
     (AVG(strlen(?ContactPointTelephone)) as ?TelephoneAvgLen)
-
 WHERE {
-    ?NoticeId a epo:ResultNotice;
-              epo:hasPublicationDate ?NoticePublicationDate;
-              epo:refersToProcedure ?ProcedureId.
-
     VALUES ?NoticePublicationDate {
         "20220706"
     }
+
+    ?NoticeId a epo:ResultNotice;
+              epo:hasPublicationDate ?NoticePublicationDate;
+              epo:refersToProcedure ?ProcedureId.
 
     ?NoticeId epo:announcesRole ?Role.
     {
@@ -83,15 +96,22 @@ WHERE {
         ?ContactPoint cccev:telephone ?ContactPointTelephone.
     }
     optional {
-    ?ContactPoint epo:hasFax ?FaxNumber.
-    FILTER(REGEX(?FaxNumber, "^[+][\\d\\s/-]+$"))
-    BIND(?ContactPoint as ?ValidFax)
-  }
-
-  # Check for valid telephone numbers (adjust the regular expression as needed)
-  optional {
-    ?ContactPoint cccev:telephone ?TelephoneNumber.
-    FILTER(REGEX(?TelephoneNumber, "^[+][\\d\\s/-]+$"))
-    BIND(?ContactPoint as ?ValidTelephone)
-  }
+        ?ContactPoint epo:hasInternetAddress ?InternetAddress.
+    }
+    optional {
+        ?ContactPoint cccev:email ?Email.
+        FILTER regex(?Email, '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$')
+        BIND(?Email AS ?ValidEmail)
+    }
+    optional {
+        ?ContactPoint epo:hasFax ?FaxNumber.
+        FILTER(REGEX(?FaxNumber, "^[+][\\d\\s/-]+$"))
+        BIND(?ContactPoint as ?ValidFax)
+    }
+    optional {
+        ?ContactPoint cccev:telephone ?TelephoneNumber.
+        FILTER(REGEX(?TelephoneNumber, "^[+][\\d\\s/-]+$"))
+        BIND(?ContactPoint as ?ValidTelephone)
+    }
 }
+
