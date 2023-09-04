@@ -26,36 +26,36 @@ def init_etl_pipelines_register():
         This function is used for register all ETL pipelines inside DAG.
     :return:
     """
-    etl_pipelines_register.register(etl_pipeline_name=TDA_FREE_INDEX_NAME,
-                                    etl_pipeline=TedDataETLPipeline(business_pack_name=TDA_FREE_INDEX_NAME))
-    etl_pipelines_register.register(etl_pipeline_name=TDA_STARTER_INDEX_NAME,
-                                    etl_pipeline=TedDataETLPipeline(business_pack_name=TDA_STARTER_INDEX_NAME))
+    # etl_pipelines_register.register(etl_pipeline_name=TDA_FREE_INDEX_NAME,
+    #                                 etl_pipeline=TedDataETLPipeline(business_pack_name=TDA_FREE_INDEX_NAME))
+    # etl_pipelines_register.register(etl_pipeline_name=TDA_STARTER_INDEX_NAME,
+    #                                 etl_pipeline=TedDataETLPipeline(business_pack_name=TDA_STARTER_INDEX_NAME))
     etl_pipelines_register.register(etl_pipeline_name=TDA_PREMIUM_INDEX_NAME,
                                     etl_pipeline=TedDataETLPipeline(business_pack_name=TDA_PREMIUM_INDEX_NAME))
-
-    tables_metadata = config.TABLES_METADATA
-
-    for table_name, query_path in config.TRIPLE_STORE_TABLE_QUERY_PATHS.items():
-        etl_pipelines_register.register(etl_pipeline_name=table_name,
-                                        etl_pipeline=PostgresETLPipeline(table_name=table_name,
-                                                                         sparql_query_path=query_path,
-                                                                         primary_key_column_name=
-                                                                         tables_metadata[table_name][
-                                                                             PRIMARY_KEY_COLUMN_NAME],
-                                                                         foreign_key_column_names=
-                                                                         tables_metadata[table_name][
-                                                                             FOREIGN_KEY_COLUMN_NAMES]))
-
-    for table_name, query_path in config.CELLAR_TABLE_QUERY_PATHS.items():
-        etl_pipelines_register.register(etl_pipeline_name=table_name,
-                                        etl_pipeline=CellarETLPipeline(table_name=table_name,
-                                                                       sparql_query_path=query_path,
-                                                                       primary_key_column_name=
-                                                                       tables_metadata[table_name][
-                                                                           PRIMARY_KEY_COLUMN_NAME],
-                                                                       foreign_key_column_names=
-                                                                       tables_metadata[table_name][
-                                                                           FOREIGN_KEY_COLUMN_NAMES]))
+    #
+    # tables_metadata = config.TABLES_METADATA
+    #
+    # for table_name, query_path in config.TRIPLE_STORE_TABLE_QUERY_PATHS.items():
+    #     etl_pipelines_register.register(etl_pipeline_name=table_name,
+    #                                     etl_pipeline=PostgresETLPipeline(table_name=table_name,
+    #                                                                      sparql_query_path=query_path,
+    #                                                                      primary_key_column_name=
+    #                                                                      tables_metadata[table_name][
+    #                                                                          PRIMARY_KEY_COLUMN_NAME],
+    #                                                                      foreign_key_column_names=
+    #                                                                      tables_metadata[table_name][
+    #                                                                          FOREIGN_KEY_COLUMN_NAMES]))
+    #
+    # for table_name, query_path in config.CELLAR_TABLE_QUERY_PATHS.items():
+    #     etl_pipelines_register.register(etl_pipeline_name=table_name,
+    #                                     etl_pipeline=CellarETLPipeline(table_name=table_name,
+    #                                                                    sparql_query_path=query_path,
+    #                                                                    primary_key_column_name=
+    #                                                                    tables_metadata[table_name][
+    #                                                                        PRIMARY_KEY_COLUMN_NAME],
+    #                                                                    foreign_key_column_names=
+    #                                                                    tables_metadata[table_name][
+    #                                                                        FOREIGN_KEY_COLUMN_NAMES]))
 
 
 @dag(default_args=DEFAULT_DAG_ARGUMENTS,
