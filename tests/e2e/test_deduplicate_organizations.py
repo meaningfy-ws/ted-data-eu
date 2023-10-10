@@ -1,3 +1,5 @@
+import pandas as pd
+
 from ted_data_eu.adapters.master_data_registry import MATCH_PROBABILITY_COLUMN_NAME, UNIQUE_ID_SRC_COLUMN_NAME
 from ted_data_eu.services.deduplicate_organizations import get_organization_records_links, remove_reference_table
 
@@ -17,3 +19,19 @@ def test_deduplicate_organizations(duplicates_records_dataframe, reference_table
     assert all(result_links[UNIQUE_ID_SRC_COLUMN_NAME] == duplicates_records_dataframe[
         duplicates_records_unique_column_name])
     assert remove_reference_table(reference_table_name=reference_table_name)
+
+
+
+def test_dedup(organization_deduplication_data: pd.DataFrame):
+
+    #assert remove_reference_table(reference_table_name=reference_table_name)
+    result_links = get_organization_records_links(organizations=organization_deduplication_data,
+                                                  unique_column_name="OrganizationAddressId",
+                                                  )
+    print(result_links[result_links["match_probability"] < 1.0])
+    # assert len(result_links) == len(duplicates_records_dataframe)
+    # assert result_links[MATCH_PROBABILITY_COLUMN_NAME].min() >= 0.8
+    # assert result_links[MATCH_PROBABILITY_COLUMN_NAME].max() <= 1.0
+    # assert all(result_links[UNIQUE_ID_SRC_COLUMN_NAME] == duplicates_records_dataframe[
+    #     duplicates_records_unique_column_name])
+    #assert remove_reference_table(reference_table_name=reference_table_name)

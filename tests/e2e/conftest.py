@@ -9,7 +9,8 @@ from ted_data_eu.adapters.storage import ElasticStorage, MongoDBStorage
 from ted_data_eu.adapters.triple_store import GraphDBAdapter
 from ted_data_eu.services.etl_pipelines.ted_data_etl_pipeline import TedDataETLPipeline, TDA_FREE_INDEX_NAME, \
     TDA_STARTER_INDEX_NAME, TDA_PREMIUM_INDEX_NAME
-from tests.test_data import TEST_RDF_MANIFESTATIONS_PATH, TEST_DOCUMENTS_PATH, TEST_NOTICES_PATH
+from tests.test_data import TEST_RDF_MANIFESTATIONS_PATH, TEST_DOCUMENTS_PATH, TEST_NOTICES_PATH, \
+    TEST_ORGANIZATION_DEDUPLICATION_DATA_PATH
 from tests.test_data.deduplication_model import SPLINK_TEST_MODEL_PATH
 
 REPOSITORY_NAME = "unknown_repository_123456677"
@@ -134,3 +135,7 @@ def log_record():
 @pytest.fixture
 def mongodb_invalid_query():
     return {"invalid_query":{"some_field":"some_value"}}
+
+@pytest.fixture
+def organization_deduplication_data():
+    return pd.read_csv(TEST_ORGANIZATION_DEDUPLICATION_DATA_PATH)
