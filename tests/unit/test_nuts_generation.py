@@ -41,7 +41,7 @@ def test_cellar_nuts_processor(real_nuts, fake_nuts, cellar_nuts_processor):
     assert cellar_nuts_processor.nuts_exists(nuts_code='F') is False
     assert cellar_nuts_processor.nuts_exists(nuts_code=None) is False
 
-    assert cellar_nuts_processor.get_nuts_label_by_code(nuts_code='FRK26') == 'Rhône'
+    assert cellar_nuts_processor.get_nuts_label_by_code(nuts_code='FRK26') == 'FRK26 Rhône'
     assert cellar_nuts_processor.get_nuts_label_by_code(nuts_code='FRK2') == 'Rhône-Alpes'
     assert cellar_nuts_processor.get_nuts_label_by_code(nuts_code='FRK') == 'Auvergne-Rhône-Alpes'
     assert cellar_nuts_processor.get_nuts_label_by_code(nuts_code='FR') == 'France'
