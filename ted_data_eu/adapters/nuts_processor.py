@@ -114,6 +114,7 @@ class CellarNUTSProcessor(object):
             }
         )
         self.dataframe[self.NUTS_PARENT_COLUMN_NAME] = self.dataframe[self.NUTS_PARENT_COLUMN_NAME].str.split("/").str[-1]
+        self.dataframe[self.NUTS_LABEL_COLUMN_NAME] = self.dataframe[self.NUTS_LABEL_COLUMN_NAME].str.partition(" ")[2]
 
     def nuts_exists(self, nuts_code: str) -> bool:
         """
