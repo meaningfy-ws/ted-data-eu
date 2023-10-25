@@ -54,3 +54,5 @@ def test_cellar_nuts_processor(real_nuts, fake_nuts, cellar_nuts_processor):
     assert cellar_nuts_processor.get_nuts_level_by_code(nuts_code='FR') == 0
     assert cellar_nuts_processor.get_nuts_level_by_code(nuts_code='F') is None
     assert cellar_nuts_processor.get_nuts_level_by_code(nuts_code=None) is None
+
+    assert cellar_nuts_processor.get_nuts_label_by_code(nuts_code='BE32') == 'Prov. Hainaut'

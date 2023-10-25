@@ -26,9 +26,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get install -y libssl-dev libcurl4-openssl-dev
-          python -m pip install --upgrade setuptools pip wheel
-          make install
-          make install-dev
+          python -m pip install --upgrade setuptools pip wheel tox~=4.11.3
       - name: Make envfile
         uses: SpicyPizza/create-envfile@v1
         with:
