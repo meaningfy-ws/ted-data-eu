@@ -34,6 +34,7 @@ START_DATE_METADATA_FIELD = "start_date"
 END_DATE_METADATA_FIELD = "end_date"
 TRIPLE_STORE_ENDPOINT = "notices"
 TED_NOTICES_LINK = 'https://ted.europa.eu/udl?uri=TED:NOTICE:{notice_id}:TEXT:EN:HTML'
+TRIPLE_STORE_ENDPOINT_FIELD = "triple_store_endpoint"
 
 PROCEDURE_TYPE_COLUMN_NAME = "procedure_type"
 WINNER_NUTS_COLUMN_NAME = "winner_nuts"
@@ -204,6 +205,7 @@ class TedDataETLPipeline(ETLPipelineABC):
         """
         etl_metadata = self.get_metadata()
         etl_metadata_fields = etl_metadata.keys()
+        triple_store_endpoint = etl_metadata[TRIPLE_STORE_ENDPOINT_FIELD] if TRIPLE_STORE_ENDPOINT_FIELD in etl_metadata_fields else TRIPLE_STORE_ENDPOINT
         if START_DATE_METADATA_FIELD in etl_metadata_fields and END_DATE_METADATA_FIELD in etl_metadata_fields:
             if START_DATE_METADATA_FIELD == END_DATE_METADATA_FIELD:
                 date_range = datetime.strptime(START_DATE_METADATA_FIELD, "\"%Y%m%d\"")
@@ -218,7 +220,7 @@ class TedDataETLPipeline(ETLPipelineABC):
 
         sparql_query_template = Template(config.BQ_PATHS[SPARQL_QUERY_NAME].read_text(encoding='utf-8'))
         sparql_query_str = sparql_query_template.substitute(date_range=date_range)
-        triple_store_endpoint = GraphDBAdapter().get_sparql_triple_store_endpoint(repository_name=TRIPLE_STORE_ENDPOINT)
+        triple_store_endpoint = GraphDBAdapter().get_sparql_triple_store_endpoint(repository_name=triple_store_endpoint)
         result_table = triple_store_endpoint.with_query(sparql_query_str).fetch_tabular()
         return {"data": result_table}
 
